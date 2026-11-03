@@ -1,0 +1,83 @@
+# AGENTS.md
+
+Instructions for AI coding agents (Claude Code) working on this repo. Read this fully before making changes. Also read `PLAN.md` and the files in `docs/`.
+
+## Project summary
+Personal portfolio tracker for ONE login (the owner), with several portfolios under it (for example the owner and the owner's wife; portfolios are labels, not accounts). It tracks Indian mutual funds, stocks (India and US), RSUs, savings balances and credit card dues. Data lives in Supabase Postgres. The site is a static Angular app on Cloudflare Pages. Scheduled GitHub Actions load daily NAVs and prices. It replaces an existing Google Sheet and must reach feature parity with it (see `docs/SHEET_MAPPING.md`).
+
+## Tech stack (do not swap without asking)
+- Angular (latest stable), standalone components, signals, TypeScript strict mode
+- PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities
+- Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
+- Charts: PrimeNG Chart (Chart.js)
+- Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
+- Hosting: Cloudflare Pages (static build, no SSR)
+- Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
+
+Use the latest stable versions and check the official docs for the installed version before using an API. Do not rely on memory for PrimeNG or Angular APIs that change between majors.
+
+## Repo layout
+```
+/                     config, README, AGENTS.md, PLAN.md
+docs/                 design docs (source of truth for behaviour)
+supabase/migrations/  SQL migrations (numbered, never edited after merge)
+web/                  Angular app
+scripts/              Python: NAV/price jobs, snapshot, backup
+.github/workflows/    scheduled jobs and CI
+```
+
+## Commands (fill in as they are created, keep this list current)
+- Install: `cd web && npm ci`
+- Dev server: `cd web && npm start`
+- Unit tests: `cd web && npm test`
+- E2E: `cd web && npx playwright test`
+- Lint and format: `cd web && npm run lint`
+- Build: `cd web && npm run build`
+- Scripts tests: `cd scripts && pytest`
+
+## Hard rules
+1. **Security first.** Every table has Row Level Security enabled and an owner policy. Never disable RLS, never add a policy that allows anonymous access. See `docs/SECURITY.md`.
+2. **Secrets.** The Supabase service role key is only used in `scripts/` and GitHub Actions. It must never appear in `web/`, in logs, or in git. Never commit `.env`.
+3. **Money.** Use Postgres `numeric` for money and units, never floats. In TypeScript keep values as numbers only for display math and round only at the display layer. Format INR with the `en-IN` locale (lakh/crore grouping, e.g. ₹56,74,412). Format USD with `en-US`.
+4. **Migrations.** Schema changes only through a new numbered file in `supabase/migrations/`. Never edit a migration that has already been applied.
+5. **Keep it light.** No transaction ledger and no NAV or price history tables: holdings are entered as units and invested amounts, and market data is latest-only (see `docs/DATA_MODEL.md`). Do not add history tables or ledgers without asking.
+5a. **Portfolios.** Every holding, savings account, card and RSU grant belongs to a `portfolio_id`. Totals default to all active portfolios; the portfolio switcher scopes every page.
+5b. **Credit cards are monthly.** Bills are one row per card per month (`card_bills`) with a derived status; never store status or a single "pending amount" on the card.
+5c. **No invented data.** Never hardcode sample portfolio values in production code. Use fixtures only in tests.
+6. **One login.** Public sign-up is disabled. Do not build registration, per-portfolio logins or sharing features.
+7. **No import tooling.** The owner loads their own data (see `docs/DATA_ENTRY.md`). Do not write scripts that read the Google Sheet.
+8. **Ask before** adding a new paid service, a new major dependency, or anything that is not free-tier.
+
+## Responsive requirement (applies to every page)
+- Mobile first. Must be usable at 360px width and on desktop at 1440px.
+- Breakpoints: mobile < 768px, tablet 768 to 1023px, desktop >= 1024px.
+- Mobile: bottom navigation bar, cards instead of wide tables for holdings lists, touch targets at least 44px, dialogs become full-screen sheets.
+- Desktop: left sidebar navigation, full data tables with sorting, filtering and totals.
+- No horizontal page scroll on any viewport. Wide tables scroll inside their own container.
+- Respect `prefers-color-scheme`; support a manual light/dark toggle. Respect iOS safe-area insets.
+- Every new page needs a Playwright check at 390x844 and 1440x900.
+See `docs/UI_SPEC.md`.
+
+## Code conventions
+- Standalone components, `ChangeDetectionStrategy.OnPush`, signals for state, `inject()` for DI.
+- One feature per folder under `web/src/app/features/<name>/` (page component, service, models, tests).
+- Shared UI under `web/src/app/shared/`. Supabase access only through services in `web/src/app/core/data/`, never directly in components.
+- Calculation logic (value, P&L, day change, XIRR if added) lives in pure functions in `web/src/app/core/calc/` with unit tests.
+- Types for database rows are generated with `supabase gen types typescript` into `web/src/app/core/db.types.ts`. Do not hand-write them.
+- Small, readable functions; no `any`; handle loading, empty and error states on every page.
+- Python scripts: typed, `requests` with timeouts and retries, idempotent (safe to re-run), exit non-zero on failure, never print secrets.
+- Commit style: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`). One logical change per commit.
+
+## Workflow
+1. Work through `PLAN.md` phase by phase. Tick the checkbox when a task is done and meets its acceptance criteria.
+2. Before finishing a phase: run lint, unit tests, build, and (if UI changed) Playwright. Report results.
+3. Stop at the end of each phase and summarise what was done and what the human must do next.
+4. If something in the docs is unclear or conflicts with reality (for example, a sheet column differs from `SHEET_MAPPING.md`), stop and ask rather than guess.
+5. Keep `docs/` updated when behaviour changes.
+
+## Definition of done (every task)
+- Works at mobile and desktop widths
+- Loading, empty and error states handled
+- No lint errors, no TypeScript errors, tests pass
+- RLS verified for any new table or view
+- No secrets in the diff
