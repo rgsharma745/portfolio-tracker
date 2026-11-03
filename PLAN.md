@@ -23,18 +23,18 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 - [ ] **Human:** Create a Supabase project (free). Note project URL, anon key, service role key.
 - [ ] **Human:** In Supabase Auth settings: disable "Allow new users to sign up". Enable email magic link (and optionally Google). Create the owner user manually (Auth > Users > Add user). Copy the user UUID.
 - [ ] **Human:** Create a Cloudflare account and a Pages project connected to the GitHub repo (settings are filled in Phase 9).
-- [ ] Add `.gitignore` (node_modules, dist, `.env*` except `.env.example`, `scripts/data/`, `__pycache__`, `.angular`).
+- [x] Add `.gitignore` (node_modules, dist, `.env*` except `.env.example`, `scripts/data/`, `__pycache__`, `.angular`).
 
 **Acceptance:** repo exists, Supabase project exists with sign-up disabled, owner user exists.
 
 ## Phase 1: Scaffold the frontend
-- [ ] Create the Angular app in `web/` (standalone, routing, SCSS, strict TS, no SSR).
-- [ ] Install PrimeNG with the Aura theme and `@primeng/themes`; configure light and dark mode via a CSS class on `<html>` (`.app-dark`), initial value from `prefers-color-scheme`.
-- [ ] Install Tailwind CSS (layout utilities only) and make sure it does not conflict with PrimeNG styles (use CSS layers as documented by PrimeNG).
-- [ ] Install `@supabase/supabase-js`, Chart.js, and testing tools (unit + Playwright).
-- [ ] Environment handling: read `NG_APP_SUPABASE_URL` and `NG_APP_SUPABASE_ANON_KEY` at build time (document the chosen approach in AGENTS.md commands).
-- [ ] Set up ESLint, Prettier, and a GitHub Actions CI workflow (`.github/workflows/ci.yml`: install, lint, test, build) on every pull request.
-- [ ] Create folder structure from AGENTS.md (`core/`, `features/`, `shared/`).
+- [x] Create the Angular app in `web/` (standalone, routing, SCSS, strict TS, no SSR).
+- [x] Install PrimeNG with the Aura theme and `@primeng/themes`; configure light and dark mode via a CSS class on `<html>` (`.app-dark`), initial value from `prefers-color-scheme`.
+- [x] Install Tailwind CSS (layout utilities only) and make sure it does not conflict with PrimeNG styles (use CSS layers as documented by PrimeNG).
+- [x] Install `@supabase/supabase-js`, Chart.js, and testing tools (unit + Playwright).
+- [x] Environment handling: read `NG_APP_SUPABASE_URL` and `NG_APP_SUPABASE_ANON_KEY` at build time (document the chosen approach in AGENTS.md commands).
+- [x] Set up ESLint, Prettier, and a GitHub Actions CI workflow (`.github/workflows/ci.yml`: install, lint, test, build) on every pull request.
+- [x] Create folder structure from AGENTS.md (`core/`, `features/`, `shared/`).
 
 **Acceptance:** `npm start` shows a blank themed shell; `npm run build` and CI pass.
 

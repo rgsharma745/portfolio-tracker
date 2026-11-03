@@ -84,9 +84,15 @@ Manage portfolios (add, rename, reorder, deactivate; delete only with a strong w
 - All icon-only buttons have `aria-label`.
 
 ## Visual style
-- PrimeNG Aura preset; primary color a calm blue; success green and danger red from theme tokens.
-- Cards: 12px radius, 1px border, subtle shadow in light theme only.
-- Typography: system UI font stack; numbers use tabular figures.
+A calm, institutional finance look. Layout and density follow this spec; the look comes from a custom Aura preset (`web/src/app/core/theme/preset.ts`) and app tokens (`web/src/styles.scss`). Use tokens, never inline hex.
+- **One action color:** blue `#0052ff` (primary 500), pressed `#003ecc` (600). Use it sparingly: primary buttons, active nav item, links. No second brand color.
+- **Surfaces (neutral palette):** canvas `#ffffff`, soft band `#f7f7f7`, strong fill `#eef0f3`, hairline `#dee1e6`; dark theme canvas `#0a0b0d`, elevated `#16181c`.
+- **Text:** ink `#0a0b0d`, body `#5b616e`, muted `#7c828a` (light theme); inverted in dark.
+- **Gain/loss:** text color only, never a background, always with a `+`/`-` sign. Light: up `#098551`, down `#cf202f`. Dark: up `#3cc68a`, down `#f0616d`. All pass AA.
+- **Typography:** Inter (self-hosted, variable) for UI; headings at weight 400 with slight negative tracking, labels and buttons at 600. Every money and unit figure uses JetBrains Mono with tabular figures (`.app-num`).
+- **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
+- **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
+- **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
 - Charts use theme CSS variables so they follow dark mode.
 
 ## Responsive test matrix (Playwright)

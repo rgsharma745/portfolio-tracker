@@ -7,7 +7,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 
 ## Tech stack (do not swap without asking)
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
-- PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities
+- PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities. PrimeNG is under the PrimeUI license (not MIT): the owner uses a free Community License key, supplied as `NG_APP_PRIMEUI_LICENSE` and renewed yearly
 - Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
 - Charts: PrimeNG Chart (Chart.js)
 - Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
@@ -27,12 +27,13 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 ```
 
 ## Commands (fill in as they are created, keep this list current)
-- Install: `cd web && npm ci`
-- Dev server: `cd web && npm start`
-- Unit tests: `cd web && npm test`
-- E2E: `cd web && npx playwright test`
-- Lint and format: `cd web && npm run lint`
-- Build: `cd web && npm run build`
+- Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium`)
+- Dev server: `cd web && npm start` (http://localhost:4200)
+- Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch)
+- E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900; starts the dev server)
+- Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
+- Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`)
+- Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on Cloudflare Pages (`CF_PAGES`) if the Supabase variables are missing.
 - Scripts tests: `cd scripts && pytest`
 
 ## Hard rules
