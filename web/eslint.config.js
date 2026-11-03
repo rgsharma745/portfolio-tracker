@@ -1,0 +1,59 @@
+// @ts-check
+const eslint = require('@eslint/js');
+const { defineConfig } = require('eslint/config');
+const tseslint = require('typescript-eslint');
+const angular = require('angular-eslint');
+
+module.exports = defineConfig([
+  {
+    files: ['**/*.ts'],
+    extends: [
+      eslint.configs.recommended,
+      tseslint.configs.recommended,
+      tseslint.configs.stylistic,
+      angular.configs.tsRecommended,
+    ],
+    processor: angular.processInlineTemplates,
+    rules: {
+      '@angular-eslint/directive-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: 'app',
+          style: 'camelCase',
+        },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: 'element',
+          prefix: 'app',
+          style: 'kebab-case',
+        },
+      ],
+      '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Components must reach Supabase through services in core/data.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@supabase/supabase-js',
+              message: 'Import Supabase only in src/app/core/data/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/app/core/data/**/*.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+  {
+    files: ['**/*.html'],
+    extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
+    rules: {},
+  },
+]);
