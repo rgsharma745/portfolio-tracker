@@ -15,7 +15,8 @@
     "prelint": "npm run env",
     "lint": "ng lint && prettier --check \"src/**/*.{ts,html,scss,css}\" \"e2e/**/*.ts\"",
     "format": "prettier --write \"src/**/*.{ts,html,scss,css}\" \"e2e/**/*.ts\"",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "gen:types": "cd .. && npx -y supabase@3.0.0 gen types typescript --local --schema public > web/src/app/core/db.types.ts && cd web && prettier --write src/app/core/db.types.ts"
   },
   "private": true,
   "packageManager": "npm@11.16.0",
