@@ -119,6 +119,9 @@ Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the
 
 **Acceptance:** totals reconcile; owner signs off.
 
+## Later (owner to define)
+- [ ] **RSU + ESOP:** revisit the RSU after-tax formula (currently `units_granted * price * (1 - tax_rate)`, kept as is for now) and add ESOP handling. Needs a schema change (new migration) and the owner's rules before any work starts.
+
 ---
 
 ## Risks and mitigations
