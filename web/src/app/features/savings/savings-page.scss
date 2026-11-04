@@ -1,0 +1,151 @@
+.savings-stats {
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  // Three cards on two mobile columns: the total spans the first row.
+  > :first-child {
+    grid-column: 1 / -1;
+
+    @media (min-width: 1024px) {
+      grid-column: auto;
+    }
+  }
+}
+
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accounts-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.bank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bank-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font-size: 17px;
+  cursor: pointer;
+
+  .pi {
+    font-size: 12px;
+    color: var(--app-text-muted);
+  }
+
+  &:hover {
+    background: var(--app-bg-soft);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+  }
+}
+
+.inline-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  input {
+    width: 12rem;
+  }
+}
+
+.share {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.share-bar {
+  flex: 1 1 auto;
+  max-width: 24rem;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--p-surface-100);
+  overflow: hidden;
+
+  :host-context(.app-dark) & {
+    background: var(--p-surface-800);
+  }
+}
+
+.share-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--p-primary-color);
+}
+
+.share-text {
+  flex-shrink: 0;
+}
+
+.updated {
+  display: none;
+
+  @media (min-width: 768px) {
+    display: inline;
+  }
+}
+
+.more {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+}

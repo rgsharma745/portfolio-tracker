@@ -1,0 +1,172 @@
+@if (!holdings.loaded()) {
+  @if (holdings.error()) {
+    <app-error-state title="Could not load your savings" (retry)="holdings.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="pi-wallet"
+    title="No savings accounts yet"
+    message="Add each bank account with its current balance, and update the balance when it changes."
+    actionLabel="Add account"
+    (action)="add()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="stat-grid savings-stats">
+      <app-stat-card label="Total savings" [value]="total()" [compact]="bp.isMobile()" />
+      <app-stat-card label="Accounts" [text]="'' + rows().length" />
+      @if (largest(); as top) {
+        <app-stat-card
+          label="Largest account"
+          [value]="top.balance"
+          [note]="top.bank"
+          [compact]="bp.isMobile()"
+        />
+      }
+    </div>
+
+    <section class="app-card accounts" aria-labelledby="accounts-title">
+      <div class="accounts-head">
+        <h2 class="section-title" id="accounts-title">Accounts</h2>
+        <button pButton type="button" (click)="add()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Add account
+        </button>
+      </div>
+      <ul class="rows" aria-label="Savings accounts">
+        @for (row of rows(); track row.account.id) {
+          <li class="row">
+            <div class="row-main">
+              <div class="bank">
+                <span class="bank-name">{{ row.account.bank }}</span>
+                @if (showPortfolio()) {
+                  <p-tag [value]="row.portfolio" severity="secondary" />
+                }
+              </div>
+              @if (inlineId() === row.account.id) {
+                <form class="inline-edit" (ngSubmit)="saveInline(row.account)">
+                  <input
+                    pInputText
+                    inputmode="decimal"
+                    autocomplete="off"
+                    name="balance"
+                    [attr.aria-label]="'New balance for ' + row.account.bank"
+                    [ngModel]="inlineText()"
+                    (ngModelChange)="inlineText.set($event)"
+                  />
+                  <button pButton type="submit" [disabled]="inlineBusy()">Save</button>
+                  <button
+                    pButton
+                    type="button"
+                    text
+                    severity="secondary"
+                    (click)="inlineId.set(null)"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              } @else {
+                <button
+                  type="button"
+                  class="balance app-num"
+                  [attr.aria-label]="
+                    'Balance of ' +
+                    row.account.bank +
+                    ': ' +
+                    (row.account.balance | money) +
+                    '. Edit'
+                  "
+                  (click)="editBalance(row.account)"
+                >
+                  {{ row.account.balance | money }}
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
+            @if (inlineId() === row.account.id && inlineError(); as e) {
+              <p class="field-error">{{ e }}</p>
+            }
+            <div class="share">
+              <span class="share-bar" aria-hidden="true">
+                <span class="share-fill" [style.width.%]="row.share"></span>
+              </span>
+              <span class="share-text">{{ shareText(row.share) }} of total</span>
+              <span class="updated">Updated {{ row.account.updated_at | date: 'd MMM y' }}</span>
+              <button
+                pButton
+                type="button"
+                iconOnly
+                rounded
+                text
+                severity="secondary"
+                class="more"
+                [attr.aria-label]="'Edit ' + row.account.bank"
+                (click)="edit(row.account)"
+              >
+                <i class="pi pi-ellipsis-h" aria-hidden="true"></i>
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+}
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialog.isEdit() ? 'Edit account' : 'Add account'"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this account?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="field">
+    <label for="sav-portfolio">Portfolio</label>
+    <p-select
+      inputId="sav-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="dialog.form().portfolioId"
+      (ngModelChange)="dialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (dialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="sav-bank">Bank or account</label>
+    <input
+      pInputText
+      id="sav-bank"
+      autocomplete="off"
+      [maxlength]="bankMax"
+      [ngModel]="dialog.form().bank"
+      (ngModelChange)="dialog.set('bank', $event)"
+    />
+    @if (dialog.errors().bank; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="sav-balance">Balance (₹)</label>
+    <input
+      pInputText
+      id="sav-balance"
+      inputmode="decimal"
+      autocomplete="off"
+      [ngModel]="dialog.form().balance"
+      (ngModelChange)="dialog.set('balance', $event)"
+    />
+    @if (dialog.errors().balance; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+</app-edit-dialog>

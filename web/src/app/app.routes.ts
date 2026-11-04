@@ -32,7 +32,11 @@ export const routes: Routes = [
         title: 'RSU',
         loadComponent: () => import('./features/rsu/rsu-page').then((m) => m.RsuPage),
       },
-      { path: 'savings', title: 'Savings', loadComponent: comingSoon },
+      {
+        path: 'savings',
+        title: 'Savings',
+        loadComponent: () => import('./features/savings/savings-page').then((m) => m.SavingsPage),
+      },
       { path: 'cards', title: 'Credit cards', loadComponent: comingSoon },
       {
         path: 'settings',
