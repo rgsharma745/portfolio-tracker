@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { AuthService } from '../auth/auth.service';
+import { scopeIds } from '../calc/common';
 import { Tables } from '../db.types';
 import { RefreshService } from './refresh.service';
 import { SUPABASE } from './supabase.client';
@@ -48,10 +49,7 @@ export class PortfolioService {
     return id && this.active().some((p) => p.id === id) ? id : null;
   });
   /** Portfolio ids that totals should include for the current scope. */
-  readonly scopeIds = computed(() => {
-    const id = this.scope();
-    return id ? [id] : this.active().map((p) => p.id);
-  });
+  readonly scopeIds = computed(() => scopeIds(this.portfolios(), this.scope()));
 
   constructor() {
     effect(() => {
