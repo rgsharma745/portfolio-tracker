@@ -35,7 +35,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium`)
 - Dev server: `cd web && npm start` (http://localhost:4200)
 - Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch)
-- E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900; starts the dev server)
+- E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900). Requires the local database (below). It serves the app on port 4300 with the `e2e` build configuration and a separate `env.e2e.ts` pointing at the local stack, so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`)
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on Cloudflare Pages (`CF_PAGES`) if the Supabase variables are missing.
@@ -70,7 +70,7 @@ See `docs/UI_SPEC.md`.
 ## Code conventions
 - Standalone components, `ChangeDetectionStrategy.OnPush`, signals for state, `inject()` for DI.
 - One feature per folder under `web/src/app/features/<name>/` (page component, service, models, tests).
-- Shared UI under `web/src/app/shared/`. Supabase access only through services in `web/src/app/core/data/`, never directly in components.
+- Shared UI under `web/src/app/shared/` (`ui/` components and pipes, `layout/` shell and navigation, `format/` pure formatters). Supabase access only through services in `web/src/app/core/data/` (and `core/auth/` for sessions), never directly in components; ESLint enforces this.
 - Calculation logic (value, P&L, day change, XIRR if added) lives in pure functions in `web/src/app/core/calc/` with unit tests.
 - Types for database rows are generated with `supabase gen types typescript` into `web/src/app/core/db.types.ts`. Do not hand-write them.
 - Small, readable functions; no `any`; handle loading, empty and error states on every page.

@@ -35,7 +35,9 @@ docs/
 
 ## Frontend design
 - Standalone Angular components, signals, OnPush, lazy-loaded routes per feature.
-- A data service per feature wraps `supabase-js` calls and exposes signals (`data`, `loading`, `error`).
+- A data service per feature wraps `supabase-js` calls and exposes signals (`data`, `loading`, `error`). Services re-query when `RefreshService.tick` changes (the top bar Refresh button) and call `markUpdated()` for the "Updated" time.
+- Auth: `core/auth/AuthService` holds the session as signals. Sign-in is an email magic link using the PKCE flow (`shouldCreateUser: false`); supabase-js persists the session in localStorage and refreshes the token, and a failed refresh (SIGNED_OUT) returns to `/login`. `authGuard` protects every app route and strips the used `?code=` from the URL; `guestGuard` keeps signed-in users off the login page. Sign-out is global (revokes all sessions).
+- Portfolio scope: `core/data/PortfolioService` exposes `scope()` (null = All) and `scopeIds()`; the choice is saved in `settings` (key `portfolio_scope`) so it follows the owner across devices.
 - Calculation functions are pure and unit tested; components only render.
 - Responsive shell: `ShellComponent` chooses sidebar vs bottom nav using CSS (media queries) and a `BreakpointService` (signal) for behaviour differences such as table vs card list.
 - Theming: PrimeNG Aura preset, dark mode via `.app-dark` class on `<html>`.

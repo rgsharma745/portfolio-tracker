@@ -58,11 +58,11 @@ The owner loads their own data into Supabase. **Do not write an import script or
 **Acceptance:** the app works from an empty database; the Data check lists any holdings the jobs cannot price.
 
 ## Phase 4: Auth and app shell (responsive)
-- [ ] Supabase auth service (signal-based session), login page (email magic link; Google button if enabled), route guard for all pages, logout.
-- [ ] App shell: desktop >= 1024px = left sidebar; mobile = bottom tab bar (Overview, MF, Stocks, More) and a "More" sheet (RSU, Savings, Cards, Settings). Top bar with page title, refresh button, theme toggle, "last updated" time.
-- [ ] Global components: `MoneyPipe` (INR en-IN / USD), `PlColorDirective` (green positive, red negative, neutral zero), `StatCard`, `EmptyState`, `ErrorState`, skeleton loaders.
-- [ ] Portfolio switcher in the top bar (All, then one entry per active portfolio), persisted in `settings`; every page's data and totals respect it. Default is All.
-- [ ] Session persistence and auto-refresh of tokens; sign out when token is invalid.
+- [x] Supabase auth service (signal-based session), login page (email magic link; Google button if enabled), route guard for all pages, logout.
+- [x] App shell: desktop >= 1024px = left sidebar; mobile = bottom tab bar (Overview, MF, Stocks, More) and a "More" sheet (RSU, Savings, Cards, Settings). Top bar with page title, refresh button, theme toggle, "last updated" time.
+- [x] Global components: `MoneyPipe` (INR en-IN / USD), `PlColorDirective` (green positive, red negative, neutral zero), `StatCard`, `EmptyState`, `ErrorState`, skeleton loaders.
+- [x] Portfolio switcher in the top bar (All, then one entry per active portfolio), persisted in `settings`; every page's data and totals respect it. Default is All.
+- [x] Session persistence and auto-refresh of tokens; sign out when token is invalid.
 
 **Acceptance:** unauthenticated users only see login; layout switches correctly at 767/768 and 1023/1024 px; no horizontal scroll at 360px.
 

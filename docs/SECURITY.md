@@ -20,6 +20,12 @@ This app holds personal financial data. Treat security as a feature.
 - Auth: email provider on (magic link), "Allow new users to sign up" **off** (`enable_signup = false` locally), Site URL and redirect URLs limited to localhost and the production domain.
 - GitHub integration: not connected. Migrations are applied manually after review.
 
+## Sign-in behaviour
+- Magic link only; the app never creates users (`shouldCreateUser: false`) and has no sign-up link.
+- The login page shows the same "Check your email" message whether or not the address is registered, so it does not reveal which emails exist.
+- PKCE flow: the one-time code in the link only works in the browser that requested it, and it is removed from the URL after use.
+- Sign-out revokes all of the owner's sessions.
+
 ## Secrets
 - Frontend gets only the project URL and the anon key (safe by design when RLS is correct).
 - Service role key, owner UUID and backup recipient live in GitHub Actions Secrets and a local `.env` (git-ignored).
