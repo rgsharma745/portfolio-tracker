@@ -43,7 +43,8 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
 - Scripts setup: `cd scripts && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
-- Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project)
+- Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project). The backup round-trip test runs only where `age` is installed (CI installs it).
+- Run a job: `cd scripts && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... .venv/bin/python -m jobs.fetch_nav` (also `fetch_prices`, `snapshot`, `backup`, `keepalive`). Against the local stack, take both values from `npx supabase status` (API URL and service role key). In GitHub: Actions › the job's workflow › Run workflow. Jobs fetch only the codes and symbols present in the database and identify themselves honestly (never as a browser).
 
 ## Hard rules
 1. **Security first.** Every table has Row Level Security enabled and an owner policy. Never disable RLS, never add a policy that allows anonymous access. See `docs/SECURITY.md`.

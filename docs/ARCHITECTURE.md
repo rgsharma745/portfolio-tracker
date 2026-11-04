@@ -19,7 +19,8 @@ web/
     features/    overview/ mutual-funds/ stocks/ rsu/ savings/ cards/ settings/ login/
     shared/      ui components, pipes, directives, layout (shell, sidebar, bottom-nav)
 scripts/
-  jobs/          fetch_nav.py fetch_prices.py snapshot.py backup.py
+  jobs/          fetch_nav.py fetch_prices.py providers.py snapshot.py backup.py keepalive.py
+  lib/           supabase_rest.py (REST client), jobs.py (run_job, job_runs), http.py, calc.py
   tests/         pytest (including RLS tests)
 supabase/migrations/   0001_init.sql, ...
 .github/workflows/     ci.yml nav.yml prices.yml backup.yml
@@ -47,12 +48,21 @@ docs/
 ## Jobs
 | Job | Schedule | Writes | Notes |
 |---|---|---|---|
-| fetch_nav | daily, 18:00 and 01:30 UTC | `mf_nav_latest` via `upsert_mf_nav` | Only schemes in `mf_holdings`; no history stored; writes unmatched codes as JSON in `job_runs.message` (see DATA_MODEL.md) |
-| fetch_prices | weekdays after market close | `stock_price_latest`, `fx_latest` via upsert functions | Provider interface with fallback; skips manual overrides |
-| snapshot | daily after prices | `portfolio_snapshots` | One row per portfolio per day, upsert |
-| backup | weekly | private repo or artifact | `age` encrypted JSON |
-| keepalive | weekly | none | simple select |
-Every job records a row in `job_runs`.
+| fetch_nav (`nav.yml`) | daily 18:00 and 01:30 UTC (23:30 and 07:00 IST) | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
+| fetch_prices (`prices.yml`) | weekdays 13:30 and 22:30 UTC (19:00 and 04:00 IST) | `stock_price_latest`, `fx_latest` via upsert functions | Only symbols in `stock_holdings` and `rsu_grants`; USD/INR only when something is in USD; skips `is_manual` rows. Sources below |
+| snapshot (`snapshot.yml`) | daily 02:00 UTC (07:30 IST) | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
+| backup (`backup.yml`) | Sundays 03:00 UTC | workflow artifact, 90 days | All owner tables as JSON, encrypted with `age` in memory before writing |
+| keepalive (`keepalive.yml`) | Wednesdays 06:00 UTC | none | One tiny select so the free project never pauses |
+
+Every job records one `job_runs` row (status, JSON summary or the error, start and finish time) and exits non-zero on failure, so GitHub emails the owner; Settings › Job runs shows the last run of each. All jobs are idempotent: re-running a day changes nothing or replaces that day's values. The scheduled workflows share `.github/workflows/_run-job.yml` and need the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (and `BACKUP_AGE_RECIPIENT` for backups). Each can also be run by hand (`workflow_dispatch`).
+
+**Price sources** (`scripts/jobs/providers.py`, one `PriceProvider` interface):
+- India stocks: NSE's official daily bhavcopy (one CSV of all closing prices; the job looks back over weekends and holidays), then Yahoo Finance (`SYMBOL.NS`) for any symbol it lacks.
+- US stocks and RSU symbols: Yahoo Finance's chart endpoint. It is unofficial and may change; Stooq, the planned US source, now blocks scripts with a browser check. Alternatives if Yahoo breaks: a free Alpha Vantage or Finnhub key, or a published GOOGLEFINANCE price sheet.
+- USD/INR: Frankfurter (European Central Bank reference rate), Yahoo `INR=X` as the fallback.
+- The jobs send an honest User-Agent (`portfolio-tracker-jobs/1.0`) and never pose as a browser or get around a site's bot checks.
+
+**Formula parity:** `scripts/lib/calc.py` repeats the app's valuation formulas for the snapshot. `web/src/app/core/calc/fixtures/snapshot-case.json` holds inputs and expected totals that both `scripts/tests/test_calc.py` and `core/calc/snapshot-parity.spec.ts` check, so a formula changed on one side only fails CI.
 
 ## Environments
 - `local`: Supabase CLI local stack (`npx supabase start` at the repo root; Docker required). It applies `supabase/migrations/` and mirrors the production auth/API settings from `supabase/config.toml`. Database tests and type generation run against it by default. Never test against production data with destructive scripts.

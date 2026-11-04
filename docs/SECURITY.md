@@ -28,7 +28,8 @@ This app holds personal financial data. Treat security as a feature.
 
 ## Secrets
 - Frontend gets only the project URL and the anon key (safe by design when RLS is correct).
-- Service role key, owner UUID and backup recipient live in GitHub Actions Secrets and a local `.env` (git-ignored).
+- Service role key and backup recipient live in GitHub Actions Secrets (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT`) and a local `.env` (git-ignored). The jobs do not need the owner's UUID: they read the owner's rows with the service role and keep each row's `owner_id`.
+- Job logs and `job_runs` messages hold counts, codes and symbols only, never keys or row contents. The backup is encrypted in memory before it is written, so no plaintext copy exists on the runner's disk or in the artifact.
 - Rotate keys if ever leaked. Run a secret scanner (gitleaks) in CI.
 
 ## Web hardening (Cloudflare `_headers`)

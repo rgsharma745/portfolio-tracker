@@ -39,7 +39,10 @@ Each table holds one row per fund, stock or pair that you actually own (a few do
 Limitations to accept: a brand-new fund shows 0 day change until its second NAV date arrives; if jobs miss several days, "previous" is the last value the job saw. A stock or FX row with `is_manual = true` is never overwritten by jobs (manual override from Settings). Deleting the manual row hands the symbol back to the jobs on their next run.
 
 ## Job messages
-`job_runs.message` for `fetch_nav` is JSON so the app can read it: `{"updated": 42, "unmatched": ["123456", ...]}`, where `unmatched` lists scheme codes from `mf_holdings` that were not in the AMFI file. Settings › Data check shows those funds as "not found in the AMFI file". On failure the message is plain text (the error), which the app ignores for this purpose.
+On success `job_runs.message` is a JSON summary; on failure it is plain text (the error). Settings › Job runs shows both in words.
+- `fetch_nav`: `{"updated": 42, "unmatched": ["123456", ...], "nav_date": "2026-11-03"}`. `unmatched` lists scheme codes from `mf_holdings` that were not in the AMFI file; Settings › Data check shows those funds as "not found in the AMFI file".
+- `fetch_prices`: `{"updated": 5, "missing": ["SYMBOL"], "sources": {"nse": 3, "yahoo": 2}, "fx": "frankfurter" | "yahoo" | "manual" | "not needed"}`. A missing symbol keeps its last price (the stale badge shows its age); the job fails only when nothing could be priced or USD/INR is needed and unavailable.
+- `snapshot`: `{"rows": 2, "snap_date": "2026-11-04"}`; `backup`: `{"file": "backup-2026-11-08.json.age", "rows": {table: count}}`; `keepalive`: `{"ok": true}`.
 
 ## Views (security_invoker = true)
 - `v_mf_holdings`: holdings + latest NAV, `prev_nav`, `current_value`, `pl`, `day_change`.

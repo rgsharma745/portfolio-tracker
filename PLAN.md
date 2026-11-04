@@ -89,14 +89,17 @@ Notes: the allocation is a segmented bar instead of a donut, and the Overview us
 
 ## Phase 7: Scheduled jobs
 Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the service role key from GitHub Secrets and are idempotent.
-- [ ] `fetch_nav.py` + `nav.yml`: download AMFI `NAVAll.txt` (https://www.amfiindia.com/spages/NAVAll.txt), parse (`;` separated: scheme code; ISIN payout; ISIN reinvest; scheme name; NAV; date), for only the scheme codes present in `mf_holdings`, call the SQL function `upsert_mf_nav(code, nav, date)` via Supabase RPC (service role). Never store NAV history; the function keeps the latest and previous value only. Schedule: daily at 23:30 IST and a retry at 07:00 IST (GitHub cron is UTC: 18:00 and 01:30). Handle holidays (no new date = no new rows, not an error).
-- [ ] `fetch_prices.py` + `prices.yml`: stock prices behind a `PriceProvider` interface. Default provider: choose the most reliable free source at implementation time (for example NSE/BSE bhavcopy for India, and a free quote source for US); document the choice and add a fallback. Write results with `upsert_stock_price(...)` and fetch USD/INR with `upsert_fx_rate(...)`; skip symbols whose row has `is_manual = true`. Schedule: weekdays after Indian market close and after US close.
-- [ ] `snapshot.py`: compute and upsert one row per portfolio per day into `portfolio_snapshots` (uses the same formulas as the frontend; share logic via SQL view or duplicate with tests that compare).
-- [ ] `backup.py` + `backup.yml`: weekly export of all owner tables to JSON, encrypt with `age` using `BACKUP_AGE_RECIPIENT`, commit to a separate PRIVATE backup repo (or upload as a workflow artifact with 90-day retention if the owner prefers).
-- [ ] Keep-alive: the daily NAV job already counts as activity, but also run a trivial query weekly so the free project is never paused.
-- [ ] Failure notification: workflow failure emails the owner (GitHub default) and also write a `job_runs` row (name, status, message, time). Show last-run status in Settings.
+- [x] `fetch_nav.py` + `nav.yml`: download AMFI `NAVAll.txt` (now https://portal.amfiindia.com/spages/NAVAll.txt), parse (`;` separated: scheme code; ISIN payout; ISIN reinvest; scheme name; NAV; date), for only the scheme codes present in `mf_holdings`, call the SQL function `upsert_mf_nav(code, nav, date)` via Supabase RPC (service role). Never store NAV history; the function keeps the latest and previous value only. Schedule: daily at 23:30 IST and a retry at 07:00 IST (GitHub cron is UTC: 18:00 and 01:30). Handle holidays (no new date = no new rows, not an error).
+- [x] `fetch_prices.py` + `prices.yml`: stock prices behind a `PriceProvider` interface. Default provider: choose the most reliable free source at implementation time (for example NSE/BSE bhavcopy for India, and a free quote source for US); document the choice and add a fallback. Write results with `upsert_stock_price(...)` and fetch USD/INR with `upsert_fx_rate(...)`; skip symbols whose row has `is_manual = true`. Schedule: weekdays after Indian market close and after US close.
+- [x] `snapshot.py`: compute and upsert one row per portfolio per day into `portfolio_snapshots` (uses the same formulas as the frontend; share logic via SQL view or duplicate with tests that compare).
+- [x] `backup.py` + `backup.yml`: weekly export of all owner tables to JSON, encrypt with `age` using `BACKUP_AGE_RECIPIENT`, commit to a separate PRIVATE backup repo (or upload as a workflow artifact with 90-day retention if the owner prefers).
+- [x] Keep-alive: the daily NAV job already counts as activity, but also run a trivial query weekly so the free project is never paused.
+- [x] Failure notification: workflow failure emails the owner (GitHub default) and also write a `job_runs` row (name, status, message, time). Show last-run status in Settings.
 
 **Acceptance:** manual `workflow_dispatch` of each job succeeds; re-running creates no duplicates; NAV date shown in the MF page advances.
+- [ ] **Human:** add the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `BACKUP_AGE_RECIPIENT` (make the key with `age-keygen`, keep the private half offline; see `docs/RUNBOOK.md`), push, then run each workflow once from the Actions tab and check Settings › Job runs.
+
+Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; Stooq now blocks scripts), Frankfurter (USD/INR), AMFI (NAVs); see `docs/ARCHITECTURE.md`. Backups go to a 90-day workflow artifact (owner's choice). Only held codes and symbols are fetched and stored.
 
 ## Phase 8: PWA, accessibility, performance
 - [ ] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android.
@@ -107,7 +110,7 @@ Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the
 ## Phase 9: Deploy
 - [ ] Cloudflare Pages build settings: root `web`, build `npm ci && npm run build`, output `dist/<app>/browser`, set `NG_APP_*` env vars.
 - [ ] Add SPA fallback (`_redirects`: `/* /index.html 200`) and security headers (`_headers`) per `docs/SECURITY.md` (CSP, HSTS, X-Content-Type-Options, Referrer-Policy, frame-ancestors none).
-- [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OWNER_USER_ID`, `BACKUP_AGE_RECIPIENT`.
+- [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT` (`OWNER_USER_ID` turned out not to be needed).
 - [ ] Optionally restrict access further with Cloudflare Access (free for up to 50 users) in front of the site.
 - [ ] Supabase Auth: set Site URL and redirect URLs to the deployed domain.
 
