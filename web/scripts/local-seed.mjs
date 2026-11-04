@@ -236,6 +236,47 @@ export async function seedHoldings(api, ownerId) {
   return true;
 }
 
+/** Adds sample daily history for the history chart, unless the user already has some. */
+export async function seedHistory(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/portfolio_snapshots?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  const rows = sampleHistory(id.Me, id.Wife).map((r) => ({ owner_id: ownerId, ...r }));
+  await insert(api, 'portfolio_snapshots', rows);
+  return true;
+}
+
+/** 200 days of made-up daily totals with a gentle upward drift and some noise. */
+function sampleHistory(me, wife) {
+  const rows = [];
+  for (let n = 200; n >= 1; n--) {
+    const drift = (200 - n) / 200;
+    const wave = Math.sin(n / 9) * 0.03 + Math.sin(n / 3.1) * 0.01;
+    for (const [portfolioId, base] of [
+      [me, 520000],
+      [wife, 190000],
+    ]) {
+      const factor = 1 + drift * 0.12 + wave;
+      rows.push({
+        portfolio_id: portfolioId,
+        snap_date: daysAgo(n),
+        mf_value: Math.round(base * 0.7 * factor),
+        stocks_value: Math.round(base * 0.3 * factor),
+        rsu_vested_value: 0,
+        savings: 0,
+        card_dues: 0,
+      });
+    }
+  }
+  return rows;
+}
+
 async function upsertMarketData(api) {
   const merge = { Prefer: 'resolution=merge-duplicates' };
   const today = daysAgo(0);
