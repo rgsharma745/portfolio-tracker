@@ -43,7 +43,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
 - Header stats: Current value, Invested, Total P&L (value and %), Today.
 - Search box, sort (name, current value, P&L, P&L %, today), optional filter chips (Gainers, Losers).
-- Desktop table columns: Fund, Units, Invested, NAV, NAV date, Current value, P&L, P&L %, Today; totals footer.
+- Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, Today; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
 - Mobile card: fund name (2 lines max), current value, P&L and %, today, NAV date.
 - Stale NAV badge when the NAV date is older than 4 days.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.

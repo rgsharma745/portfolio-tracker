@@ -99,24 +99,60 @@
       [sort]="sort()"
       (sortChange)="sort.set($event)"
       [emptyMessage]="rows().length ? 'No stocks match.' : 'No stocks in this market yet.'"
-      minWidth="68rem"
+      minWidth="46rem"
     >
       <ng-template appCell="name" let-row>
         <div class="name-cell">
           <span
-            ><strong>{{ row.symbol }}</strong>
+            ><span class="name-title">{{ row.symbol }}</span>
             @if (row.companyName) {
               <span class="company"> · {{ row.companyName }}</span>
             }
           </span>
-          <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+          <span class="cell-sub">
+            <span class="app-num">{{ units(row.quantity) }} sh</span>
+            @if (row.avgPrice !== null) {
+              <span
+                >· avg <span class="app-num">{{ money(row.avgPrice, row.currency, 2) }}</span></span
+              >
+            }
+            @if (row.price !== null) {
+              <span
+                >· price <span class="app-num">{{ money(row.price, row.currency, 2) }}</span> ({{
+                  shortDate(row.priceDate)
+                }})</span
+              >
+            }
+            <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+          </span>
         </div>
       </ng-template>
       <ng-template appCell="value" let-row>
         <span class="app-num">{{ money(row.value, row.currency) }}</span>
-        @if (row.currency === 'USD' && row.valueInr !== null) {
-          <span class="inr app-num">≈ {{ money(row.valueInr, 'INR') }}</span>
-        }
+        <span class="cell-sub app-num">
+          @if (row.currency === 'USD' && row.valueInr !== null) {
+            ≈ {{ money(row.valueInr, 'INR') }} ·
+          }
+          {{ money(row.invested, row.currency) }} invested
+        </span>
+      </ng-template>
+      <ng-template appCell="pl" let-row>
+        <span class="app-num" [appPl]="row.pl">{{ signed(row.pl, row.currency) }}</span>
+        <span class="cell-sub app-num" [appPl]="row.plPercent">{{ row.plPercent | percent2 }}</span>
+      </ng-template>
+      <ng-template appFooter="name" let-t>
+        <span class="name-title">Total</span>
+        <span class="cell-sub"
+          >{{ visible().length }} {{ visible().length === 1 ? 'stock' : 'stocks' }}</span
+        >
+      </ng-template>
+      <ng-template appFooter="value" let-t>
+        <span class="app-num">{{ money(t.value, currency()) }}</span>
+        <span class="cell-sub app-num">{{ money(t.invested, currency()) }} invested</span>
+      </ng-template>
+      <ng-template appFooter="pl" let-t>
+        <span class="app-num" [appPl]="t.pl">{{ signed(t.pl, currency()) }}</span>
+        <span class="cell-sub app-num" [appPl]="t.plPercent">{{ t.plPercent | percent2 }}</span>
       </ng-template>
       <ng-template appCell="actions" let-row>
         <div class="row-actions">
@@ -153,7 +189,7 @@
 }
 
 <ng-template #tags let-row>
-  <span class="name-tags">
+  <span class="name-tags inline-tags">
     @if (showPortfolio()) {
       <p-tag [value]="row.portfolio" severity="secondary" />
     }

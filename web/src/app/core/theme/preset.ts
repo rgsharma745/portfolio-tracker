@@ -54,5 +54,25 @@ export const AppPreset = definePreset(Aura, {
     button: {
       root: { borderRadius: '9999px' },
     },
+    // Holdings tables: roomy rows, a soft header band and a totals bar (UI_SPEC).
+    datatable: {
+      headerCell: { padding: '0.75rem 1rem' },
+      columnTitle: { fontWeight: '600', fontSize: '0.75rem' },
+      bodyCell: { padding: '0.875rem 1rem' },
+      footerCell: { padding: '0.875rem 1rem' },
+      columnFooter: { fontWeight: '600' },
+      colorScheme: {
+        light: {
+          headerCell: { background: '{surface.50}', color: '{surface.600}' },
+          row: { hoverBackground: '{surface.50}' },
+          footerCell: { background: '{surface.50}' },
+        },
+        dark: {
+          headerCell: { background: '{surface.900}', color: '{surface.300}' },
+          row: { hoverBackground: '{surface.900}' },
+          footerCell: { background: '{surface.900}' },
+        },
+      },
+    },
   },
 });

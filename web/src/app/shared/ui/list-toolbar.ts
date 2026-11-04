@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -7,7 +7,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { PlFilter, Sort } from '../format/sort';
-import { BreakpointService } from '../layout/breakpoint.service';
 
 export interface SortOption {
   label: string;
@@ -23,8 +22,8 @@ const PL_FILTERS: { label: string; value: PlFilter }[] = [
 let nextId = 0;
 
 /**
- * Above a holdings list: search, Gainers/Losers filter, a sort menu on mobile (desktop sorts
- * from the table headers), Export CSV and Add.
+ * Above a holdings list: search, Gainers/Losers filter, a sort menu (it mirrors the table
+ * header sorting and also offers sorts without a column, such as P&L %), Export CSV and Add.
  */
 @Component({
   selector: 'app-list-toolbar',
@@ -61,32 +60,30 @@ let nextId = 0;
         [allowEmpty]="false"
         [ariaLabelledBy]="filterLabelId"
       />
-      @if (bp.isMobile()) {
-        <span class="sort">
-          <p-select
-            [options]="sortOptions()"
-            optionLabel="label"
-            optionValue="value"
-            [ngModel]="sort().key"
-            (ngModelChange)="setSortKey($event)"
-            ariaLabel="Sort by"
-          />
-          <button
-            pButton
-            type="button"
-            iconOnly
-            text
-            severity="secondary"
-            [attr.aria-label]="sort().order === 1 ? 'Sort descending' : 'Sort ascending'"
-            (click)="flipSort()"
-          >
-            <i
-              [class]="sort().order === 1 ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down'"
-              aria-hidden="true"
-            ></i>
-          </button>
-        </span>
-      }
+      <span class="sort">
+        <p-select
+          [options]="sortOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="sort().key"
+          (ngModelChange)="setSortKey($event)"
+          ariaLabel="Sort by"
+        />
+        <button
+          pButton
+          type="button"
+          iconOnly
+          text
+          severity="secondary"
+          [attr.aria-label]="sort().order === 1 ? 'Sort descending' : 'Sort ascending'"
+          (click)="flipSort()"
+        >
+          <i
+            [class]="sort().order === 1 ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down'"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </span>
       <div class="toolbar-end">
         <ng-content />
         <button pButton type="button" severity="secondary" (click)="export.emit()">
@@ -113,7 +110,6 @@ let nextId = 0;
   `,
 })
 export class ListToolbar {
-  protected readonly bp = inject(BreakpointService);
   protected readonly plFilters = PL_FILTERS;
   protected readonly filterLabelId = `toolbar-filter-${nextId++}`;
 

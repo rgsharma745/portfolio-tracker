@@ -220,11 +220,32 @@ body {
   flex-direction: column;
   gap: 4px;
 
+  .name-title {
+    font-weight: 600;
+  }
+
   .name-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
   }
+}
+
+// A quieter second line inside a table cell (details under a name or value).
+.cell-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: inherit;
+  gap: 4px 8px;
+  margin-top: 2px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  white-space: normal;
+}
+
+td.num .cell-sub {
+  justify-content: flex-end;
 }
 
 .row-actions {
@@ -251,4 +272,9 @@ body {
   @media (min-width: 1280px) {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+}
+
+// Tags inside a details line sit inline with the text.
+.name-tags.inline-tags {
+  display: inline-flex;
 }

@@ -13,10 +13,16 @@ import { PortfolioService } from '../../core/data/portfolio.service';
 import { toCsv } from '../../shared/format/csv';
 import { downloadText } from '../../shared/format/download';
 import { formatMoney } from '../../shared/format/money';
-import { formatDate } from '../../shared/format/number';
+import { formatDate, formatUnits } from '../../shared/format/number';
 import { PlFilter, Sort, filterByPl, matchesSearch, sortRows } from '../../shared/format/sort';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
-import { CardTemplate, CellTemplate, Column, DataTable } from '../../shared/ui/data-table';
+import {
+  CardTemplate,
+  CellTemplate,
+  Column,
+  DataTable,
+  FooterTemplate,
+} from '../../shared/ui/data-table';
 import { DialogForm } from '../../shared/ui/dialog-form';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -24,7 +30,8 @@ import { ErrorState } from '../../shared/ui/error-state';
 import { HoldingCard } from '../../shared/ui/holding-card';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { ListToolbar } from '../../shared/ui/list-toolbar';
-import { MoneyPipe } from '../../shared/ui/money.pipe';
+import { MoneyPipe, PercentPipe } from '../../shared/ui/money.pipe';
+import { PlColorDirective } from '../../shared/ui/pl-color.directive';
 import { StatCard } from '../../shared/ui/stat-card';
 import { MfForm, emptyMfForm, mfFormFrom, validateMfForm } from './mf-form';
 import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
@@ -43,6 +50,7 @@ import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
     CardTemplate,
     CellTemplate,
     DataTable,
+    FooterTemplate,
     EditDialog,
     EmptyState,
     ErrorState,
@@ -50,6 +58,8 @@ import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
     ListSkeleton,
     ListToolbar,
     MoneyPipe,
+    PercentPipe,
+    PlColorDirective,
     StatCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -114,13 +124,8 @@ export class MfPage {
 
   protected readonly columns: Column<MfRow>[] = [
     { key: 'name', header: 'Fund', type: 'custom', sortable: true },
-    { key: 'units', header: 'Units', type: 'units' },
-    { key: 'invested', header: 'Invested', type: 'money' },
-    { key: 'nav', header: 'NAV', type: 'custom', sortable: true, alignEnd: true },
-    { key: 'navDate', header: 'NAV date', type: 'date' },
-    { key: 'value', header: 'Current value', type: 'money' },
-    { key: 'pl', header: 'P&L', type: 'pl' },
-    { key: 'plPercent', header: 'P&L %', type: 'percent' },
+    { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
+    { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
     { key: 'dayChange', header: 'Today', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
@@ -130,7 +135,17 @@ export class MfPage {
   );
 
   protected nav(value: number | null): string {
-    return formatMoney(value, 'INR', { digits: 4 });
+    return formatMoney(value, 'INR', { digits: 2 });
+  }
+
+  protected units(value: number): string {
+    return formatUnits(value);
+  }
+
+  /** "3 Nov" (the year only when it is not this year). */
+  protected shortDate(value: string | null): string {
+    const text = formatDate(value);
+    return value?.startsWith(this.today.slice(0, 4)) ? text.replace(/ \d{4}$/, '') : text;
   }
 
   protected date(value: string | null): string {

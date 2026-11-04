@@ -15,10 +15,16 @@ import { PortfolioService } from '../../core/data/portfolio.service';
 import { toCsv } from '../../shared/format/csv';
 import { downloadText } from '../../shared/format/download';
 import { Currency, formatMoney } from '../../shared/format/money';
-import { formatDate } from '../../shared/format/number';
+import { formatDate, formatUnits } from '../../shared/format/number';
 import { PlFilter, Sort, filterByPl, matchesSearch, sortRows } from '../../shared/format/sort';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
-import { CardTemplate, CellTemplate, Column, DataTable } from '../../shared/ui/data-table';
+import {
+  CardTemplate,
+  CellTemplate,
+  Column,
+  DataTable,
+  FooterTemplate,
+} from '../../shared/ui/data-table';
 import { DialogForm } from '../../shared/ui/dialog-form';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -26,7 +32,8 @@ import { ErrorState } from '../../shared/ui/error-state';
 import { HoldingCard } from '../../shared/ui/holding-card';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { ListToolbar } from '../../shared/ui/list-toolbar';
-import { MoneyPipe } from '../../shared/ui/money.pipe';
+import { MoneyPipe, PercentPipe } from '../../shared/ui/money.pipe';
+import { PlColorDirective } from '../../shared/ui/pl-color.directive';
 import { StatCard } from '../../shared/ui/stat-card';
 import { StockForm, emptyStockForm, stockFormFrom, validateStockForm } from './stock-form';
 import { STOCK_CSV_COLUMNS, StockRow, buildStockRows } from './stock-rows';
@@ -47,6 +54,7 @@ import { STOCK_CSV_COLUMNS, StockRow, buildStockRows } from './stock-rows';
     CardTemplate,
     CellTemplate,
     DataTable,
+    FooterTemplate,
     EditDialog,
     EmptyState,
     ErrorState,
@@ -54,6 +62,8 @@ import { STOCK_CSV_COLUMNS, StockRow, buildStockRows } from './stock-rows';
     ListSkeleton,
     ListToolbar,
     MoneyPipe,
+    PercentPipe,
+    PlColorDirective,
     StatCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -158,22 +168,8 @@ export class StocksPage {
   private readonly rowCurrency = (row: StockRow) => row.currency;
   protected readonly columns: Column<StockRow>[] = [
     { key: 'name', header: 'Stock', type: 'custom', sortable: true },
-    { key: 'quantity', header: 'Qty', type: 'units' },
-    { key: 'avgPrice', header: 'Avg price', type: 'money', currency: this.rowCurrency },
-    { key: 'invested', header: 'Invested', type: 'money', currency: this.rowCurrency },
-    { key: 'price', header: 'Price', type: 'money', currency: this.rowCurrency },
-    { key: 'priceDate', header: 'Price date', type: 'date' },
-    {
-      key: 'value',
-      header: 'Current value',
-      type: 'custom',
-      sortable: true,
-      alignEnd: true,
-      footerType: 'money',
-      currency: this.rowCurrency,
-    },
-    { key: 'pl', header: 'P&L', type: 'pl', currency: this.rowCurrency },
-    { key: 'plPercent', header: 'P&L %', type: 'percent' },
+    { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
+    { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
     { key: 'dayChange', header: 'Today', type: 'pl', currency: this.rowCurrency },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
@@ -182,8 +178,26 @@ export class StocksPage {
     this.portfolios.active().map((p) => ({ label: p.name, value: p.id })),
   );
 
-  protected money(value: number | null, currency: Currency = this.currency()): string {
-    return formatMoney(value, currency);
+  protected money(
+    value: number | null,
+    currency: Currency = this.currency(),
+    digits?: number,
+  ): string {
+    return formatMoney(value, currency, digits === undefined ? {} : { digits });
+  }
+
+  protected signed(value: number | null, currency: Currency): string {
+    return formatMoney(value, currency, { sign: true });
+  }
+
+  protected units(value: number): string {
+    return formatUnits(value);
+  }
+
+  /** "3 Nov" (the year only when it is not this year). */
+  protected shortDate(value: string | null): string {
+    const text = formatDate(value);
+    return value?.startsWith(this.today.slice(0, 4)) ? text.replace(/ \d{4}$/, '') : text;
   }
 
   protected meta(row: StockRow): string {

@@ -44,6 +44,13 @@ export class CellTemplate {
   readonly template = inject(TemplateRef);
 }
 
+/** `<ng-template appFooter="key" let-totals>` overrides one column's cell in the totals row. */
+@Directive({ selector: 'ng-template[appFooter]' })
+export class FooterTemplate {
+  readonly appFooter = input.required<string>();
+  readonly template = inject(TemplateRef);
+}
+
 /** `<ng-template appCard let-row>`: how one row renders as a card below 768px. */
 @Directive({ selector: 'ng-template[appCard]' })
 export class CardTemplate {
@@ -82,7 +89,7 @@ export class CardTemplate {
           [dataKey]="dataKey()"
           [tableStyle]="{ 'min-width': minWidth() }"
           [pt]="tablePt()"
-          size="small"
+          [rowHover]="true"
         >
           <ng-template #header>
             <tr>
@@ -119,7 +126,12 @@ export class CardTemplate {
               <tr>
                 @for (col of columns(); track col.key; let first = $first) {
                   <td [class.num]="isNumeric(col)">
-                    @if (first && valueOf(totals, col) === undefined) {
+                    @if (footerTemplates().get(col.key); as custom) {
+                      <ng-container
+                        [ngTemplateOutlet]="custom"
+                        [ngTemplateOutletContext]="{ $implicit: totals }"
+                      />
+                    } @else if (first && valueOf(totals, col) === undefined) {
                       Total
                     } @else if (footerColumn(col); as footerCol) {
                       <ng-container
@@ -200,9 +212,10 @@ export class CardTemplate {
       white-space: nowrap;
     }
     th {
-      color: var(--app-text-body);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
     :host ::ng-deep tfoot td {
       font-size: 14px;
@@ -213,6 +226,8 @@ export class CardTemplate {
     }
     .sort-button {
       display: inline-flex;
+      text-transform: inherit;
+      letter-spacing: inherit;
       align-items: center;
       gap: 6px;
       min-height: 32px;
@@ -229,8 +244,16 @@ export class CardTemplate {
       outline-offset: 2px;
     }
     .sort-button .pi {
-      font-size: 12px;
+      font-size: 10px;
       color: var(--app-text-muted);
+    }
+    /* Unsorted columns show their sort icon only on hover or keyboard focus. */
+    .sort-button .pi-sort-alt {
+      opacity: 0;
+    }
+    th:hover .pi-sort-alt,
+    .sort-button:focus-visible .pi-sort-alt {
+      opacity: 1;
     }
     /* Sticky first column so the name stays visible while scrolling sideways. */
     th:first-child,
@@ -238,11 +261,14 @@ export class CardTemplate {
       position: sticky;
       left: 0;
       z-index: 1;
-      /* Same background as the row (theme-aware), opaque so scrolled cells pass beneath. */
-      background: inherit;
       white-space: normal;
-      min-width: 12rem;
-      max-width: 22rem;
+      min-width: 16rem;
+      max-width: 28rem;
+    }
+    /* Body cells take the row's (theme-aware, opaque) background so scrolled cells pass
+       beneath the sticky column; header and totals cells keep the theme's band color. */
+    :host ::ng-deep .p-datatable-tbody > tr > td:first-child {
+      background: inherit;
     }
     :host ::ng-deep tfoot td {
       font-weight: 600;
@@ -279,6 +305,10 @@ export class DataTable<T extends object> {
 
   protected readonly cardTemplate = contentChild(CardTemplate);
   private readonly cellDirectives = contentChildren(CellTemplate);
+  private readonly footerDirectives = contentChildren(FooterTemplate);
+  protected readonly footerTemplates = computed(
+    () => new Map(this.footerDirectives().map((d) => [d.appFooter(), d.template])),
+  );
   protected readonly cellTemplates = computed(
     () => new Map(this.cellDirectives().map((d) => [d.appCell(), d.template])),
   );
