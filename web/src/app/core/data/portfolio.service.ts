@@ -4,6 +4,7 @@ import { scopeIds } from '../calc/common';
 import { Tables } from '../db.types';
 import { RefreshService } from './refresh.service';
 import { SUPABASE } from './supabase.client';
+import { WriteError, writeErrorMessage } from './write-error';
 
 export type Portfolio = Tables<'portfolios'>;
 
@@ -13,8 +14,7 @@ export type PortfolioScope = string | null;
 const SCOPE_KEY = 'portfolio_scope';
 export const PORTFOLIO_NAME_MAX = 40;
 
-/** Outcome of a write: `null` on success, otherwise a message for the owner. */
-export type WriteError = string | null;
+export type { WriteError } from './write-error';
 
 /** Rows that deleting a portfolio would remove (ON DELETE CASCADE). */
 export interface PortfolioContents {
@@ -148,10 +148,7 @@ export class PortfolioService {
   }
 
   private async afterWrite(error: { code?: string } | null): Promise<WriteError> {
-    if (error)
-      return error.code === '23505'
-        ? 'A portfolio with this name already exists.'
-        : 'Could not save. Try again.';
+    if (error) return writeErrorMessage(error, 'A portfolio with this name already exists.');
     await this.load();
     return null;
   }

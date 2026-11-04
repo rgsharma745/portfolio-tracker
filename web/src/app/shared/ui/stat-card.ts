@@ -16,9 +16,25 @@ import { PlColorDirective } from './pl-color.directive';
         <p-skeleton width="70%" height="1.75rem" />
         <p-skeleton width="45%" height="1rem" styleClass="mt-2" />
       } @else {
-        <p class="stat-value app-num" [class.app-down]="danger() && (value() ?? 0) > 0">
-          {{ value() | money: currency() : { compact: compact() } }}
-        </p>
+        @if (signed()) {
+          <p class="stat-value app-num" [appPl]="value()">
+            {{ value() | money: currency() : { sign: true, compact: compact() } }}
+            @if (percent() !== undefined) {
+              <span class="stat-percent">({{ percent() | percent2 }})</span>
+            }
+          </p>
+        } @else {
+          <p
+            class="stat-value app-num"
+            [class.app-down]="danger() && (value() ?? 0) > 0"
+            [class.app-up]="goodWhenZero() && value() === 0"
+          >
+            {{ text() || (value() | money: currency() : { compact: compact() }) }}
+          </p>
+        }
+        @if (note()) {
+          <p class="stat-note">{{ note() }}</p>
+        }
         @if (delta() !== undefined) {
           <p class="stat-delta app-num" [appPl]="delta()">
             {{ delta() | money: currency() : { sign: true, compact: compact() } }}
@@ -56,6 +72,14 @@ import { PlColorDirective } from './pl-color.directive';
       margin: 0;
       font-size: 13px;
     }
+    .stat-percent {
+      font-size: 14px;
+    }
+    .stat-note {
+      margin: 0;
+      color: var(--app-text-muted);
+      font-size: 13px;
+    }
     .stat-delta-label {
       margin-left: 4px;
       color: var(--app-text-muted);
@@ -73,5 +97,15 @@ export class StatCard {
   /** Show the value in red when above zero (e.g. card dues). */
   readonly danger = input(false);
   readonly compact = input(false);
+  /** Show the value itself as a gain/loss: signed and colored (P&L, today). */
+  readonly signed = input(false);
+  /** With `signed`: a percentage after the value. */
+  readonly percent = input<number | null | undefined>(undefined);
+  /** Show text instead of a money value (e.g. a card name). */
+  readonly text = input('');
+  /** A small line under the value. */
+  readonly note = input('');
+  /** Show a zero value in green (e.g. nothing pending). */
+  readonly goodWhenZero = input(false);
   readonly loading = input(false);
 }
