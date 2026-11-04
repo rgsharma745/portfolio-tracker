@@ -1,0 +1,191 @@
+<section class="app-card flex flex-col gap-4" aria-labelledby="portfolios-title">
+  <div>
+    <h2 class="section-title" id="portfolios-title">Portfolios</h2>
+    <p class="section-hint">
+      Whose money it is. Inactive portfolios are hidden from the switcher and totals.
+    </p>
+  </div>
+
+  @if (error(); as message) {
+    <p-message severity="error">{{ message }}</p-message>
+  }
+
+  <ul class="rows">
+    @for (
+      portfolio of service.portfolios();
+      track portfolio.id;
+      let first = $first;
+      let last = $last
+    ) {
+      <li class="row" [attr.data-testid]="'portfolio-' + portfolio.name">
+        @if (editingId() === portfolio.id) {
+          <form class="rename" (ngSubmit)="saveRename(portfolio)">
+            <input
+              pInputText
+              [ngModel]="editName()"
+              (ngModelChange)="editName.set($event)"
+              name="name"
+              [maxlength]="maxLength"
+              [attr.aria-label]="'New name for ' + portfolio.name"
+              autocomplete="off"
+            />
+            <button pButton type="submit" [disabled]="busy()">Save</button>
+            <button pButton type="button" text severity="secondary" (click)="editingId.set(null)">
+              Cancel
+            </button>
+          </form>
+        } @else {
+          <div class="name">
+            <span>{{ portfolio.name }}</span>
+            @if (!portfolio.is_active) {
+              <p-tag value="Inactive" severity="secondary" />
+            }
+          </div>
+          <div class="actions">
+            <p-toggleswitch
+              [ngModel]="portfolio.is_active"
+              (ngModelChange)="setActive(portfolio, $event)"
+              [disabled]="busy()"
+              [ariaLabel]="portfolio.name + ' active'"
+            />
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              [disabled]="first || busy()"
+              [attr.aria-label]="'Move ' + portfolio.name + ' up'"
+              (click)="move(portfolio, -1)"
+            >
+              <i class="pi pi-arrow-up" aria-hidden="true"></i>
+            </button>
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              [disabled]="last || busy()"
+              [attr.aria-label]="'Move ' + portfolio.name + ' down'"
+              (click)="move(portfolio, 1)"
+            >
+              <i class="pi pi-arrow-down" aria-hidden="true"></i>
+            </button>
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              [attr.aria-label]="'Rename ' + portfolio.name"
+              (click)="startRename(portfolio)"
+            >
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+            </button>
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="danger"
+              [attr.aria-label]="'Delete ' + portfolio.name"
+              (click)="askDelete(portfolio)"
+            >
+              <i class="pi pi-trash" aria-hidden="true"></i>
+            </button>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+
+  <form class="add" (ngSubmit)="add()">
+    <label for="new-portfolio" class="visually-hidden">New portfolio name</label>
+    <input
+      pInputText
+      id="new-portfolio"
+      placeholder="New portfolio name"
+      [ngModel]="newName()"
+      (ngModelChange)="newName.set($event)"
+      name="newName"
+      [maxlength]="maxLength"
+      autocomplete="off"
+    />
+    <button pButton type="submit" [disabled]="busy() || !newName().trim()">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+      Add
+    </button>
+  </form>
+</section>
+
+<p-dialog
+  [visible]="deleteOpen()"
+  (visibleChange)="$event || closeDelete()"
+  [modal]="true"
+  [draggable]="false"
+  [header]="'Delete ' + (deleting()?.name ?? '') + '?'"
+  styleClass="app-dialog"
+>
+  @if (deleting(); as portfolio) {
+    <div class="flex flex-col gap-3">
+      <p class="m-0">
+        This permanently deletes <strong>{{ portfolio.name }}</strong> and everything in it. It
+        cannot be undone in the app (only from a backup).
+      </p>
+      @if (deleteContents(); as c) {
+        <ul class="contents" aria-label="What will be deleted">
+          <li>{{ c.mutualFunds }} mutual fund holdings</li>
+          <li>{{ c.stocks }} stock holdings</li>
+          <li>{{ c.rsuGrants }} RSU grants</li>
+          <li>{{ c.savingsAccounts }} savings accounts</li>
+          <li>{{ c.creditCards }} credit cards (and their bills)</li>
+        </ul>
+      }
+      <p class="m-0 section-hint">
+        To keep the data but hide it from totals, deactivate the portfolio instead.
+      </p>
+      <label for="delete-confirm" class="field-label">
+        Type <strong>{{ portfolio.name }}</strong> to confirm
+      </label>
+      <input
+        pInputText
+        id="delete-confirm"
+        autocomplete="off"
+        [ngModel]="deleteConfirm()"
+        (ngModelChange)="deleteConfirm.set($event)"
+      />
+      @if (error(); as message) {
+        <p-message severity="error">{{ message }}</p-message>
+      }
+    </div>
+  }
+  <ng-template #footer>
+    <div class="dialog-actions">
+      @if (deleting()?.is_active) {
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          [disabled]="busy()"
+          (click)="deactivateInstead()"
+        >
+          Deactivate instead
+        </button>
+      }
+      <button
+        pButton
+        type="button"
+        severity="danger"
+        [disabled]="!deleteAllowed() || busy()"
+        (click)="confirmDelete()"
+      >
+        Delete permanently
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

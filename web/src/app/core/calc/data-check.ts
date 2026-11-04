@@ -1,0 +1,131 @@
+/**
+ * Data check: holdings the daily jobs cannot value, and cards whose due dates cannot be
+ * computed. Only active portfolios are checked, since only they count in totals.
+ */
+
+export type DataProblemKind =
+  | 'mf_no_code'
+  | 'mf_code_not_found'
+  | 'mf_no_nav'
+  | 'stock_no_price'
+  | 'rsu_no_price'
+  | 'card_missing_days';
+
+export interface DataProblem {
+  kind: DataProblemKind;
+  id: string;
+  label: string;
+  portfolio: string;
+  detail: string;
+}
+
+export interface DataCheckInput {
+  portfolios: readonly { id: string; name: string; is_active: boolean }[];
+  mfHoldings: readonly {
+    id: string;
+    scheme_name: string;
+    scheme_code: string | null;
+    portfolio_id: string;
+  }[];
+  /** Scheme codes that have a row in mf_nav_latest. */
+  navCodes: readonly string[];
+  /** Scheme codes the last NAV job could not find in the AMFI file. */
+  unmatchedCodes: readonly string[];
+  stockHoldings: readonly { id: string; symbol: string; market: string; portfolio_id: string }[];
+  /** Symbols that have a row in stock_price_latest. */
+  pricedSymbols: readonly string[];
+  rsuGrants: readonly { id: string; symbol: string; grant_label: string; portfolio_id: string }[];
+  creditCards: readonly {
+    id: string;
+    name: string;
+    bill_day: number | null;
+    due_day: number | null;
+    portfolio_id: string;
+    is_active: boolean;
+  }[];
+}
+
+export function findDataProblems(input: DataCheckInput): DataProblem[] {
+  const portfolioName = new Map(
+    input.portfolios.filter((p) => p.is_active).map((p) => [p.id, p.name]),
+  );
+  const inActive = <T extends { portfolio_id: string }>(rows: readonly T[]) =>
+    rows.filter((row) => portfolioName.has(row.portfolio_id));
+  const nameOf = (portfolioId: string) => portfolioName.get(portfolioId) ?? '';
+
+  const navCodes = new Set(input.navCodes);
+  const unmatched = new Set(input.unmatchedCodes);
+  const priced = new Set(input.pricedSymbols);
+  const problems: DataProblem[] = [];
+
+  for (const fund of inActive(input.mfHoldings)) {
+    const code = fund.scheme_code?.trim() ?? '';
+    const base = { id: fund.id, label: fund.scheme_name, portfolio: nameOf(fund.portfolio_id) };
+    if (!code) {
+      problems.push({ ...base, kind: 'mf_no_code', detail: 'No scheme code' });
+    } else if (unmatched.has(code)) {
+      problems.push({ ...base, kind: 'mf_code_not_found', detail: `Code ${code}` });
+    } else if (!navCodes.has(code)) {
+      problems.push({ ...base, kind: 'mf_no_nav', detail: `Code ${code}` });
+    }
+  }
+
+  for (const stock of inActive(input.stockHoldings)) {
+    if (!priced.has(stock.symbol)) {
+      problems.push({
+        kind: 'stock_no_price',
+        id: stock.id,
+        label: stock.symbol,
+        portfolio: nameOf(stock.portfolio_id),
+        detail: stock.market === 'US' ? 'US' : 'India',
+      });
+    }
+  }
+
+  for (const grant of inActive(input.rsuGrants)) {
+    if (!priced.has(grant.symbol)) {
+      problems.push({
+        kind: 'rsu_no_price',
+        id: grant.id,
+        label: `${grant.symbol} · ${grant.grant_label}`,
+        portfolio: nameOf(grant.portfolio_id),
+        detail: grant.symbol,
+      });
+    }
+  }
+
+  for (const card of inActive(input.creditCards.filter((c) => c.is_active))) {
+    const missing = [card.bill_day ? '' : 'bill day', card.due_day ? '' : 'due day'].filter(
+      Boolean,
+    );
+    if (missing.length) {
+      problems.push({
+        kind: 'card_missing_days',
+        id: card.id,
+        label: card.name,
+        portfolio: nameOf(card.portfolio_id),
+        detail: `No ${missing.join(' or ')}`,
+      });
+    }
+  }
+
+  return problems;
+}
+
+/**
+ * Reads unmatched scheme codes from the NAV job's `job_runs.message`, which is JSON:
+ * `{"unmatched": ["123456", ...], ...}`. Anything else yields no codes.
+ */
+export function parseUnmatchedCodes(message: string | null | undefined): string[] {
+  if (!message) return [];
+  try {
+    const parsed: unknown = JSON.parse(message);
+    if (parsed && typeof parsed === 'object' && 'unmatched' in parsed) {
+      const codes = (parsed as { unmatched: unknown }).unmatched;
+      return Array.isArray(codes) ? codes.filter((c): c is string => typeof c === 'string') : [];
+    }
+  } catch {
+    // Plain-text message (e.g. an error): no unmatched codes to report.
+  }
+  return [];
+}

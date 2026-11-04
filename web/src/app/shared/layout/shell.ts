@@ -5,8 +5,12 @@ import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
 import { AuthService } from '../../core/auth/auth.service';
 import { RefreshService } from '../../core/data/refresh.service';
+import { PortfolioService } from '../../core/data/portfolio.service';
 import { PageTitleStrategy } from '../../core/page-title.strategy';
 import { ThemeService } from '../../core/theme/theme.service';
+import { Welcome } from '../../features/welcome/welcome';
+import { ErrorState } from '../ui/error-state';
+import { ListSkeleton } from '../ui/list-skeleton';
 import { NAV_ITEMS } from './nav-items';
 import { PortfolioSwitcher } from './portfolio-switcher';
 
@@ -24,6 +28,9 @@ import { PortfolioSwitcher } from './portfolio-switcher';
     ButtonModule,
     DrawerModule,
     PortfolioSwitcher,
+    ErrorState,
+    ListSkeleton,
+    Welcome,
   ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
@@ -33,6 +40,7 @@ export class Shell {
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   protected readonly refresher = inject(RefreshService);
+  protected readonly portfolios = inject(PortfolioService);
   protected readonly title = (inject(TitleStrategy) as PageTitleStrategy).current;
 
   protected readonly navItems = NAV_ITEMS;

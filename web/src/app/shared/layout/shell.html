@@ -62,7 +62,17 @@
     </header>
 
     <main class="app-page content">
-      <router-outlet />
+      @if (!portfolios.loaded()) {
+        @if (portfolios.error()) {
+          <app-error-state title="Could not load your portfolios" (retry)="portfolios.load()" />
+        } @else {
+          <app-list-skeleton [rows]="3" />
+        }
+      } @else if (portfolios.portfolios().length === 0) {
+        <app-welcome />
+      } @else {
+        <router-outlet />
+      }
     </main>
   </div>
 
