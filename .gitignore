@@ -5,6 +5,7 @@ dist/
 .env.*
 !.env.example
 scripts/data/
+scripts/backup-out/
 __pycache__/
 *.pyc
 .venv/
