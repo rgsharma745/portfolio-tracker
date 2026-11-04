@@ -108,8 +108,8 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [ ] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
 
 ## Phase 9: Deploy
-- [ ] Cloudflare Pages build settings: root `web`, build `npm ci && npm run build`, output `dist/<app>/browser`, set `NG_APP_*` env vars.
-- [ ] Add SPA fallback (`_redirects`: `/* /index.html 200`) and security headers (`_headers`) per `docs/SECURITY.md` (CSP, HSTS, X-Content-Type-Options, Referrer-Policy, frame-ancestors none).
+- [ ] **Human:** Cloudflare Pages build settings: root `web`, build `npm ci && npm run build`, output `dist/portfolio-tracker/browser`, set `NG_APP_*` env vars (Node version comes from `web/.node-version`).
+- [x] SPA fallback and security headers per `docs/SECURITY.md`. `npm run build` writes `_headers` (CSP with the Supabase origin from `NG_APP_SUPABASE_URL`, HSTS, nosniff, Referrer-Policy, frame-ancestors none). No `_redirects`: Pages serves `index.html` for unknown paths when the build has no `404.html`, and a `/* /index.html 200` rule is flagged as a loop. Critical-CSS inlining is off because its inline script would be blocked by the CSP.
 - [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT` (`OWNER_USER_ID` turned out not to be needed).
 - [ ] Optionally restrict access further with Cloudflare Access (free for up to 50 users) in front of the site.
 - [ ] Supabase Auth: set Site URL and redirect URLs to the deployed domain.

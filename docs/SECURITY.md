@@ -33,15 +33,18 @@ This app holds personal financial data. Treat security as a feature.
 - Rotate keys if ever leaked. Run a secret scanner (gitleaks) in CI.
 
 ## Web hardening (Cloudflare `_headers`)
+`npm run build` writes `_headers` into the build output (`web/scripts/write-headers.mjs`), filling in the Supabase origin from `NG_APP_SUPABASE_URL`:
 ```
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://YOUR-PROJECT.supabase.co wss://YOUR-PROJECT.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://YOUR-PROJECT.supabase.co wss://YOUR-PROJECT.supabase.co; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 ```
+`style-src 'unsafe-inline'` is needed because PrimeNG writes its theme into `<style>` tags. The production build does not inline critical CSS: that feature adds an inline script, which `script-src 'self'` blocks (the page would load unstyled).
 Adjust the CSP if Angular or PrimeNG needs additional sources, but never use `unsafe-eval` and never allow `*` for `script-src`.
 Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that disallows all.
 

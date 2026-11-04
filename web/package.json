@@ -13,6 +13,7 @@
     "local:user": "node scripts/local-user.mjs",
     "prebuild": "npm run env",
     "build": "ng build",
+    "postbuild": "node scripts/write-headers.mjs",
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run env",
     "test": "ng test --watch=false",

@@ -5,34 +5,13 @@
 // `npm run start:local` and Playwright, so they never touch the env.ts of `npm start`.
 // Refuses to embed a Supabase service-role/secret key in the frontend bundle.
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { loadEnv, webDir } from './load-env.mjs';
 
-const webDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const local = process.argv.includes('--local');
 const outFile = resolve(webDir, `src/environments/${local ? 'env.local.ts' : 'env.ts'}`);
-
-function readDotEnv(path) {
-  if (!existsSync(path)) return {};
-  const vars = {};
-  for (const line of readFileSync(path, 'utf8').split('\n')) {
-    const eq = line.indexOf('=');
-    const name = line.slice(0, eq).trim();
-    if (eq < 1 || !/^[A-Z0-9_]+$/.test(name)) continue;
-    vars[name] = line
-      .slice(eq + 1)
-      .trim()
-      .replace(/^['"]|['"]$/g, '');
-  }
-  return vars;
-}
-
-const env = {
-  ...readDotEnv(resolve(webDir, '../.env')),
-  ...readDotEnv(resolve(webDir, '.env')),
-  ...process.env,
-};
+const env = loadEnv();
 
 function localStack() {
   try {
