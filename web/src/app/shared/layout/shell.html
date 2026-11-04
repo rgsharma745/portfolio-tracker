@@ -1,0 +1,117 @@
+<div class="shell">
+  <nav class="sidebar" aria-label="Main">
+    <a routerLink="/overview" class="brand">
+      <span class="brand-mark" aria-hidden="true">₹</span>
+      <span class="nav-label">Portfolio</span>
+    </a>
+    <ul class="side-links">
+      @for (item of navItems; track item.path) {
+        <li>
+          <a
+            class="side-link"
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            [title]="item.label"
+          >
+            <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+    <button type="button" class="side-link sign-out" title="Sign out" (click)="signOut()">
+      <i class="pi pi-sign-out" aria-hidden="true"></i>
+      <span class="nav-label">Sign out</span>
+    </button>
+  </nav>
+
+  <div class="main-col">
+    <header class="topbar">
+      <h1 class="page-title">{{ title() }}</h1>
+      <app-portfolio-switcher class="switcher" />
+      <div class="topbar-actions">
+        @if (refresher.lastUpdated(); as updated) {
+          <span class="updated" aria-live="polite">Updated {{ updated | date: 'shortTime' }}</span>
+        }
+        <button
+          pButton
+          type="button"
+          iconOnly
+          rounded
+          text
+          severity="secondary"
+          aria-label="Refresh data"
+          (click)="refresher.refresh()"
+        >
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+        </button>
+        <button
+          pButton
+          type="button"
+          iconOnly
+          rounded
+          text
+          severity="secondary"
+          [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
+          (click)="theme.toggle()"
+        >
+          <i [class]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-page content">
+      <router-outlet />
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Main">
+    @for (item of primaryItems; track item.path) {
+      <a
+        class="tab"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+      >
+        <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
+        <span>{{ item.shortLabel }}</span>
+      </a>
+    }
+    <button
+      type="button"
+      class="tab"
+      aria-haspopup="dialog"
+      [attr.aria-expanded]="moreOpen()"
+      (click)="moreOpen.set(true)"
+    >
+      <i class="pi pi-ellipsis-h" aria-hidden="true"></i>
+      <span>More</span>
+    </button>
+  </nav>
+
+  <p-drawer
+    [(visible)]="moreOpen"
+    position="bottom"
+    header="More"
+    ariaCloseLabel="Close"
+    [pt]="sheetPt"
+  >
+    <ul class="more-links">
+      @for (item of moreItems; track item.path) {
+        <li>
+          <a class="more-link" [routerLink]="item.path" (click)="moreOpen.set(false)">
+            <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </li>
+      }
+      <li>
+        <button type="button" class="more-link" (click)="signOut()">
+          <i class="pi pi-sign-out" aria-hidden="true"></i>
+          <span>Sign out</span>
+        </button>
+      </li>
+    </ul>
+  </p-drawer>
+</div>

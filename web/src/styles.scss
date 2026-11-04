@@ -57,11 +57,21 @@ body {
   }
 }
 
-.app-title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+// Content card: hairline border, 24px radius, flat (UI_SPEC visual style).
+.app-card {
+  padding: 20px;
+  border: 1px solid var(--app-hairline);
+  border-radius: 24px;
+  background: var(--app-bg);
+}
+
+// Gain/loss text colors; always paired with a +/- sign.
+.app-up {
+  color: var(--app-up);
+}
+
+.app-down {
+  color: var(--app-down);
 }
 
 // Every money or unit figure uses this.
