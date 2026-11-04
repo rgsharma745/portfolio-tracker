@@ -3,7 +3,7 @@
 A private, free-to-host personal finance dashboard (mutual funds, stocks, RSUs, savings, credit cards) that replaces a Google Sheet. Responsive: works on desktop and mobile.
 
 ## Stack
-Angular + PrimeNG (frontend) · Supabase (Postgres + Auth + RLS) · Cloudflare Pages (hosting) · GitHub Actions (scheduled NAV/price jobs, backups).
+Angular + PrimeNG (frontend) · Supabase (Postgres + Auth + RLS) · Cloudflare Workers static assets (hosting) · GitHub Actions (scheduled NAV/price jobs, backups).
 
 ## How to use this folder with Claude Code
 1. Create an empty git repo and copy everything in this folder into its root.

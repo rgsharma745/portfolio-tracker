@@ -32,7 +32,7 @@ This app holds personal financial data. Treat security as a feature.
 - Job logs and `job_runs` messages hold counts, codes and symbols only, never keys or row contents. The backup is encrypted in memory before it is written, so no plaintext copy exists on the runner's disk or in the artifact.
 - Rotate keys if ever leaked. Run a secret scanner (gitleaks) in CI.
 
-## Web hardening (Cloudflare `_headers`)
+## Web hardening (Cloudflare `_headers`, served by Workers static assets)
 `npm run build` writes `_headers` into the build output (`web/scripts/write-headers.mjs`), filling in the Supabase origin from `NG_APP_SUPABASE_URL`:
 ```
 /*

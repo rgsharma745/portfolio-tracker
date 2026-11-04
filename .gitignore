@@ -12,3 +12,6 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 supabase/.temp/
+
+# Wrangler local dev state
+.wrangler/

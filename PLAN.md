@@ -14,7 +14,7 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 - `MF`, `MF2`, `MF3` (and `Stocks`, `Stocks2`, `Stocks3`) are different people's portfolios, not duplicates. They become rows in the `portfolios` table. Default totals are the **family total (All portfolios)**, with a switcher for one portfolio. Confirm names and the Stocks mapping with the owner in Phase 3.
 - No transaction ledger and no NAV/price history. Holdings are entered as units and invested amount; market data is latest-only (see `docs/DATA_MODEL.md`).
 - Credit cards are managed monthly: one bill per card per month that can be marked paid.
-- Free tiers only: Supabase Free, Cloudflare Pages Free, GitHub Actions Free.
+- Free tiers only: Supabase Free, Cloudflare Workers Free, GitHub Actions Free.
 
 ---
 
@@ -22,7 +22,7 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 - [x] **Human:** Create a GitHub repo (private) and push this folder as the first commit.
 - [x] **Human:** Create a Supabase project (free). Note project URL, anon key, service role key.
 - [x] **Human:** In Supabase Auth settings: disable "Allow new users to sign up". Enable email magic link (and optionally Google). Create the owner user manually (Auth > Users > Add user). Copy the user UUID.
-- [ ] **Human:** Create a Cloudflare account and a Pages project connected to the GitHub repo (settings are filled in Phase 9).
+- [ ] **Human:** Create a Cloudflare account and a Worker connected to the GitHub repo (Pages at first; switched to Workers static assets, Cloudflare's recommended path, in Phase 9) (settings are filled in Phase 9).
 - [x] Add `.gitignore` (node_modules, dist, `.env*` except `.env.example`, `scripts/data/`, `__pycache__`, `.angular`).
 
 **Acceptance:** repo exists, Supabase project exists with sign-up disabled, owner user exists.
@@ -108,8 +108,9 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [ ] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
 
 ## Phase 9: Deploy
-- [ ] **Human:** Cloudflare Pages build settings: root `web`, build `npm ci && npm run build`, output `dist/portfolio-tracker/browser`, set `NG_APP_*` env vars (Node version comes from `web/.node-version`).
-- [x] SPA fallback and security headers per `docs/SECURITY.md`. `npm run build` writes `_headers` (CSP with the Supabase origin from `NG_APP_SUPABASE_URL`, HSTS, nosniff, Referrer-Policy, frame-ancestors none). No `_redirects`: Pages serves `index.html` for unknown paths when the build has no `404.html`, and a `/* /index.html 200` rule is flagged as a loop. Critical-CSS inlining is off because its inline script would be blocked by the CSP.
+- [x] Workers static assets config (`web/wrangler.jsonc`: output folder, single-page-application fallback). Cloudflare now recommends Workers over Pages for new projects.
+- [ ] **Human:** create the Worker from the GitHub repo: root `web`, build `npm ci && npm run build`, deploy `npx wrangler deploy`, `NG_APP_*` as build variables (Node version comes from `web/.node-version`).
+- [x] SPA fallback and security headers per `docs/SECURITY.md`. `npm run build` writes `_headers` (CSP with the Supabase origin from `NG_APP_SUPABASE_URL`, HSTS, nosniff, Referrer-Policy, frame-ancestors none). No `_redirects`: unknown paths get `index.html` through `not_found_handling: single-page-application`. Critical-CSS inlining is off because its inline script would be blocked by the CSP.
 - [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT` (`OWNER_USER_ID` turned out not to be needed).
 - [ ] Optionally restrict access further with Cloudflare Access (free for up to 50 users) in front of the site.
 - [ ] Supabase Auth: set Site URL and redirect URLs to the deployed domain.

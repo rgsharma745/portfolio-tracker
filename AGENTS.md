@@ -3,7 +3,7 @@
 Instructions for AI coding agents (Claude Code) working on this repo. Read this fully before making changes. Also read `PLAN.md` and the files in `docs/`.
 
 ## Project summary
-Personal portfolio tracker for ONE login (the owner), with several portfolios under it (for example the owner and the owner's wife; portfolios are labels, not accounts). It tracks Indian mutual funds, stocks (India and US), RSUs, savings balances and credit card dues. Data lives in Supabase Postgres. The site is a static Angular app on Cloudflare Pages. Scheduled GitHub Actions load daily NAVs and prices. It replaces an existing Google Sheet and must reach feature parity with it (see `docs/SHEET_MAPPING.md`).
+Personal portfolio tracker for ONE login (the owner), with several portfolios under it (for example the owner and the owner's wife; portfolios are labels, not accounts). It tracks Indian mutual funds, stocks (India and US), RSUs, savings balances and credit card dues. Data lives in Supabase Postgres. The site is a static Angular app on Cloudflare Workers (static assets only). Scheduled GitHub Actions load daily NAVs and prices. It replaces an existing Google Sheet and must reach feature parity with it (see `docs/SHEET_MAPPING.md`).
 
 ## Tech stack (do not swap without asking)
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
@@ -11,7 +11,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 - Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
 - Charts: Chart.js used directly through the shared `app-line-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
 - Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
-- Hosting: Cloudflare Pages (static build, no SSR)
+- Hosting: Cloudflare Workers with static assets (`web/wrangler.jsonc`; static build, no SSR, no Worker code)
 - Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
 
 ### PrimeNG licensing guards
@@ -38,8 +38,8 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
 - E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
-- Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`; `postbuild` writes Cloudflare's `_headers` with the CSP). Cloudflare Pages builds it from `web/` with `npm ci && npm run build`, Node from `web/.node-version`
-- Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on Cloudflare Pages (`CF_PAGES`) if the Supabase variables are missing.
+- Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`; `postbuild` writes Cloudflare's `_headers` with the CSP). Cloudflare Workers Builds builds it from `web/` with `npm ci && npm run build` (Node from `web/.node-version`) and deploys with `npx wrangler deploy` (`web/wrangler.jsonc`). Preview the production build locally with `npx wrangler dev` in `web/`
+- Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on a Cloudflare build (`WORKERS_CI` or `CF_PAGES`) if the Supabase variables are missing.
 - Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
 - Scripts setup: `cd scripts && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`

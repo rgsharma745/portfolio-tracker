@@ -1,4 +1,4 @@
-// Writes Cloudflare Pages' _headers into the build output (docs/SECURITY.md, "Web hardening").
+// Writes Cloudflare's _headers into the build output (docs/SECURITY.md, "Web hardening").
 // The CSP allows the app's own files plus the Supabase project from NG_APP_SUPABASE_URL,
 // so the policy never needs editing by hand. Runs after `ng build`.
 import { existsSync, writeFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ let connect = "'self'";
 if (env.NG_APP_SUPABASE_URL) {
   const url = new URL(env.NG_APP_SUPABASE_URL);
   connect += ` ${url.origin} wss://${url.host}`;
-} else if (env.CF_PAGES) {
+} else if (env.WORKERS_CI || env.CF_PAGES) {
   console.error('write-headers: NG_APP_SUPABASE_URL must be set.');
   process.exit(1);
 }

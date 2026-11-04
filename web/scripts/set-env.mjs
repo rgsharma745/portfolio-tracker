@@ -53,8 +53,9 @@ if (isSecretKey(supabaseAnonKey)) {
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // Cloudflare Pages sets CF_PAGES=1; a production deploy without config must fail.
-  if (env.CF_PAGES) {
+  // Cloudflare builds set WORKERS_CI=1 (Workers) or CF_PAGES=1 (Pages); a production
+  // deploy without config must fail.
+  if (env.WORKERS_CI || env.CF_PAGES) {
     console.error('set-env: NG_APP_SUPABASE_URL and NG_APP_SUPABASE_ANON_KEY must be set.');
     process.exit(1);
   }

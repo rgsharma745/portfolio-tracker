@@ -1,0 +1,12 @@
+// Cloudflare Workers deploy: static assets only, no server code.
+// Workers Builds runs `npm ci && npm run build` in web/, then `npx wrangler deploy`.
+// The NG_APP_* values are build variables (Settings › Build › Variables and secrets).
+{
+  "name": "portfolio-tracker",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist/portfolio-tracker/browser",
+    // Unknown paths (deep links like /mutual-funds) get index.html; the Angular router takes over.
+    "not_found_handling": "single-page-application"
+  }
+}

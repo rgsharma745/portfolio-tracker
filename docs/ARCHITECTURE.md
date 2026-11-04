@@ -5,7 +5,7 @@
 Browser (Angular + PrimeNG, static)  --HTTPS-->  Supabase (Auth + Postgres + RLS)
         ^                                              ^
         | served by                                     | service role key (server side only)
-Cloudflare Pages                              GitHub Actions (Python jobs)
+Cloudflare Workers (static)                   GitHub Actions (Python jobs)
                                                 |  AMFI NAV file, price providers, FX
                                                 +--> weekly encrypted backup (private repo)
 ```
@@ -66,7 +66,7 @@ Every job records one `job_runs` row (status, JSON summary or the error, start a
 
 ## Environments
 - `local`: Supabase CLI local stack (`npx supabase start` at the repo root; Docker required). It applies `supabase/migrations/` and mirrors the production auth/API settings from `supabase/config.toml`. Database tests and type generation run against it by default. Never test against production data with destructive scripts.
-- `production`: the live Supabase project and Cloudflare Pages.
+- `production`: the live Supabase project and the Cloudflare Worker (static assets).
 
 ## Decisions log
 - Static SPA (no SSR) to stay free and simple.
