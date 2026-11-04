@@ -2,6 +2,8 @@
 -- Single login (the owner). Several PORTFOLIOS (e.g. "Me", "Wife") live under that one owner.
 -- Every owner table is protected by RLS (owner_id = auth.uid()).
 -- Market data is "latest only": one small row per fund/stock/pair, no history tables.
+-- The project runs with "Automatically expose new tables" OFF, so every privilege
+-- below is granted explicitly. The anon role gets nothing.
 
 -- ============ Portfolios ============
 
@@ -99,7 +101,7 @@ create table public.card_bills (
   id               uuid primary key default gen_random_uuid(),
   owner_id         uuid not null default auth.uid() references auth.users(id) on delete cascade,
   card_id          uuid not null references public.credit_cards(id) on delete cascade,
-  statement_month  date not null check (extract(day from statement_month) = 1)   -- always the first of the month,
+  statement_month  date not null check (extract(day from statement_month) = 1),  -- always the first of the month
   due_date         date not null,
   amount           numeric(18,2) check (amount >= 0),          -- null = statement not received yet
   paid_amount      numeric(18,2) not null default 0 check (paid_amount >= 0),
@@ -134,7 +136,7 @@ create table public.settings (
 
 -- keep updated_at fresh
 create or replace function public.touch_updated_at() returns trigger
-language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
+language plpgsql set search_path = '' as $$ begin new.updated_at = now(); return new; end $$;
 
 create trigger t_mf_touch    before update on public.mf_holdings      for each row execute function public.touch_updated_at();
 create trigger t_stock_touch before update on public.stock_holdings   for each row execute function public.touch_updated_at();
@@ -171,6 +173,7 @@ create table public.fx_latest (
   rate_date       date not null,
   prev_rate       numeric(18,6),
   prev_rate_date  date,
+  is_manual       boolean not null default false,   -- manual override: jobs must not overwrite
   updated_at      timestamptz not null default now()
 );
 
@@ -222,7 +225,8 @@ begin
     prev_rate_date = case when excluded.rate_date > fx_latest.rate_date then fx_latest.rate_date else fx_latest.prev_rate_date end,
     rate           = case when excluded.rate_date >= fx_latest.rate_date then excluded.rate else fx_latest.rate end,
     rate_date      = greatest(excluded.rate_date, fx_latest.rate_date),
-    updated_at     = now();
+    updated_at     = now()
+  where not fx_latest.is_manual;
 end $$;
 
 revoke all on function public.upsert_mf_nav(text, numeric, date)               from public, anon, authenticated;
@@ -245,18 +249,16 @@ begin
                     using (owner_id = auth.uid()) with check (owner_id = auth.uid())', t);
   end loop;
 
+  -- Shared market data (no personal data, no owner_id). The signed-in owner may read and
+  -- write it directly, e.g. a manual price or FX override (is_manual = true, which the
+  -- jobs never overwrite; deleting the row hands it back to the jobs). Anonymous: nothing.
   foreach t in array array['mf_nav_latest','stock_price_latest','fx_latest','job_runs']
   loop
     execute format('alter table public.%I enable row level security', t);
-    execute format('create policy "read_authenticated" on public.%I for select to authenticated using (true)', t);
+    execute format('create policy "authenticated_all" on public.%I for all to authenticated
+                    using (true) with check (true)', t);
   end loop;
 end $$;
-
--- Manual price override is the only write the owner may do on market data.
-create policy "owner_manual_price_insert" on public.stock_price_latest for insert to authenticated
-  with check (is_manual);
-create policy "owner_manual_price_update" on public.stock_price_latest for update to authenticated
-  using (is_manual) with check (is_manual);
 
 -- ============ Views (respect caller RLS) ============
 
@@ -299,3 +301,15 @@ select
   end as status
 from public.card_bills b
 join public.credit_cards c on c.id = b.card_id;
+
+-- ============ Privileges (Data API) ============
+-- Explicit because new tables are not exposed automatically. RLS still decides which rows.
+
+revoke all on all tables    in schema public from anon;
+revoke all on all sequences in schema public from anon;
+
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant usage on all sequences in schema public to authenticated;
+
+grant all on all tables    in schema public to service_role;
+grant all on all sequences in schema public to service_role;
