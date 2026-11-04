@@ -7,7 +7,7 @@ The SQL lives in `supabase/migrations/0001_init.sql`; this doc explains intent. 
 ## Ownership and access
 - One Supabase user (the owner). Every owner table has `owner_id uuid not null default auth.uid()` and one RLS policy: `owner_id = auth.uid()` for all operations.
 - A **portfolio** is a label for whose money it is, not a login. All portfolios are visible to the one owner.
-- Market data tables hold no personal data: readable by any signed-in user, written only by the service role (jobs).
+- Market data tables hold no personal data and have no `owner_id`: RLS is enabled, and any signed-in user (in practice only the owner) may read and write them, which is how manual overrides work. Jobs write through the service role. Anonymous callers have no privileges at all.
 
 ## Owner tables
 | Table | Purpose | Key columns |
@@ -29,14 +29,14 @@ The same fund or stock can appear in several portfolios (different rows, same `s
 |---|---|---|
 | `mf_nav_latest` | `scheme_code` | `nav`, `nav_date`, `prev_nav`, `prev_nav_date` |
 | `stock_price_latest` | `symbol` | `close`, `price_date`, `prev_close`, `prev_price_date`, `source`, `is_manual` |
-| `fx_latest` | `pair` (e.g. `USDINR`) | `rate`, `rate_date`, `prev_rate`, `prev_rate_date` |
+| `fx_latest` | `pair` (e.g. `USDINR`) | `rate`, `rate_date`, `prev_rate`, `prev_rate_date`, `is_manual` |
 | `job_runs` | id | `job`, `status`, `message`, `started_at`, `finished_at` |
 
 Each table holds one row per fund, stock or pair that you actually own (a few dozen rows in total). It never grows.
 
 **How "today's change" works without history:** jobs call SQL functions `upsert_mf_nav`, `upsert_stock_price` and `upsert_fx_rate`. When the incoming date is newer than the stored one, the stored value moves into `prev_*` and the new value replaces it. If the date is the same, the value is corrected in place. If the date is older, it is ignored. Day change = `units * (nav - prev_nav)`.
 
-Limitations to accept: a brand-new fund shows 0 day change until its second NAV date arrives; if jobs miss several days, "previous" is the last value the job saw. A stock row with `is_manual = true` is never overwritten by jobs (manual price override from Settings).
+Limitations to accept: a brand-new fund shows 0 day change until its second NAV date arrives; if jobs miss several days, "previous" is the last value the job saw. A stock or FX row with `is_manual = true` is never overwritten by jobs (manual override from Settings). Deleting the manual row hands the symbol back to the jobs on their next run.
 
 ## Views (security_invoker = true)
 - `v_mf_holdings`: holdings + latest NAV, `prev_nav`, `current_value`, `pl`, `day_change`.

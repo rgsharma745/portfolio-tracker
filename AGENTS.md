@@ -39,7 +39,10 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`)
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on Cloudflare Pages (`CF_PAGES`) if the Supabase variables are missing.
-- Scripts tests: `cd scripts && pytest`
+- Local database: `npx -y supabase@3.0.0 start -x realtime,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,studio` (repo root, Docker required); reset after a migration change with `npx -y supabase@3.0.0 db reset`; stop with `npx -y supabase@3.0.0 stop`
+- Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
+- Scripts setup: `cd scripts && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
+- Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project)
 
 ## Hard rules
 1. **Security first.** Every table has Row Level Security enabled and an owner policy. Never disable RLS, never add a policy that allows anonymous access. See `docs/SECURITY.md`.

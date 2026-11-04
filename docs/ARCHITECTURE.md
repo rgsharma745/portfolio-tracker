@@ -53,7 +53,7 @@ docs/
 Every job records a row in `job_runs`.
 
 ## Environments
-- `local`: Supabase CLI local stack (optional) or a separate dev Supabase project. Never test against production data with destructive scripts.
+- `local`: Supabase CLI local stack (`npx supabase start` at the repo root; Docker required). It applies `supabase/migrations/` and mirrors the production auth/API settings from `supabase/config.toml`. Database tests and type generation run against it by default. Never test against production data with destructive scripts.
 - `production`: the live Supabase project and Cloudflare Pages.
 
 ## Decisions log

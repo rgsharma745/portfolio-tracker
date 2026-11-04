@@ -7,10 +7,18 @@ This app holds personal financial data. Treat security as a feature.
 - Optional but recommended: enable MFA (TOTP) for the owner in Supabase Auth.
 - Optional extra layer: Cloudflare Access (free) in front of the site.
 - Every owner table: `alter table ... enable row level security;` plus policies `using (owner_id = auth.uid()) with check (owner_id = auth.uid())`.
-- Shared market-data tables (`mf_nav_latest`, `stock_price_latest`, `fx_latest`, `job_runs`): `select` for role `authenticated` only. The only owner write allowed is a manual price override row in `stock_price_latest` (`is_manual = true`). All other writes go through the `upsert_*` functions, which only the `service_role` may execute (`security definer`, EXECUTE revoked from public, anon and authenticated).
+- Shared market-data tables (`mf_nav_latest`, `stock_price_latest`, `fx_latest`, `job_runs`): RLS enabled with one policy allowing role `authenticated` to read and write (no `owner_id`; they hold no personal data). This lets the owner set manual overrides (`is_manual = true`) for a stock price or the USD/INR rate. Jobs write through the `upsert_*` functions, which only the `service_role` may execute (`security definer`, EXECUTE revoked from public, anon and authenticated) and which never overwrite `is_manual` rows.
+- Privileges are granted explicitly in the migrations: `authenticated` gets select/insert/update/delete, `service_role` gets all, `anon` gets nothing (all privileges revoked). RLS then decides which rows.
 - Portfolios are labels under one owner, so no extra access rules are needed. If a second login is ever added, this design must be revisited.
 - Views use `security_invoker = true` so they respect the caller's RLS.
 - Never expose the `service_role` key to the browser.
+
+## Supabase project settings (set when creating the project; keep `supabase/config.toml` in sync)
+- Data API: **enabled** (supabase-js and the jobs use it).
+- Automatically expose new tables: **off**. New tables get no privileges until a migration grants them (`auto_expose_new_tables = false` locally).
+- Automatic RLS: **on** (event trigger enables RLS on new public tables as a safety net).
+- Auth: email provider on (magic link), "Allow new users to sign up" **off** (`enable_signup = false` locally), Site URL and redirect URLs limited to localhost and the production domain.
+- GitHub integration: not connected. Migrations are applied manually after review.
 
 ## Secrets
 - Frontend gets only the project URL and the anon key (safe by design when RLS is correct).
@@ -40,6 +48,7 @@ Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that di
 - [ ] Sign-up disabled; only one user exists
 - [ ] RLS enabled on every table, verified by `scripts/tests/test_rls.py`
 - [ ] An unauthenticated request to every table returns no data
+- [ ] "Automatically expose new tables" is off and anon has no table privileges
 - [ ] anon and authenticated roles cannot execute the `upsert_*` functions
 - [ ] Service role key absent from `web/` and from the build output (grep the `dist` folder)
 - [ ] Security headers present (check with securityheaders.com or curl)

@@ -39,12 +39,12 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 **Acceptance:** `npm start` shows a blank themed shell; `npm run build` and CI pass.
 
 ## Phase 2: Database and security
-- [ ] Review `supabase/migrations/0001_init.sql`; adjust to `docs/DATA_MODEL.md` if they differ and keep both in sync.
+- [x] Review `supabase/migrations/0001_init.sql`; adjust to `docs/DATA_MODEL.md` if they differ and keep both in sync.
 - [ ] **Human:** Apply the migration (Supabase SQL editor or `supabase db push` with the CLI).
-- [ ] Generate TypeScript types into `web/src/app/core/db.types.ts` and add an npm script `gen:types`.
-- [ ] Test the market-data upsert functions (`scripts/tests/test_upserts.py`): a newer date moves the old value into `prev_*`; the same date corrects the value without moving it; an older date is ignored; the anon and authenticated roles cannot execute the functions; a row with `is_manual = true` is not overwritten by `upsert_stock_price`.
-- [ ] Write an RLS test script (`scripts/tests/test_rls.py`): with the anon key and no login every table returns nothing or is rejected; with a second throwaway user (created in the test, deleted after) owner tables return zero rows of the owner's data.
-- [ ] Confirm views use `security_invoker = true`.
+- [x] Generate TypeScript types into `web/src/app/core/db.types.ts` and add an npm script `gen:types`.
+- [x] Test the market-data upsert functions (`scripts/tests/test_upserts.py`): a newer date moves the old value into `prev_*`; the same date corrects the value without moving it; an older date is ignored; the anon and authenticated roles cannot execute the functions; a row with `is_manual = true` is not overwritten by `upsert_stock_price` or `upsert_fx_rate`.
+- [x] Write an RLS test script (`scripts/tests/test_rls.py`): with the anon key and no login every table returns nothing or is rejected; with a second throwaway user (created in the test, deleted after) owner tables return zero rows of the owner's data.
+- [x] Confirm views use `security_invoker = true` (verified by `test_rls.py`: a second user sees no rows through any view).
 
 **Acceptance:** all tables have RLS enabled; RLS tests pass; an unauthenticated REST call returns no data.
 
