@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
       - name: Service role key must not reach the bundle
         run: node scripts/check-bundle-secrets.mjs dist
