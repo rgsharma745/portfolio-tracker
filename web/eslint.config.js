@@ -50,7 +50,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['src/app/core/data/**/*.ts'],
+    files: ['src/app/core/data/**/*.ts', 'src/app/core/auth/**/*.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
   {
