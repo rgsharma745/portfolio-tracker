@@ -5,6 +5,7 @@ export const OWNER_EMAIL = 'e2e-owner@example.com';
 export const SIGNOUT_EMAIL = 'e2e-signout@example.com';
 export const WELCOME_EMAIL = 'e2e-welcome@example.com';
 export const SETTINGS_EMAIL = 'e2e-settings@example.com';
+export const HOLDINGS_EMAIL = 'e2e-holdings@example.com';
 export const PORTFOLIOS = ['Me', 'Wife'];
 
 async function admin(): Promise<APIRequestContext> {
@@ -103,6 +104,11 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
 
   await page.goto(link);
   await expect(page).toHaveURL(/\/overview$/);
+}
+
+/** Saves a full-page screenshot under test-results/screens for visual review. */
+export async function screenshot(page: Page, name: string, project: string): Promise<void> {
+  await page.screenshot({ path: `test-results/screens/${name}-${project}.png`, fullPage: true });
 }
 
 /** Fails if the page scrolls horizontally. */
