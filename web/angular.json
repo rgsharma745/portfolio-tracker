@@ -85,7 +85,8 @@
               "buildTarget": "portfolio-tracker:build:development"
             },
             "local": {
-              "buildTarget": "portfolio-tracker:build:local"
+              "buildTarget": "portfolio-tracker:build:local",
+              "prebundle": false
             }
           },
           "defaultConfiguration": "development"
