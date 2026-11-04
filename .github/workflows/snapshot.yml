@@ -1,0 +1,21 @@
+name: Snapshot
+
+# One portfolio_snapshots row per active portfolio for the day, after the night's NAV and
+# price runs: 07:30 IST.
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: job-snapshot
+
+jobs:
+  snapshot:
+    uses: ./.github/workflows/_run-job.yml
+    with:
+      job: snapshot
+    secrets: inherit

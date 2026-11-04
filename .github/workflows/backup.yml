@@ -1,0 +1,45 @@
+name: Backup
+
+# Weekly: every owner table as JSON, encrypted with age (public key in BACKUP_AGE_RECIPIENT),
+# uploaded as a workflow artifact kept 90 days. The plaintext never touches disk.
+# Restore: docs/RUNBOOK.md. Sundays 08:30 IST.
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: job-backup
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: scripts
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Install age
+        run: sudo apt-get update -q && sudo apt-get install -y -q age
+      - run: python -m jobs.backup
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          BACKUP_DIR: backup-out
+      - uses: actions/upload-artifact@v7
+        with:
+          name: backup-${{ github.run_id }}
+          path: scripts/backup-out/*.age
+          retention-days: 90
+          if-no-files-found: error

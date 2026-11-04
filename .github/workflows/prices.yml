@@ -1,0 +1,22 @@
+name: Prices
+
+# Stock prices (NSE bhavcopy, Yahoo) and USD/INR (Frankfurter), for the symbols held only.
+# Weekdays at 19:00 IST (after NSE publishes the day's bhavcopy) and 04:00 IST (after the US close).
+on:
+  schedule:
+    - cron: '30 13 * * 1-5'
+    - cron: '30 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: job-fetch-prices
+
+jobs:
+  fetch-prices:
+    uses: ./.github/workflows/_run-job.yml
+    with:
+      job: fetch_prices
+    secrets: inherit

@@ -33,8 +33,8 @@ jobs:
         run: node scripts/check-bundle-secrets.mjs dist
 
   integration:
-    # Applies supabase/migrations to a throwaway local stack, then runs the RLS/upsert
-    # tests and the Playwright suite (real magic-link sign-in via the local Mailpit).
+    # Applies supabase/migrations to a throwaway local stack, then runs the RLS/upsert and
+    # job tests and the Playwright suite (real magic-link sign-in via the local Mailpit).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +51,8 @@ jobs:
       - name: Start local Supabase
         run: npx -y supabase@3.0.0 start -x realtime,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,studio
       - run: pip install -r scripts/requirements-dev.txt
+      - name: Install age (backup encryption test)
+        run: sudo apt-get update -q && sudo apt-get install -y -q age
       - run: pytest
         working-directory: scripts
       - name: db.types.ts matches the migrations

@@ -1,0 +1,17 @@
+name: Keep-alive
+
+# A trivial weekly query so the free Supabase project never pauses, even if other jobs stop.
+on:
+  schedule:
+    - cron: '0 6 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    uses: ./.github/workflows/_run-job.yml
+    with:
+      job: keepalive
+    secrets: inherit
