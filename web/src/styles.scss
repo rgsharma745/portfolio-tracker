@@ -230,3 +230,14 @@ body {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+// Five stat cards (RSU): 2 columns on mobile, 3 from 1024px, 5 from 1280px.
+.stat-grid.stat-grid-5 {
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

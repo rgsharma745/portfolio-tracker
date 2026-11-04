@@ -1,0 +1,285 @@
+@if (!holdings.loaded()) {
+  @if (holdings.error()) {
+    <app-error-state title="Could not load your RSUs" (retry)="holdings.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="pi-briefcase"
+    title="No RSU grants yet"
+    message="Add each grant with its units granted, vested and sold for tax. Values use the stock's latest price."
+    actionLabel="Add grant"
+    (action)="add()"
+  />
+} @else {
+  <div class="page-stack">
+    <section aria-labelledby="rsu-values" class="page-stack">
+      <h2 id="rsu-values" class="visually-hidden">Values</h2>
+      <div class="stat-grid stat-grid-5">
+        <app-stat-card
+          label="After tax (INR)"
+          [value]="totals().afterTaxInr"
+          [compact]="bp.isMobile()"
+        />
+        <app-stat-card label="Total value (USD)" [value]="totals().totalUsd" currency="USD" />
+        <app-stat-card label="After tax (USD)" [value]="totals().afterTaxUsd" currency="USD" />
+        <app-stat-card
+          label="Vested value (INR)"
+          [value]="totals().vestedInr"
+          [compact]="bp.isMobile()"
+        />
+        @if (price(); as p) {
+          <app-stat-card label="Current price" [value]="p.price" currency="USD" [note]="p.symbol" />
+        } @else {
+          <app-stat-card label="Current price" text="Several stocks" note="See each grant" />
+        }
+      </div>
+    </section>
+
+    <section aria-labelledby="rsu-units" class="page-stack">
+      <h2 id="rsu-units" class="section-title">Units</h2>
+      <div class="stat-grid stat-grid-5">
+        <app-stat-card label="Total" [text]="units(totals().units.granted)" />
+        <app-stat-card label="Vested" [text]="units(totals().units.vested)" />
+        <app-stat-card label="Sellable" [text]="units(totals().units.sellable)" />
+        <app-stat-card label="Pending vesting" [text]="units(totals().units.pending)" />
+        <app-stat-card label="Sold for tax" [text]="units(totals().units.soldForTax)" />
+      </div>
+    </section>
+
+    @if (totals().unpriced) {
+      <p class="note">
+        {{ totals().unpriced }} {{ totals().unpriced === 1 ? 'grant has' : 'grants have' }} no price
+        yet: units count, values do not. See <a routerLink="/settings">Settings › Data check</a>.
+      </p>
+    } @else if (totals().vestedInr === null) {
+      <p class="note">
+        There is no USD/INR rate yet, so INR values are missing. Set one in
+        <a routerLink="/settings">Settings</a> or wait for the price job.
+      </p>
+    }
+
+    <div class="grants-head">
+      <h2 class="section-title">Grants</h2>
+      <button pButton type="button" (click)="add()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Add grant
+      </button>
+    </div>
+
+    <app-data-table
+      label="RSU grants"
+      [rows]="rows()"
+      [columns]="columns"
+      [footer]="footer()"
+      minWidth="70rem"
+    >
+      <ng-template appCell="name" let-row>
+        <div class="name-cell">
+          <span
+            ><strong>{{ row.symbol }}</strong> · {{ row.name }}</span
+          >
+          @if (showPortfolio() || row.price === null) {
+            <span class="name-tags">
+              @if (showPortfolio()) {
+                <p-tag [value]="row.portfolio" severity="secondary" />
+              }
+              @if (row.price === null) {
+                <p-tag value="No price" severity="warn" />
+              }
+            </span>
+          }
+        </div>
+      </ng-template>
+      <ng-template appCell="taxPercent" let-row>
+        <span class="app-num">{{ row.taxPercent }}%</span>
+      </ng-template>
+      <ng-template appCell="actions" let-row>
+        <div class="row-actions">
+          <button
+            pButton
+            type="button"
+            iconOnly
+            rounded
+            text
+            severity="secondary"
+            [attr.aria-label]="'Edit ' + row.symbol + ' ' + row.name"
+            (click)="edit(row)"
+          >
+            <i class="pi pi-pencil" aria-hidden="true"></i>
+          </button>
+        </div>
+      </ng-template>
+      <ng-template appCard let-row>
+        <button type="button" class="app-card grant-card" (click)="edit(row)">
+          <span class="grant-top">
+            <span class="grant-title">{{ row.symbol }} · {{ row.name }}</span>
+            <span class="app-num">{{ row.afterTaxInr | money }}</span>
+          </span>
+          <span class="grant-meta">
+            @if (showPortfolio()) {
+              <p-tag [value]="row.portfolio" severity="secondary" />
+            }
+            @if (row.price === null) {
+              <p-tag value="No price" severity="warn" />
+            }
+            <span class="app-num"
+              >{{ units(row.vested) }}/{{ units(row.granted) }} vested ·
+              {{ units(row.sellable) }} sellable</span
+            >
+          </span>
+          <span class="grant-meta">
+            Granted {{ date(row.grantDate) }} · Vested value
+            <span class="app-num">{{ row.vestedInr | money }}</span>
+          </span>
+        </button>
+      </ng-template>
+    </app-data-table>
+
+    <details class="formulas">
+      <summary>How these are worked out</summary>
+      <ul>
+        <li>Price: the latest close of the symbol, in USD.</li>
+        <li>Vested value = units vested × price.</li>
+        <li>Sellable = units vested − units sold for tax.</li>
+        <li>Pending vesting = units granted − units vested.</li>
+        <li>Total value = units granted × price; after tax = total value × (1 − tax rate).</li>
+        <li>INR = USD × the latest USD/INR rate.</li>
+      </ul>
+    </details>
+  </div>
+}
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialog.isEdit() ? 'Edit grant' : 'Add grant'"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this grant?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="form-row">
+    <div class="field">
+      <label for="rsu-portfolio">Portfolio</label>
+      <p-select
+        inputId="rsu-portfolio"
+        [options]="portfolioOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="dialog.form().portfolioId"
+        (ngModelChange)="dialog.set('portfolioId', $event)"
+        appendTo="body"
+      />
+      @if (dialog.errors().portfolioId; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="rsu-symbol">Symbol</label>
+      <input
+        pInputText
+        id="rsu-symbol"
+        autocomplete="off"
+        autocapitalize="characters"
+        [ngModel]="dialog.form().symbol"
+        (ngModelChange)="dialog.set('symbol', $event)"
+      />
+      @if (dialog.errors().symbol; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="rsu-label">Grant name</label>
+      <input
+        pInputText
+        id="rsu-label"
+        autocomplete="off"
+        placeholder="2024 annual"
+        [ngModel]="dialog.form().label"
+        (ngModelChange)="dialog.set('label', $event)"
+      />
+      @if (dialog.errors().label; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="rsu-date">Grant date (optional)</label>
+      <input
+        pInputText
+        id="rsu-date"
+        type="date"
+        [ngModel]="dialog.form().grantDate"
+        (ngModelChange)="dialog.set('grantDate', $event)"
+      />
+      @if (dialog.errors().grantDate; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="rsu-granted">Units granted</label>
+      <input
+        pInputText
+        id="rsu-granted"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().granted"
+        (ngModelChange)="dialog.set('granted', $event)"
+      />
+      @if (dialog.errors().granted; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="rsu-vested">Units vested</label>
+      <input
+        pInputText
+        id="rsu-vested"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().vested"
+        (ngModelChange)="dialog.set('vested', $event)"
+      />
+      @if (dialog.errors().vested; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="rsu-sold">Units sold for tax</label>
+      <input
+        pInputText
+        id="rsu-sold"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().soldForTax"
+        (ngModelChange)="dialog.set('soldForTax', $event)"
+      />
+      @if (dialog.errors().soldForTax; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="rsu-tax">Tax rate (%)</label>
+      <input
+        pInputText
+        id="rsu-tax"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().taxPercent"
+        (ngModelChange)="dialog.set('taxPercent', $event)"
+      />
+      @if (dialog.errors().taxPercent; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+</app-edit-dialog>

@@ -27,7 +27,11 @@ export const routes: Routes = [
         title: 'Stocks',
         loadComponent: () => import('./features/stocks/stocks-page').then((m) => m.StocksPage),
       },
-      { path: 'rsu', title: 'RSU', loadComponent: comingSoon },
+      {
+        path: 'rsu',
+        title: 'RSU',
+        loadComponent: () => import('./features/rsu/rsu-page').then((m) => m.RsuPage),
+      },
       { path: 'savings', title: 'Savings', loadComponent: comingSoon },
       { path: 'cards', title: 'Credit cards', loadComponent: comingSoon },
       {
