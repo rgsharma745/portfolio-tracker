@@ -45,7 +45,7 @@ Thumbs.db
 
 # Generated at build time by scripts/set-env.mjs
 /src/environments/env.ts
-/src/environments/env.e2e.ts
+/src/environments/env.local.ts
 .env
 
 # Playwright

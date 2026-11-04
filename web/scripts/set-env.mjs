@@ -1,15 +1,17 @@
 // Writes src/environments/env.ts from NG_APP_* variables at build time.
 // Sources, in priority order: process env, web/.env, repo-root .env.
-// With --e2e it writes env.e2e.ts instead (swapped in by the `e2e` build configuration),
-// so Playwright runs never touch the env.ts a running dev server uses.
+// With --local it writes env.local.ts instead, pointing at the local Supabase stack
+// (`npx supabase start`); the `local` build configuration swaps it in. Used by
+// `npm run start:local` and Playwright, so they never touch the env.ts of `npm start`.
 // Refuses to embed a Supabase service-role/secret key in the frontend bundle.
+import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const e2e = process.argv.includes('--e2e');
-const outFile = resolve(webDir, `src/environments/${e2e ? 'env.e2e.ts' : 'env.ts'}`);
+const local = process.argv.includes('--local');
+const outFile = resolve(webDir, `src/environments/${local ? 'env.local.ts' : 'env.ts'}`);
 
 function readDotEnv(path) {
   if (!existsSync(path)) return {};
@@ -32,8 +34,24 @@ const env = {
   ...process.env,
 };
 
-const supabaseUrl = env.NG_APP_SUPABASE_URL ?? '';
-const supabaseAnonKey = env.NG_APP_SUPABASE_ANON_KEY ?? '';
+function localStack() {
+  try {
+    const out = execSync('npx -y supabase@3.0.0 status -o json', {
+      cwd: resolve(webDir, '..'),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const status = JSON.parse(out.slice(out.indexOf('{')));
+    return { url: status.API_URL, anonKey: status.ANON_KEY };
+  } catch {
+    console.error('set-env: local Supabase is not running. Start it with `npx supabase start`.');
+    process.exit(1);
+  }
+}
+
+const stack = local ? localStack() : undefined;
+const supabaseUrl = stack?.url ?? env.NG_APP_SUPABASE_URL ?? '';
+const supabaseAnonKey = stack?.anonKey ?? env.NG_APP_SUPABASE_ANON_KEY ?? '';
 // PrimeUI Community License key; empty shows PrimeNG's license notice.
 const primeuiLicense = env.NG_APP_PRIMEUI_LICENSE ?? '';
 
@@ -76,6 +94,6 @@ export const env = {
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, source(supabaseUrl, supabaseAnonKey));
 
-// The e2e build still compiles env.ts before replacing it, so make sure one exists.
+// The local build still compiles env.ts before replacing it, so make sure one exists.
 const devFile = resolve(webDir, 'src/environments/env.ts');
-if (e2e && !existsSync(devFile)) writeFileSync(devFile, source('', ''));
+if (local && !existsSync(devFile)) writeFileSync(devFile, source('', ''));

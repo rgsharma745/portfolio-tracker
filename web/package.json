@@ -6,6 +6,8 @@
     "env": "node scripts/set-env.mjs",
     "prestart": "npm run env",
     "start": "ng serve",
+    "start:local": "node scripts/set-env.mjs --local && ng serve --configuration local --port 4300",
+    "local:user": "node scripts/local-user.mjs",
     "prebuild": "npm run env",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

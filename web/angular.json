@@ -61,14 +61,14 @@
               "extractLicenses": false,
               "sourceMap": true
             },
-            "e2e": {
+            "local": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/env.ts",
-                  "with": "src/environments/env.e2e.ts"
+                  "with": "src/environments/env.local.ts"
                 }
               ]
             }
@@ -84,8 +84,8 @@
             "development": {
               "buildTarget": "portfolio-tracker:build:development"
             },
-            "e2e": {
-              "buildTarget": "portfolio-tracker:build:e2e"
+            "local": {
+              "buildTarget": "portfolio-tracker:build:local"
             }
           },
           "defaultConfiguration": "development"
