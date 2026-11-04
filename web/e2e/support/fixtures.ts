@@ -59,10 +59,26 @@ export async function adminInsert(
   table: string,
   rows: Record<string, unknown>[],
 ): Promise<Record<string, string>[]> {
+  return adminWrite(table, rows, 'return=representation');
+}
+
+/** Inserts or replaces rows by primary key (shared market data tables). */
+export async function adminUpsert(table: string, rows: Record<string, unknown>[]): Promise<void> {
+  await adminWrite(table, rows, 'resolution=merge-duplicates,return=representation');
+}
+
+async function adminWrite(
+  table: string,
+  rows: Record<string, unknown>[],
+  prefer: string,
+): Promise<Record<string, string>[]> {
   const api = await admin();
+  // Rows may omit optional fields; `columns` lets the omitted ones take their defaults.
+  const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))].join(',');
   const res = await api.post(`/rest/v1/${table}`, {
+    params: { columns },
     data: rows,
-    headers: { Prefer: 'return=representation' },
+    headers: { Prefer: prefer },
   });
   expect(res.ok(), `${table}: ${await res.text()}`).toBe(true);
   return res.json();
@@ -108,6 +124,8 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
 
 /** Saves a full-page screenshot under test-results/screens for visual review. */
 export async function screenshot(page: Page, name: string, project: string): Promise<void> {
+  // Let PrimeNG transitions (selected states, dialogs) settle first.
+  await page.waitForTimeout(500);
   await page.screenshot({ path: `test-results/screens/${name}-${project}.png`, fullPage: true });
 }
 

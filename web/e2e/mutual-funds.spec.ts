@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   HOLDINGS_EMAIL,
   adminInsert,
+  adminUpsert,
   ensureUser,
   expectNoHorizontalScroll,
   screenshot,
@@ -17,10 +18,10 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   const mobile = testInfo.project.name === 'mobile';
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me', 'Wife']);
-  await adminInsert('mf_nav_latest', [
+  await adminUpsert('mf_nav_latest', [
     { scheme_code: 'e2e-mf-1', nav: 50, nav_date: daysAgo(1), prev_nav: 49 },
     { scheme_code: 'e2e-mf-2', nav: 20, nav_date: daysAgo(10), prev_nav: 21 },
-  ]).catch(() => undefined);
+  ]);
   await adminInsert('mf_holdings', [
     {
       owner_id: ownerId,
