@@ -47,7 +47,7 @@ docs/
 ## Jobs
 | Job | Schedule | Writes | Notes |
 |---|---|---|---|
-| fetch_nav | daily, 18:00 and 01:30 UTC | `mf_nav_latest` via `upsert_mf_nav` | Only schemes in `mf_holdings`; no history stored |
+| fetch_nav | daily, 18:00 and 01:30 UTC | `mf_nav_latest` via `upsert_mf_nav` | Only schemes in `mf_holdings`; no history stored; writes unmatched codes as JSON in `job_runs.message` (see DATA_MODEL.md) |
 | fetch_prices | weekdays after market close | `stock_price_latest`, `fx_latest` via upsert functions | Provider interface with fallback; skips manual overrides |
 | snapshot | daily after prices | `portfolio_snapshots` | One row per portfolio per day, upsert |
 | backup | weekly | private repo or artifact | `age` encrypted JSON |

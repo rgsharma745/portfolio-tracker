@@ -50,9 +50,9 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 
 ## Phase 3: Data loading (done by the owner, no import tooling)
 The owner loads their own data into Supabase. **Do not write an import script or read the Google Sheet.**
-- [ ] Write `docs/DATA_ENTRY.md` (already provided as a starting point; keep it accurate): table order, required columns, CSV headers for Supabase's table-editor CSV import, and SQL snippets for tables that reference other tables.
-- [ ] First-run experience in the app: when `portfolios` is empty show a welcome screen ("Create your first portfolio"); when a page has no holdings show an empty state with an Add button, so the app is fully usable even if the owner types everything in through the UI.
-- [ ] Add a "Data check" section in Settings listing problems the owner can fix: funds with no `scheme_code`, funds whose `scheme_code` was not found in the latest AMFI file (the NAV job writes these into `job_runs.message`), stocks without a price, cards with no bill day or due day.
+- [x] Write `docs/DATA_ENTRY.md` (already provided as a starting point; keep it accurate): table order, required columns, CSV headers for Supabase's table-editor CSV import, and SQL snippets for tables that reference other tables.
+- [x] First-run experience in the app: when `portfolios` is empty show a welcome screen ("Create your first portfolio"); when a page has no holdings show an empty state with an Add button, so the app is fully usable even if the owner types everything in through the UI. (Welcome screen and the shared `EmptyState` with an action are done; each Phase 6 page uses `EmptyState` for its no-holdings case.)
+- [x] Add a "Data check" section in Settings listing problems the owner can fix: funds with no `scheme_code`, funds whose `scheme_code` was not found in the latest AMFI file (the NAV job writes these into `job_runs.message`), stocks without a price, cards with no bill day or due day.
 - [ ] **Human:** load the data (CSV import, SQL, or the app's forms) and compare totals with the Google Sheet. Mapping hints are in `docs/SHEET_MAPPING.md`.
 
 **Acceptance:** the app works from an empty database; the Data check lists any holdings the jobs cannot price.
@@ -80,7 +80,7 @@ Build each page per `docs/UI_SPEC.md`. For every page: loading, empty and error 
 - [ ] **RSU:** grants table, cards for total value (after tax INR), USD pre/after tax, vested value INR, current price, units (total, vested, sellable, pending, sold for tax). Edit grants.
 - [ ] **Savings:** accounts list with balance share bar, inline balance edit, add/delete account, total.
 - [ ] **Cards (monthly management):** month selector (default current month), bills for that month with status chips (awaiting, unpaid, partial, paid, overdue), a section for unpaid bills from earlier months, "Create this month's bills" (rows with no amount for every active card), enter or edit a bill amount, **Mark paid** (full) and record a partial payment, notes, manage cards (add, edit bill/due day, deactivate). Summary cards: total pending, bills awaiting a statement, next due (red if within 3 days or overdue). Rules in `docs/DATA_MODEL.md`.
-- [ ] **Settings:** manage portfolios (add, rename, reorder, deactivate; delete only with a strong confirmation), theme, manual price override (stock or FX), last job runs, data export (JSON), sign out.
+- [ ] **Settings:** ~~manage portfolios (add, rename, reorder, deactivate; delete only with a strong confirmation)~~ (done in Phase 3), theme, manual price override (stock or FX), last job runs, data export (JSON), sign out.
 
 **Acceptance:** each page matches `UI_SPEC.md`; totals equal the Google Sheet's within rounding for the same date's NAVs; all pages pass the responsive checks.
 

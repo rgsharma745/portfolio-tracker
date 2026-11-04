@@ -2,6 +2,10 @@
 
 You load your own data. Three options: the app's forms, Supabase's table editor (CSV import), or the SQL editor. Load in this order because later tables point to earlier ones.
 
+**Portfolios are easiest in the app.** On first sign-in the app asks you to create your first portfolio; add, rename, reorder or deactivate more in Settings › Portfolios. Rows created in the app get the right `owner_id` automatically. (Forms for holdings, savings and cards arrive with their pages; until then use CSV or SQL below.)
+
+**Try it locally first** if you like: `cd web && npm run db:start && npm run start:local` gives you a throwaway copy of the app and database on your machine (see AGENTS.md).
+
 1. `portfolios`
 2. `mf_holdings`, `stock_holdings`, `rsu_grants`, `savings_accounts`, `credit_cards` (each needs a `portfolio_id`)
 3. `card_bills` (needs a `card_id`)
@@ -67,4 +71,9 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 
 ## After loading
 - Compare invested totals per portfolio with your sheet.
-- Run the NAV and price jobs once (GitHub Actions > Run workflow), then open the app and check the Data check list in Settings.
+- Open Settings › Data check. Before the jobs have run it lists every fund and stock as "no NAV yet" / "without a price"; that is expected.
+- Run the NAV and price jobs once (GitHub Actions > Run workflow), then re-run the Data check. Anything still listed needs fixing:
+  - **Funds without a scheme code** / **scheme codes not found in the AMFI file**: correct `scheme_code`.
+  - **Stocks or RSU grants without a price**: correct `symbol`, or set a manual price in Settings.
+  - **Cards missing a bill day or due day**: set `bill_day` and `due_day`.
+- Only active portfolios are checked.
