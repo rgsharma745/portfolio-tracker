@@ -79,6 +79,7 @@ Manage portfolios (add, rename, reorder, deactivate; delete only with a strong w
 
 ## Interaction details
 - Pull-to-refresh behavior on mobile is replaced by a visible Refresh button (re-queries Supabase).
+- Data also re-queries by itself: on returning to the tab or app when it is over a minute old, and every 5 minutes while the app is visible (picks up job runs and edits made elsewhere). No Realtime subscriptions.
 - Optimistic UI is not required; show a saving state then refresh the row.
 - Form validation messages inline; number inputs use `inputmode="decimal"`.
 - All icon-only buttons have `aria-label`.
