@@ -22,7 +22,11 @@ export const routes: Routes = [
         title: 'Mutual funds',
         loadComponent: () => import('./features/mutual-funds/mf-page').then((m) => m.MfPage),
       },
-      { path: 'stocks', title: 'Stocks', loadComponent: comingSoon },
+      {
+        path: 'stocks',
+        title: 'Stocks',
+        loadComponent: () => import('./features/stocks/stocks-page').then((m) => m.StocksPage),
+      },
       { path: 'rsu', title: 'RSU', loadComponent: comingSoon },
       { path: 'savings', title: 'Savings', loadComponent: comingSoon },
       { path: 'cards', title: 'Credit cards', loadComponent: comingSoon },

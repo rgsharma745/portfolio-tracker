@@ -1,0 +1,279 @@
+@if (!holdings.loaded()) {
+  @if (holdings.error()) {
+    <app-error-state title="Could not load your stocks" (retry)="holdings.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (!hasAny()) {
+  <app-empty-state
+    icon="pi-chart-bar"
+    title="No stocks yet"
+    message="Add Indian or US stocks with the quantity and what you paid. Prices update after market close."
+    actionLabel="Add stock"
+    (action)="add()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="market-bar">
+      <span id="market-label" class="visually-hidden">Market</span>
+      <p-selectbutton
+        [options]="marketTabs()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="market()"
+        (ngModelChange)="setMarket($event)"
+        [allowEmpty]="false"
+        ariaLabelledBy="market-label"
+      />
+      @if (market() === 'US') {
+        <label class="inr-toggle">
+          <p-toggleswitch
+            [ngModel]="inInr()"
+            (ngModelChange)="inInr.set($event)"
+            ariaLabel="Show US stocks in INR"
+          />
+          <span aria-hidden="true">Show in INR</span>
+        </label>
+      }
+    </div>
+
+    <div class="stat-grid">
+      <app-stat-card
+        label="Current value"
+        [value]="totals().value"
+        [currency]="currency()"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Invested"
+        [value]="totals().invested"
+        [currency]="currency()"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Total P&L"
+        [value]="totals().pl"
+        [percent]="totals().plPercent"
+        [currency]="currency()"
+        [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Today"
+        [value]="totals().dayChange"
+        [currency]="currency()"
+        [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+    </div>
+    @if (noRate() && inInr()) {
+      <p class="note">
+        There is no USD/INR rate yet, so US stocks cannot be shown in INR. It is fetched with the
+        prices, or you can set one in <a routerLink="/settings">Settings</a>.
+      </p>
+    } @else if (totals().unpriced) {
+      <p class="note">
+        {{ totals().unpriced }} {{ totals().unpriced === 1 ? 'stock has' : 'stocks have' }} no price
+        yet ({{ totals().unpricedInvested | money: currency() }} invested) and
+        {{ totals().unpriced === 1 ? 'is' : 'are' }} left out of these totals. See
+        <a routerLink="/settings">Settings › Data check</a>.
+      </p>
+    }
+
+    <app-list-toolbar
+      searchLabel="Search stocks"
+      addLabel="Add stock"
+      [sortOptions]="sortOptions"
+      [(search)]="search"
+      [(plFilter)]="plFilter"
+      [(sort)]="sort"
+      (add)="add()"
+      (export)="exportCsv()"
+    />
+
+    <app-data-table
+      [label]="market() === 'US' ? 'US stocks' : 'Indian stocks'"
+      [rows]="visible()"
+      [columns]="columns"
+      [footer]="footer()"
+      [sort]="sort()"
+      (sortChange)="sort.set($event)"
+      [emptyMessage]="rows().length ? 'No stocks match.' : 'No stocks in this market yet.'"
+      minWidth="68rem"
+    >
+      <ng-template appCell="name" let-row>
+        <div class="name-cell">
+          <span
+            ><strong>{{ row.symbol }}</strong>
+            @if (row.companyName) {
+              <span class="company"> · {{ row.companyName }}</span>
+            }
+          </span>
+          <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+        </div>
+      </ng-template>
+      <ng-template appCell="value" let-row>
+        <span class="app-num">{{ money(row.value, row.currency) }}</span>
+        @if (row.currency === 'USD' && row.valueInr !== null) {
+          <span class="inr app-num">≈ {{ money(row.valueInr, 'INR') }}</span>
+        }
+      </ng-template>
+      <ng-template appCell="actions" let-row>
+        <div class="row-actions">
+          <button
+            pButton
+            type="button"
+            iconOnly
+            rounded
+            text
+            severity="secondary"
+            [attr.aria-label]="'Edit ' + row.symbol"
+            (click)="edit(row)"
+          >
+            <i class="pi pi-pencil" aria-hidden="true"></i>
+          </button>
+        </div>
+      </ng-template>
+      <ng-template appCard let-row>
+        <app-holding-card
+          [title]="row.symbol"
+          [value]="row.value"
+          [currency]="row.currency"
+          [pl]="row.pl"
+          [plPercent]="row.plPercent"
+          [dayChange]="row.dayChange"
+          [meta]="meta(row)"
+          (open)="edit(row)"
+        >
+          <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+        </app-holding-card>
+      </ng-template>
+    </app-data-table>
+  </div>
+}
+
+<ng-template #tags let-row>
+  <span class="name-tags">
+    @if (showPortfolio()) {
+      <p-tag [value]="row.portfolio" severity="secondary" />
+    }
+    @if (row.price === null) {
+      <p-tag value="No price" severity="warn" />
+    } @else if (row.stale) {
+      <p-tag value="Stale" severity="warn" [title]="staleTitle(row)" />
+    }
+  </span>
+</ng-template>
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialog.isEdit() ? 'Edit stock' : 'Add stock'"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this stock?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="form-row">
+    <div class="field">
+      <label for="stock-portfolio">Portfolio</label>
+      <p-select
+        inputId="stock-portfolio"
+        [options]="portfolioOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="dialog.form().portfolioId"
+        (ngModelChange)="dialog.set('portfolioId', $event)"
+        appendTo="body"
+      />
+      @if (dialog.errors().portfolioId; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="stock-market">Market</label>
+      <p-select
+        inputId="stock-market"
+        [options]="markets"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="dialog.form().market"
+        (ngModelChange)="dialog.set('market', $event)"
+        appendTo="body"
+      />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="stock-symbol">Symbol</label>
+      <input
+        pInputText
+        id="stock-symbol"
+        autocomplete="off"
+        autocapitalize="characters"
+        [ngModel]="dialog.form().symbol"
+        (ngModelChange)="dialog.set('symbol', $event)"
+      />
+      @if (dialog.errors().symbol; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="stock-name">Name (optional)</label>
+      <input
+        pInputText
+        id="stock-name"
+        autocomplete="off"
+        [ngModel]="dialog.form().name"
+        (ngModelChange)="dialog.set('name', $event)"
+      />
+    </div>
+  </div>
+  <div class="field">
+    <label for="stock-qty">Quantity</label>
+    <input
+      pInputText
+      id="stock-qty"
+      inputmode="decimal"
+      autocomplete="off"
+      [ngModel]="dialog.form().quantity"
+      (ngModelChange)="dialog.set('quantity', $event)"
+    />
+    @if (dialog.errors().quantity; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="stock-invested">Invested ({{ dialog.form().market === 'US' ? '$' : '₹' }})</label>
+      <input
+        pInputText
+        id="stock-invested"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().invested"
+        (ngModelChange)="dialog.set('invested', $event)"
+      />
+      @if (dialog.errors().invested; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="stock-avg">Average price ({{ dialog.form().market === 'US' ? '$' : '₹' }})</label>
+      <input
+        pInputText
+        id="stock-avg"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().avgPrice"
+        (ngModelChange)="dialog.set('avgPrice', $event)"
+      />
+      @if (dialog.errors().avgPrice; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <p class="field-help">Enter either one; the other is worked out from the quantity.</p>
+</app-edit-dialog>
