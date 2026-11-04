@@ -10,24 +10,31 @@ export const JOB_LABEL: Record<JobName, string> = {
 };
 
 /**
- * A line about a job run for Settings: the NAV job's JSON message becomes "42 updated,
- * 2 not found"; other messages show as they are.
+ * A line about a job run for Settings. Successful runs store a JSON summary, shown in words
+ * ("42 updated, 2 not found in the AMFI file"); failures store plain text, shown as it is.
  */
 export function describeRun(run: Pick<JobRun, 'job' | 'status' | 'message'>): string {
-  if (run.job === 'fetch_nav' && run.status === 'success' && run.message) {
-    try {
-      const parsed = JSON.parse(run.message) as { updated?: unknown; unmatched?: unknown };
-      const parts: string[] = [];
-      if (typeof parsed.updated === 'number') parts.push(`${parsed.updated} updated`);
-      if (Array.isArray(parsed.unmatched) && parsed.unmatched.length) {
-        parts.push(`${parsed.unmatched.length} not found in the AMFI file`);
-      }
-      if (parts.length) return parts.join(', ');
-    } catch {
-      // Not JSON: fall through to the raw message.
-    }
+  if (run.status !== 'success' || !run.message) return run.message ?? '';
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(run.message) as Record<string, unknown>;
+  } catch {
+    return run.message;
   }
-  return run.message ?? '';
+  const count = (key: string) =>
+    Array.isArray(parsed[key]) ? (parsed[key] as unknown[]).length : 0;
+  const parts: string[] = [];
+  if (typeof parsed['updated'] === 'number') parts.push(`${parsed['updated']} updated`);
+  if (count('unmatched')) parts.push(`${count('unmatched')} not found in the AMFI file`);
+  if (count('missing')) parts.push(`no price for ${(parsed['missing'] as string[]).join(', ')}`);
+  if (typeof parsed['fx'] === 'string' && parsed['fx'] !== 'not needed') {
+    parts.push(`USD/INR ${parsed['fx'] === 'manual' ? 'set by hand' : 'from ' + parsed['fx']}`);
+  }
+  if (typeof parsed['rows'] === 'number') {
+    parts.push(`${parsed['rows']} ${parsed['rows'] === 1 ? 'portfolio' : 'portfolios'}`);
+  }
+  if (typeof parsed['file'] === 'string') parts.push(parsed['file']);
+  return parts.length ? parts.join(', ') : run.message;
 }
 
 export type OverrideKind = 'stock' | 'usdinr';

@@ -18,6 +18,37 @@ describe('describeRun', () => {
     ).toBe('3 updated');
   });
 
+  it('summarises the price, snapshot and backup jobs', () => {
+    expect(
+      describeRun({
+        job: 'fetch_prices',
+        status: 'success',
+        message: '{"fx":"frankfurter","missing":["JIO"],"sources":{"nse":1},"updated":3}',
+      }),
+    ).toBe('3 updated, no price for JIO, USD/INR from frankfurter');
+    expect(
+      describeRun({
+        job: 'fetch_prices',
+        status: 'success',
+        message: '{"fx":"manual","missing":[],"updated":0}',
+      }),
+    ).toBe('0 updated, USD/INR set by hand');
+    expect(
+      describeRun({
+        job: 'snapshot',
+        status: 'success',
+        message: '{"rows":2,"snap_date":"2026-11-04"}',
+      }),
+    ).toBe('2 portfolios');
+    expect(
+      describeRun({
+        job: 'backup',
+        status: 'success',
+        message: '{"file":"backup-2026-11-08.json.age","rows":{}}',
+      }),
+    ).toBe('backup-2026-11-08.json.age');
+  });
+
   it('shows other messages as they are', () => {
     expect(describeRun({ job: 'fetch_nav', status: 'failure', message: 'Timeout' })).toBe(
       'Timeout',
