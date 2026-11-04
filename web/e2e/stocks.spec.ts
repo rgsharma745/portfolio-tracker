@@ -8,6 +8,7 @@ import {
   screenshot,
   seedPortfolios,
   signInWithMagicLink,
+  statCard,
 } from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -47,7 +48,7 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
 
   await signInWithMagicLink(page, HOLDINGS_EMAIL);
   await page.goto('/stocks');
-  const stat = (label: string) => page.locator('app-stat-card', { hasText: label });
+  const stat = (label: string) => statCard(page, label);
 
   // India tab: 10 x 150
   await expect(stat('Current value')).toContainText('₹1,500');

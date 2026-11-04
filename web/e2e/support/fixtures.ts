@@ -122,6 +122,13 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
   await expect(page).toHaveURL(/\/overview$/);
 }
 
+/** A stat card by its exact label. */
+export function statCard(page: Page, label: string) {
+  return page
+    .locator('app-stat-card')
+    .filter({ has: page.getByRole('heading', { name: label, exact: true }) });
+}
+
 /** Saves a full-page screenshot under test-results/screens for visual review. */
 export async function screenshot(page: Page, name: string, project: string): Promise<void> {
   // Let PrimeNG transitions (selected states, dialogs) settle first.

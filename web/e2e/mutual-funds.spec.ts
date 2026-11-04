@@ -8,6 +8,7 @@ import {
   screenshot,
   seedPortfolios,
   signInWithMagicLink,
+  statCard,
 } from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -45,7 +46,7 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await page.goto('/mutual-funds');
 
   // Totals over both portfolios: 5,000 + 1,000 = 6,000 value; 5,200 invested.
-  const stat = (label: string) => page.locator('app-stat-card', { hasText: label });
+  const stat = (label: string) => statCard(page, label);
   await expect(stat('Current value')).toContainText('₹6,000');
   await expect(stat('Invested')).toContainText('₹5,200');
   await expect(stat('Total P&L')).toContainText('+₹800');
