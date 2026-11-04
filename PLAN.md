@@ -74,15 +74,18 @@ The owner loads their own data into Supabase. **Do not write an import script or
 
 ## Phase 6: Feature pages
 Build each page per `docs/UI_SPEC.md`. For every page: loading, empty and error states; desktop table + mobile card list; Playwright screenshots at 390x844 and 1440x900.
-- [ ] **Overview:** stat cards (MF value, MF today, Stocks value, Stocks today, RSU vested value, Savings, Card dues, Combined) for the selected portfolio or All, allocation donut chart, summary table with one row per portfolio plus a family total row, history line chart from `portfolio_snapshots`.
-- [ ] **Mutual Funds:** uses the portfolio switcher (All or one portfolio; in All mode show a portfolio column/tag), totals (current, invested, P&L and %, today), search, sort, column totals footer, NAV date shown with a stale-NAV badge, add/edit/delete holding dialog (portfolio, scheme code, units, invested, folio; the scheme code field explains where to find the AMFI code, and a fund-name search is optional: only add it if a free source such as mfapi.in is allowed in the CSP, and ask the owner first), CSV export.
-- [ ] **Stocks:** India and US tabs, same totals, quantity/avg price edit, USD to INR display toggle.
-- [ ] **RSU:** grants table, cards for total value (after tax INR), USD pre/after tax, vested value INR, current price, units (total, vested, sellable, pending, sold for tax). Edit grants.
-- [ ] **Savings:** accounts list with balance share bar, inline balance edit, add/delete account, total.
-- [ ] **Cards (monthly management):** month selector (default current month), bills for that month with status chips (awaiting, unpaid, partial, paid, overdue), a section for unpaid bills from earlier months, "Create this month's bills" (rows with no amount for every active card), enter or edit a bill amount, **Mark paid** (full) and record a partial payment, notes, manage cards (add, edit bill/due day, deactivate). Summary cards: total pending, bills awaiting a statement, next due (red if within 3 days or overdue). Rules in `docs/DATA_MODEL.md`.
-- [ ] **Settings:** ~~manage portfolios (add, rename, reorder, deactivate; delete only with a strong confirmation)~~ (done in Phase 3), theme, manual price override (stock or FX), last job runs, data export (JSON), sign out.
+- [x] **Overview:** stat cards (MF value, MF today, Stocks value, Stocks today, RSU vested value, Savings, Card dues, Combined) for the selected portfolio or All, allocation donut chart, summary table with one row per portfolio plus a family total row, history line chart from `portfolio_snapshots`.
+- [x] **Mutual Funds:** uses the portfolio switcher (All or one portfolio; in All mode show a portfolio column/tag), totals (current, invested, P&L and %, today), search, sort, column totals footer, NAV date shown with a stale-NAV badge, add/edit/delete holding dialog (portfolio, scheme code, units, invested, folio; the scheme code field explains where to find the AMFI code, and a fund-name search is optional: only add it if a free source such as mfapi.in is allowed in the CSP, and ask the owner first), CSV export.
+- [x] **Stocks:** India and US tabs, same totals, quantity/avg price edit, USD to INR display toggle.
+- [x] **RSU:** grants table, cards for total value (after tax INR), USD pre/after tax, vested value INR, current price, units (total, vested, sellable, pending, sold for tax). Edit grants.
+- [x] **Savings:** accounts list with balance share bar, inline balance edit, add/delete account, total.
+- [x] **Cards (monthly management):** month selector (default current month), bills for that month with status chips (awaiting, unpaid, partial, paid, overdue), a section for unpaid bills from earlier months, "Create this month's bills" (rows with no amount for every active card), enter or edit a bill amount, **Mark paid** (full) and record a partial payment, notes, manage cards (add, edit bill/due day, deactivate). Summary cards: total pending, bills awaiting a statement, next due (red if within 3 days or overdue). Rules in `docs/DATA_MODEL.md`.
+- [x] **Settings:** ~~manage portfolios (add, rename, reorder, deactivate; delete only with a strong confirmation)~~ (done in Phase 3), theme, manual price override (stock or FX), last job runs, data export (JSON), sign out.
 
 **Acceptance:** each page matches `UI_SPEC.md`; totals equal the Google Sheet's within rounding for the same date's NAVs; all pages pass the responsive checks.
+- [ ] **Human:** compare the app's totals with the Google Sheet for the same date's NAVs (needs your data loaded and, for live NAVs, the Phase 7 jobs).
+
+Notes: the allocation is a segmented bar instead of a donut, and the Overview uses 3 stat columns on desktop (see `UI_SPEC.md`). The optional fund-name search (mfapi.in) was not added; the scheme code field explains where to find the code.
 
 ## Phase 7: Scheduled jobs
 Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the service role key from GitHub Secrets and are idempotent.
