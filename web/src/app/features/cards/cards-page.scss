@@ -1,0 +1,107 @@
+.month-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  > button[iconOnly],
+  > .p-button-icon-only {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.month-label {
+  min-width: 10.5rem;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.card-stats {
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  > :first-child {
+    grid-column: 1 / -1;
+
+    @media (min-width: 1024px) {
+      grid-column: auto;
+    }
+  }
+}
+
+.manage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.card-info {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card-name {
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--app-text-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.missing {
+  color: var(--app-down);
+}
+
+.edit-card {
+  width: 44px;
+  height: 44px;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}

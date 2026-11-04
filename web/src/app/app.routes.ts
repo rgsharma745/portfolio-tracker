@@ -37,7 +37,11 @@ export const routes: Routes = [
         title: 'Savings',
         loadComponent: () => import('./features/savings/savings-page').then((m) => m.SavingsPage),
       },
-      { path: 'cards', title: 'Credit cards', loadComponent: comingSoon },
+      {
+        path: 'cards',
+        title: 'Credit cards',
+        loadComponent: () => import('./features/cards/cards-page').then((m) => m.CardsPage),
+      },
       {
         path: 'settings',
         title: 'Settings',

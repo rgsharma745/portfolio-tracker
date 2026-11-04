@@ -1,0 +1,348 @@
+@if (!service.loaded()) {
+  @if (service.error()) {
+    <app-error-state title="Could not load your cards" (retry)="service.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (cards().length === 0) {
+  <app-empty-state
+    icon="pi-credit-card"
+    title="No credit cards yet"
+    message="Add each card with its statement day and due day. Each month you enter the bill amount and mark it paid."
+    actionLabel="Add card"
+    (action)="addCard()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="month-bar">
+      <div class="month-nav" role="group" aria-label="Month">
+        <button
+          pButton
+          type="button"
+          iconOnly
+          rounded
+          text
+          severity="secondary"
+          aria-label="Previous month"
+          (click)="shiftMonth(-1)"
+        >
+          <i class="pi pi-chevron-left" aria-hidden="true"></i>
+        </button>
+        <h2 class="month-label" aria-live="polite">{{ monthLabel() }}</h2>
+        <button
+          pButton
+          type="button"
+          iconOnly
+          rounded
+          text
+          severity="secondary"
+          aria-label="Next month"
+          (click)="shiftMonth(1)"
+        >
+          <i class="pi pi-chevron-right" aria-hidden="true"></i>
+        </button>
+        @if (!isCurrentMonth()) {
+          <button pButton type="button" text size="small" (click)="goToThisMonth()">
+            This month
+          </button>
+        }
+      </div>
+      @if (missingBills().length) {
+        <button pButton type="button" [disabled]="creating()" (click)="createBills()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          {{ isCurrentMonth() ? "Create this month's bills" : 'Create bills for ' + monthLabel() }}
+        </button>
+      }
+    </div>
+
+    <div class="stat-grid card-stats">
+      <app-stat-card
+        label="Total pending"
+        [value]="summary().pending"
+        [danger]="true"
+        [goodWhenZero]="true"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Awaiting statement"
+        [text]="'' + summary().awaiting"
+        [note]="summary().awaiting === 1 ? 'bill without an amount' : 'bills without an amount'"
+      />
+      <app-stat-card
+        label="Next due"
+        [text]="nextDueText()"
+        [textIsName]="true"
+        [note]="nextDueNote()"
+        [tone]="summary().nextDue ? (summary().nextDue!.urgent ? 'down' : null) : 'up'"
+      />
+    </div>
+
+    @if (message(); as m) {
+      <p-message [severity]="m.severity">{{ m.text }}</p-message>
+    }
+
+    @if (earlierRows().length) {
+      <section class="page-stack" aria-labelledby="earlier-title">
+        <h2 class="section-title" id="earlier-title">Earlier unpaid bills</h2>
+        <app-bill-list
+          label="Earlier unpaid bills"
+          [rows]="earlierRows()"
+          [today]="today"
+          [showPortfolio]="showPortfolio()"
+          [paying]="paying()"
+          (markPaid)="markPaid($event)"
+          (edit)="editBill($event)"
+        />
+      </section>
+    }
+
+    <section class="page-stack" aria-labelledby="month-title">
+      <h2 class="section-title" id="month-title">Bills for {{ monthLabel() }}</h2>
+      <app-bill-list
+        [label]="'Bills for ' + monthLabel()"
+        [rows]="monthRows()"
+        [today]="today"
+        [showPortfolio]="showPortfolio()"
+        [paying]="paying()"
+        [emptyMessage]="
+          missingBills().length ? 'No bills yet. Create them with the button above.' : 'No bills.'
+        "
+        (markPaid)="markPaid($event)"
+        (edit)="editBill($event)"
+      />
+    </section>
+
+    <section class="app-card manage" aria-labelledby="manage-title">
+      <div class="manage-head">
+        <h2 class="section-title" id="manage-title">Your cards</h2>
+        <button pButton type="button" severity="secondary" (click)="addCard()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Add card
+        </button>
+      </div>
+      <ul class="card-rows" aria-label="Your cards">
+        @for (card of cards(); track card.id) {
+          <li class="card-row">
+            <div class="card-info">
+              <span class="card-name">
+                {{ card.name }}
+                @if (card.bank) {
+                  <span class="muted"> · {{ card.bank }}</span>
+                }
+              </span>
+              <span class="muted" [class.missing]="!card.bill_day || !card.due_day">{{
+                cardDays(card)
+              }}</span>
+            </div>
+            <span class="name-tags">
+              @if (showPortfolio()) {
+                <p-tag [value]="portfolioName(card.portfolio_id)" severity="secondary" />
+              }
+              @if (!card.is_active) {
+                <p-tag value="Inactive" severity="secondary" />
+              }
+            </span>
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              class="edit-card"
+              [attr.aria-label]="'Edit card ' + card.name"
+              (click)="editCard(card)"
+            >
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  </div>
+}
+
+<app-edit-dialog
+  [visible]="billDialog.open()"
+  [header]="billHeader()"
+  [busy]="billDialog.busy()"
+  [error]="billDialog.error()"
+  [canDelete]="true"
+  deleteQuestion="Delete this bill?"
+  (save)="saveBill()"
+  (remove)="removeBill()"
+  (closed)="billDialog.close()"
+>
+  <div class="form-row">
+    <div class="field">
+      <label for="bill-amount">Statement amount (₹)</label>
+      <input
+        pInputText
+        id="bill-amount"
+        inputmode="decimal"
+        autocomplete="off"
+        aria-describedby="bill-amount-help"
+        [ngModel]="billDialog.form().amount"
+        (ngModelChange)="billDialog.set('amount', $event)"
+      />
+      <p class="field-help" id="bill-amount-help">Leave empty until the statement arrives.</p>
+      @if (billDialog.errors().amount; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="bill-due">Due date</label>
+      <input
+        pInputText
+        id="bill-due"
+        type="date"
+        [ngModel]="billDialog.form().dueDate"
+        (ngModelChange)="billDialog.set('dueDate', $event)"
+      />
+      @if (billDialog.errors().dueDate; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="bill-paid">Paid so far (₹)</label>
+      <input
+        pInputText
+        id="bill-paid"
+        inputmode="decimal"
+        autocomplete="off"
+        aria-describedby="bill-paid-help"
+        [ngModel]="billDialog.form().paid"
+        (ngModelChange)="billDialog.set('paid', $event)"
+      />
+      <p class="field-help" id="bill-paid-help">A partial payment is just a smaller amount.</p>
+      @if (billDialog.errors().paid; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="bill-paid-on">Paid on (optional)</label>
+      <input
+        pInputText
+        id="bill-paid-on"
+        type="date"
+        [ngModel]="billDialog.form().paidOn"
+        (ngModelChange)="billDialog.set('paidOn', $event)"
+      />
+      @if (billDialog.errors().paidOn; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="field">
+    <label for="bill-notes">Notes (optional)</label>
+    <textarea
+      pTextarea
+      id="bill-notes"
+      rows="2"
+      [maxlength]="notesMax"
+      [ngModel]="billDialog.form().notes"
+      (ngModelChange)="billDialog.set('notes', $event)"
+    ></textarea>
+    @if (billDialog.errors().notes; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+</app-edit-dialog>
+
+<app-edit-dialog
+  [visible]="cardDialog.open()"
+  [header]="cardDialog.isEdit() ? 'Edit card' : 'Add card'"
+  [busy]="cardDialog.busy()"
+  [error]="cardDialog.error()"
+  [canDelete]="cardDialog.isEdit()"
+  deleteQuestion="Delete the card and all its bills?"
+  (save)="saveCard()"
+  (remove)="removeCard()"
+  (closed)="cardDialog.close()"
+>
+  <div class="form-row">
+    <div class="field">
+      <label for="card-name">Card name</label>
+      <input
+        pInputText
+        id="card-name"
+        autocomplete="off"
+        [maxlength]="cardNameMax"
+        [ngModel]="cardDialog.form().name"
+        (ngModelChange)="cardDialog.set('name', $event)"
+      />
+      @if (cardDialog.errors().name; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="card-bank">Bank (optional)</label>
+      <input
+        pInputText
+        id="card-bank"
+        autocomplete="off"
+        [ngModel]="cardDialog.form().bank"
+        (ngModelChange)="cardDialog.set('bank', $event)"
+      />
+    </div>
+  </div>
+  <div class="field">
+    <label for="card-portfolio">Portfolio</label>
+    <p-select
+      inputId="card-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="cardDialog.form().portfolioId"
+      (ngModelChange)="cardDialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (cardDialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="card-bill-day">Statement day</label>
+      <input
+        pInputText
+        id="card-bill-day"
+        inputmode="numeric"
+        autocomplete="off"
+        [ngModel]="cardDialog.form().billDay"
+        (ngModelChange)="cardDialog.set('billDay', $event)"
+      />
+      @if (cardDialog.errors().billDay; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="card-due-day">Due day</label>
+      <input
+        pInputText
+        id="card-due-day"
+        inputmode="numeric"
+        autocomplete="off"
+        [ngModel]="cardDialog.form().dueDay"
+        (ngModelChange)="cardDialog.set('dueDay', $event)"
+      />
+      @if (cardDialog.errors().dueDay; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <p class="field-help">
+    Days of the month (1 to 31). They are needed to create monthly bills: if the due day is not
+    after the statement day, the bill is due the next month.
+  </p>
+  <div class="toggle-field">
+    <p-toggleswitch
+      inputId="card-active"
+      [ngModel]="cardDialog.form().isActive"
+      (ngModelChange)="cardDialog.set('isActive', $event)"
+    />
+    <label for="card-active">Active (gets a bill each month)</label>
+  </div>
+</app-edit-dialog>

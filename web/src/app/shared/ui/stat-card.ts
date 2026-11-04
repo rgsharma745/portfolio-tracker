@@ -25,9 +25,10 @@ import { PlColorDirective } from './pl-color.directive';
           </p>
         } @else {
           <p
-            class="stat-value app-num"
-            [class.app-down]="danger() && (value() ?? 0) > 0"
-            [class.app-up]="goodWhenZero() && value() === 0"
+            class="stat-value"
+            [class.app-num]="!textIsName()"
+            [class.app-down]="tone() === 'down' || (danger() && (value() ?? 0) > 0)"
+            [class.app-up]="tone() === 'up' || (goodWhenZero() && value() === 0)"
           >
             {{ text() || (value() | money: currency() : { compact: compact() }) }}
           </p>
@@ -103,8 +104,12 @@ export class StatCard {
   readonly percent = input<number | null | undefined>(undefined);
   /** Show text instead of a money value (e.g. a card name). */
   readonly text = input('');
+  /** The text is a name, not a figure: use the UI font instead of the number font. */
+  readonly textIsName = input(false);
   /** A small line under the value. */
   readonly note = input('');
+  /** Color the value (or text) as good or bad, e.g. an urgent due date. */
+  readonly tone = input<'up' | 'down' | null>(null);
   /** Show a zero value in green (e.g. nothing pending). */
   readonly goodWhenZero = input(false);
   readonly loading = input(false);
