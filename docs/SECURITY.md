@@ -65,4 +65,4 @@ Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that di
 - [ ] Auth redirect URLs limited to the production domain and localhost
 - [ ] MFA enabled for the owner (recommended)
 - [ ] Backup restore tested once
-- [ ] Dependabot or Renovate enabled for npm and pip
+- [ ] Renovate enabled for npm, pip and GitHub Actions (`renovate.json`; human installs the Renovate GitHub app)

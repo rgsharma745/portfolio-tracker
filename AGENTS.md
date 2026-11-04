@@ -17,7 +17,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 ### PrimeNG licensing guards
 - Do not use PrimeNG components that are deprecated in favor of PrimeUI PRO (paid), currently Chart and Editor. Check the component's `@deprecated` notes before adopting it.
 - Feature pages use the shared `DataTable` wrapper (`web/src/app/shared/`), never PrimeNG `Table` directly, so the table can be replaced in one place if it ever moves to PRO. Simple primitives (buttons, inputs, tags) may be used directly.
-- Stay on the current PrimeNG major. Before upgrading to a new major, read its release notes for components moving to PRO. Dependency bots must not auto-merge PrimeNG majors.
+- Stay on the current PrimeNG major. Before upgrading to a new major, read its release notes for components moving to PRO. Dependency bots must not auto-merge PrimeNG majors. Renovate (`renovate.json`) enforces this: PrimeNG majors, and all majors, wait for approval on its Dependency Dashboard issue.
 
 Use the latest stable versions and check the official docs for the installed version before using an API. Do not rely on memory for PrimeNG or Angular APIs that change between majors.
 
