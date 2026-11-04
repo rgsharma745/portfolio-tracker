@@ -30,13 +30,11 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Service role key must not reach the bundle
-        run: |
-          if grep -rEl 'sb_secret_|service_role' dist/; then
-            echo "::error::Secret-looking key found in build output"; exit 1
-          fi
+        run: node scripts/check-bundle-secrets.mjs dist
 
-  db:
-    # Applies supabase/migrations to a throwaway local stack and runs the RLS/upsert tests.
+  integration:
+    # Applies supabase/migrations to a throwaway local stack, then runs the RLS/upsert
+    # tests and the Playwright suite (real magic-link sign-in via the local Mailpit).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -61,6 +59,17 @@ jobs:
           npm ci
           npm run gen:types
           git diff --exit-code src/app/core/db.types.ts
+      - name: Playwright
+        working-directory: web
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/test-results/
+          retention-days: 7
 
   secrets-scan:
     runs-on: ubuntu-latest

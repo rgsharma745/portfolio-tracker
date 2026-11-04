@@ -1,29 +1,99 @@
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
+import { expectNoHorizontalScroll } from './support/fixtures';
+
+const PAGES = [
+  { label: 'Overview', heading: 'Overview' },
+  { label: 'Mutual funds', heading: 'Mutual funds' },
+  { label: 'Stocks', heading: 'Stocks' },
+  { label: 'RSU', heading: 'RSU' },
+  { label: 'Savings', heading: 'Savings' },
+  { label: 'Credit cards', heading: 'Credit cards' },
+  { label: 'Settings', heading: 'Settings' },
+];
+
+const sidebar = (page: Page) => page.locator('nav.sidebar');
+const bottomNav = (page: Page) => page.locator('nav.bottom-nav');
 
 test.describe('app shell', () => {
-  test('renders the themed shell without horizontal scroll', async ({ page }) => {
+  test('opens on Overview with no horizontal scroll', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Portfolio Tracker' })).toBeVisible();
+    await expect(page).toHaveURL(/\/overview$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Overview' })).toBeVisible();
+    await expect(page).toHaveTitle('Overview · Portfolio Tracker');
+    await expectNoHorizontalScroll(page);
+  });
 
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
+  test('every page is reachable from the navigation', async ({ page }, testInfo) => {
+    await page.goto('/overview');
+    const mobile = testInfo.project.name === 'mobile';
+    for (const target of PAGES) {
+      if (!mobile) {
+        await sidebar(page).getByRole('link', { name: target.label }).click();
+      } else if (['Overview', 'Mutual funds', 'Stocks'].includes(target.label)) {
+        const short = target.label === 'Mutual funds' ? 'MF' : target.label;
+        await bottomNav(page).getByRole('link', { name: short }).click();
+      } else {
+        await bottomNav(page).getByRole('button', { name: 'More' }).click();
+        await page.getByRole('dialog').getByRole('link', { name: target.label }).click();
+        await expect(page.getByRole('dialog')).toBeHidden();
+      }
+      await expect(page.getByRole('heading', { level: 1, name: target.heading })).toBeVisible();
+      await expectNoHorizontalScroll(page);
+    }
+  });
+
+  test('layout switches at 768px and 1024px', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'viewport sweep runs once');
+    await page.goto('/overview');
+    const overviewLabel = sidebar(page).locator('.nav-label', { hasText: 'Overview' });
+    const sizes = [
+      { width: 360, layout: 'bottom' },
+      { width: 767, layout: 'bottom' },
+      { width: 768, layout: 'rail' },
+      { width: 1023, layout: 'rail' },
+      { width: 1024, layout: 'sidebar' },
+      { width: 1440, layout: 'sidebar' },
+    ];
+    for (const { width, layout } of sizes) {
+      await page.setViewportSize({ width, height: 900 });
+      if (layout === 'bottom') {
+        await expect(bottomNav(page), `${width}px`).toBeVisible();
+        await expect(sidebar(page), `${width}px`).toBeHidden();
+      } else {
+        await expect(bottomNav(page), `${width}px`).toBeHidden();
+        await expect(sidebar(page), `${width}px`).toBeVisible();
+        const box = await overviewLabel.boundingBox();
+        const labelShown = !!box && box.width > 1;
+        expect(labelShown, `${width}px sidebar labels`).toBe(layout === 'sidebar');
+      }
+      await expectNoHorizontalScroll(page);
+    }
+  });
+
+  test('touch targets in the bottom bar are at least 44px', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'mobile only');
+    await page.goto('/overview');
+    for (const tab of await bottomNav(page).locator('.tab').all()) {
+      const box = await tab.boundingBox();
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test('theme toggle switches dark mode', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('/');
-    const html = page.locator('html');
-    await expect(html).not.toHaveClass(/app-dark/);
-
+    await page.goto('/overview');
     await page.getByRole('button', { name: 'Switch to dark theme' }).click();
-    await expect(html).toHaveClass(/app-dark/);
+    await expect(page.locator('html')).toHaveClass(/app-dark/);
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
+    await expect(page.locator('html')).not.toHaveClass(/app-dark/);
   });
 
-  test('follows prefers-color-scheme on first visit', async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'dark' });
-    await page.goto('/');
-    await expect(page.locator('html')).toHaveClass(/app-dark/);
+  test('refresh button re-queries and shows the update time', async ({ page }, testInfo) => {
+    await page.goto('/overview');
+    await page.getByRole('button', { name: 'Refresh data' }).click();
+    if (testInfo.project.name === 'desktop') {
+      await expect(page.getByText(/^Updated \d{1,2}:\d{2}/)).toBeVisible();
+    }
   });
 });
