@@ -3,6 +3,8 @@ import { localSupabase } from './local-supabase';
 
 export const OWNER_EMAIL = 'e2e-owner@example.com';
 export const SIGNOUT_EMAIL = 'e2e-signout@example.com';
+export const WELCOME_EMAIL = 'e2e-welcome@example.com';
+export const SETTINGS_EMAIL = 'e2e-settings@example.com';
 export const PORTFOLIOS = ['Me', 'Wife'];
 
 async function admin(): Promise<APIRequestContext> {
@@ -26,17 +28,49 @@ export async function ensureUser(email: string): Promise<string> {
   return user.id;
 }
 
-/** Resets a user's data to a known state: the given portfolios and no settings. */
-export async function seedPortfolios(ownerId: string, names: string[]): Promise<void> {
+/**
+ * Resets a user's data to a known state: the given portfolios (deleting a portfolio
+ * cascades to its holdings and cards) and no settings. Returns portfolio ids by name.
+ */
+export async function seedPortfolios(
+  ownerId: string,
+  names: string[],
+  inactive: string[] = [],
+): Promise<Record<string, string>> {
   const api = await admin();
   await api.delete('/rest/v1/settings', { params: { owner_id: `eq.${ownerId}` } });
   await api.delete('/rest/v1/portfolios', { params: { owner_id: `eq.${ownerId}` } });
-  if (names.length) {
-    const res = await api.post('/rest/v1/portfolios', {
-      data: names.map((name, i) => ({ owner_id: ownerId, name, sort_order: i + 1 })),
-    });
-    expect(res.ok(), await res.text()).toBe(true);
-  }
+  if (!names.length) return {};
+  const rows = await adminInsert(
+    'portfolios',
+    names.map((name, i) => ({
+      owner_id: ownerId,
+      name,
+      sort_order: i + 1,
+      is_active: !inactive.includes(name),
+    })),
+  );
+  return Object.fromEntries(rows.map((r) => [r['name'], r['id']]));
+}
+
+/** Inserts rows with the service role (bypasses RLS) and returns them. */
+export async function adminInsert(
+  table: string,
+  rows: Record<string, unknown>[],
+): Promise<Record<string, string>[]> {
+  const api = await admin();
+  const res = await api.post(`/rest/v1/${table}`, {
+    data: rows,
+    headers: { Prefer: 'return=representation' },
+  });
+  expect(res.ok(), `${table}: ${await res.text()}`).toBe(true);
+  return res.json();
+}
+
+/** Deletes rows matching PostgREST filters with the service role. */
+export async function adminDelete(table: string, filters: Record<string, string>): Promise<void> {
+  const api = await admin();
+  await api.delete(`/rest/v1/${table}`, { params: filters });
 }
 
 /** Signs in through the real flow: request a magic link, read it from Mailpit, open it. */
