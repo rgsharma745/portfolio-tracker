@@ -1,0 +1,66 @@
+// Six cards: the combined figure leads. Mobile: 2 columns with the combined card full width;
+// from 1024px: 3 columns (two even rows).
+.overview-stats {
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hero {
+    grid-column: 1 / -1;
+
+    @media (min-width: 1024px) {
+      grid-column: auto;
+    }
+  }
+}
+
+.charts {
+  display: grid;
+  gap: 16px;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+
+  &.total {
+    background: var(--app-bg-soft);
+  }
+}
+
+.summary-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.summary-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}

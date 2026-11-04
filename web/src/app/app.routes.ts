@@ -1,8 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
 
-const comingSoon = () => import('./shared/ui/coming-soon-page').then((m) => m.ComingSoonPage);
-
 export const routes: Routes = [
   {
     path: 'login',
@@ -16,7 +14,12 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/layout/shell').then((m) => m.Shell),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
-      { path: 'overview', title: 'Overview', loadComponent: comingSoon },
+      {
+        path: 'overview',
+        title: 'Overview',
+        loadComponent: () =>
+          import('./features/overview/overview-page').then((m) => m.OverviewPage),
+      },
       {
         path: 'mutual-funds',
         title: 'Mutual funds',
