@@ -67,8 +67,8 @@ The owner loads their own data into Supabase. **Do not write an import script or
 **Acceptance:** unauthenticated users only see login; layout switches correctly at 767/768 and 1023/1024 px; no horizontal scroll at 360px.
 
 ## Phase 5: Core calculations (pure functions + tests)
-- [ ] `core/calc/mf.ts`, `stocks.ts`, `rsu.ts`, `savings.ts`, `cards.ts` implementing formulas in `docs/DATA_MODEL.md` ("Calculations" and "Credit card bills"), including portfolio-scoped totals (one portfolio or all active).
-- [ ] Unit tests with fixtures including: missing NAV, stale NAV date, zero units, negative P&L, USD conversion, RSU with partial vesting, card due-date computation (due day before and after bill day, short months), bill status (awaiting, unpaid, partial, paid, overdue), and totals across several portfolios.
+- [x] `core/calc/mf.ts`, `stocks.ts`, `rsu.ts`, `savings.ts`, `cards.ts` implementing formulas in `docs/DATA_MODEL.md` ("Calculations" and "Credit card bills"), including portfolio-scoped totals (one portfolio or all active).
+- [x] Unit tests with fixtures including: missing NAV, stale NAV date, zero units, negative P&L, USD conversion, RSU with partial vesting, card due-date computation (due day before and after bill day, short months), bill status (awaiting, unpaid, partial, paid, overdue), and totals across several portfolios.
 
 **Acceptance:** all calculation tests pass; coverage of `core/calc` at least 90%.
 

@@ -59,6 +59,8 @@ Limitations to accept: a brand-new fund shows 0 day change until its second NAV 
 - **Mark paid:** sets `paid_amount = amount` and `paid_on = today` (editable). A partial payment is just a smaller `paid_amount`.
 - **Balance** = `max(amount - paid_amount, 0)`; "Card dues" on the Overview = sum of balances across all bills (only bills with an amount contribute).
 - **Next due** = the unpaid bill (balance > 0) with the earliest `due_date`. Urgent if it is due within 3 days or overdue.
+- **Earlier months:** the Cards page lists bills from months before the selected one that are not paid, including ones whose amount was never entered.
+- **Cards without a bill day or due day** are skipped by "Create this month's bills" (their due date cannot be computed) and are listed by Settings › Data check.
 
 ## Calculations (single source of truth)
 Let `nav` be the latest NAV and `prev_nav` the previous stored NAV (equal to `nav` if none).
@@ -70,7 +72,9 @@ Let `nav` be the latest NAV and `prev_nav` the previous stored NAV (equal to `na
   - sellable units = `units_vested - units_sold_for_tax`; pending vesting = `units_granted - units_vested`
   - after-tax value USD = `units_granted * price * (1 - tax_rate)` (verify against the sheet in Phase 3; the sheet is the reference)
   - INR values = USD value * USDINR
-- Savings total = sum of balances.
+- Savings total = sum of balances. An account's share (the share bar) = its balance / the sum of positive balances, so an overdrawn account shows 0% and never pushes others past 100%.
+- **Missing prices:** a holding without a NAV or price (or a USD holding without a USDINR rate, when shown in INR) has no value, P&L or day change. Totals leave it out of value, invested and P&L alike (so value - invested = P&L) and report it separately as "N holdings, ₹X invested, not valued" for the UI to flag. RSU units still count; only their values are left out.
+- **Day change in INR** for USD holdings = USD day change * today's USDINR rate; the exchange-rate move itself is not counted.
 - **Portfolio scope:** every total is computed for the selected portfolio, or for all active portfolios when "All" is selected. **The default is All (family total).**
 - Overview combined = MF + Stocks (INR). RSU vested value, Savings and Card dues are shown as separate cards.
 

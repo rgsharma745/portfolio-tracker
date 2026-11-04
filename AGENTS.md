@@ -35,7 +35,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium`)
 - Dev server: `cd web && npm start` (http://localhost:4200)
 - Dev server on the local database: `cd web && npm run db:start` (starts the local Supabase stack in Docker and ensures the user `test@portfolio-tracker.com` with sample portfolios), then `npm run start:local` (http://localhost:4300) and sign in as that user. Stop the stack with `npm run db:stop` (data is kept). `npm run local:user -- other@example.com [--seed]` adds more local users. Magic-link emails land in Mailpit at http://127.0.0.1:54324. Uses `env.local.ts` and the `local` build configuration, so it can run next to `npm start`.
-- Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch)
+- Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
 - E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`)
