@@ -19,9 +19,9 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 ---
 
 ## Phase 0: Prerequisites (Human)
-- [ ] **Human:** Create a GitHub repo (private) and push this folder as the first commit.
-- [ ] **Human:** Create a Supabase project (free). Note project URL, anon key, service role key.
-- [ ] **Human:** In Supabase Auth settings: disable "Allow new users to sign up". Enable email magic link (and optionally Google). Create the owner user manually (Auth > Users > Add user). Copy the user UUID.
+- [x] **Human:** Create a GitHub repo (private) and push this folder as the first commit.
+- [x] **Human:** Create a Supabase project (free). Note project URL, anon key, service role key.
+- [x] **Human:** In Supabase Auth settings: disable "Allow new users to sign up". Enable email magic link (and optionally Google). Create the owner user manually (Auth > Users > Add user). Copy the user UUID.
 - [ ] **Human:** Create a Cloudflare account and a Pages project connected to the GitHub repo (settings are filled in Phase 9).
 - [x] Add `.gitignore` (node_modules, dist, `.env*` except `.env.example`, `scripts/data/`, `__pycache__`, `.angular`).
 
