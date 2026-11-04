@@ -238,7 +238,8 @@ export class CardTemplate {
       position: sticky;
       left: 0;
       z-index: 1;
-      background: var(--app-bg);
+      /* Same background as the row (theme-aware), opaque so scrolled cells pass beneath. */
+      background: inherit;
       white-space: normal;
       min-width: 12rem;
       max-width: 22rem;
