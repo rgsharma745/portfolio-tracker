@@ -35,6 +35,33 @@ jobs:
             echo "::error::Secret-looking key found in build output"; exit 1
           fi
 
+  db:
+    # Applies supabase/migrations to a throwaway local stack and runs the RLS/upsert tests.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements-dev.txt
+      - name: Start local Supabase
+        run: npx -y supabase@3.0.0 start -x realtime,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,studio
+      - run: pip install -r scripts/requirements-dev.txt
+      - run: pytest
+        working-directory: scripts
+      - name: db.types.ts matches the migrations
+        working-directory: web
+        run: |
+          npm ci
+          npm run gen:types
+          git diff --exit-code src/app/core/db.types.ts
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
