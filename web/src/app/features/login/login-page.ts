@@ -47,7 +47,9 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
               <small id="email-error" class="app-down">Enter a valid email address.</small>
             }
             @if (status() === 'error') {
-              <p-message severity="error" text="Could not send the link. Try again in a minute." />
+              <p-message severity="error"
+                >Could not send the link. Try again in a minute.</p-message
+              >
             }
             <button pButton type="submit" [disabled]="status() === 'sending'">
               {{ status() === 'sending' ? 'Sending…' : 'Email me a sign-in link' }}
