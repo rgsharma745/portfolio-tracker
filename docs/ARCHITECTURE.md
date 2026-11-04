@@ -39,7 +39,8 @@ docs/
 - Calculation functions are pure and unit tested; components only render.
 - Responsive shell: `ShellComponent` chooses sidebar vs bottom nav using CSS (media queries) and a `BreakpointService` (signal) for behaviour differences such as table vs card list.
 - Theming: PrimeNG Aura preset, dark mode via `.app-dark` class on `<html>`.
-- Charts: Chart.js via PrimeNG Chart, colors from CSS variables so both themes work.
+- Charts: Chart.js directly through a shared `app-chart` component (register only the controllers used, so the bundle stays small); colors from CSS variables so both themes work. PrimeNG Chart is not used because it is deprecated in favor of paid PRO Charts.
+- Tables: feature pages use the shared `DataTable` wrapper around PrimeNG Table, so the table implementation can be swapped in one place.
 
 ## Jobs
 | Job | Schedule | Writes | Notes |
@@ -59,3 +60,4 @@ Every job records a row in `job_runs`.
 - Static SPA (no SSR) to stay free and simple.
 - No custom API: RLS is the authorization layer.
 - Python for jobs: parsing and data scripts are simpler there; frontend stays pure TypeScript.
+- PrimeNG kept under its free Community License; Chart.js used directly instead of PrimeNG Chart (moving to PRO).

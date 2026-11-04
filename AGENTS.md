@@ -9,10 +9,15 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
 - PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities. PrimeNG is under the PrimeUI license (not MIT): the owner uses a free Community License key, supplied as `NG_APP_PRIMEUI_LICENSE` and renewed yearly
 - Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
-- Charts: PrimeNG Chart (Chart.js)
+- Charts: Chart.js used directly through the shared `app-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
 - Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
 - Hosting: Cloudflare Pages (static build, no SSR)
 - Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
+
+### PrimeNG licensing guards
+- Do not use PrimeNG components that are deprecated in favor of PrimeUI PRO (paid), currently Chart and Editor. Check the component's `@deprecated` notes before adopting it.
+- Feature pages use the shared `DataTable` wrapper (`web/src/app/shared/`), never PrimeNG `Table` directly, so the table can be replaced in one place if it ever moves to PRO. Simple primitives (buttons, inputs, tags) may be used directly.
+- Stay on the current PrimeNG major. Before upgrading to a new major, read its release notes for components moving to PRO. Dependency bots must not auto-merge PrimeNG majors.
 
 Use the latest stable versions and check the official docs for the installed version before using an API. Do not rely on memory for PrimeNG or Angular APIs that change between majors.
 

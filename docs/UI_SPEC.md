@@ -93,7 +93,7 @@ A calm, institutional finance look. Layout and density follow this spec; the loo
 - **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
 - **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
-- Charts use theme CSS variables so they follow dark mode.
+- Charts (Chart.js via the shared `app-chart` component) use theme CSS variables so they follow dark mode.
 
 ## Responsive test matrix (Playwright)
 Run every page at 360x740, 390x844, 768x1024, 1024x768, 1440x900. Assert: no horizontal page scroll, bottom nav visible only below 768px, sidebar visible only at 1024px and above, primary stat cards visible without scrolling on the Overview page at 390x844.
