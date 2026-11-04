@@ -21,7 +21,7 @@
 - `StatCard` (label, value, optional delta with color and sign)
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, today, tap to open details/edit)
-- `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below)
+- `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used.
 - `PortfolioSwitcher` (All, then one entry per active portfolio; segmented control or dropdown on desktop, a chip row or bottom sheet on mobile; persisted in settings; default All)
 - `PageHeader` (title, last-updated time, refresh button)
 - States: skeleton loading, empty state with a call to action, error state with retry
@@ -34,8 +34,8 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- Stat cards (2 columns on mobile, 4 on desktop): Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, Card dues (red if > 0), Combined (MF + Stocks) with today.
-- Allocation donut (MF, Stocks, RSU vested, Savings).
+- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, Card dues (red if > 0). Mobile: 2 columns with Combined full width; from 1024px: 3 columns, so the six cards make two even rows.
+- Allocation (MF, Stocks, RSU vested, Savings) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All.
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, Today). On mobile, becomes stacked rows.
 
@@ -93,7 +93,7 @@ A calm, institutional finance look. Layout and density follow this spec; the loo
 - **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
 - **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
-- Charts (Chart.js via the shared `app-chart` component) use theme CSS variables so they follow dark mode.
+- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..4` in a fixed order (blue, orange, aqua, yellow; light and dark steps), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
 
 ## Responsive test matrix (Playwright)
 Run every page at 360x740, 390x844, 768x1024, 1024x768, 1440x900. Assert: no horizontal page scroll, bottom nav visible only below 768px, sidebar visible only at 1024px and above, primary stat cards visible without scrolling on the Overview page at 390x844.

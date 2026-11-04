@@ -9,7 +9,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
 - PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities. PrimeNG is under the PrimeUI license (not MIT): the owner uses a free Community License key, supplied as `NG_APP_PRIMEUI_LICENSE` and renewed yearly
 - Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
-- Charts: Chart.js used directly through the shared `app-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
+- Charts: Chart.js used directly through the shared `app-line-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
 - Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
 - Hosting: Cloudflare Pages (static build, no SSR)
 - Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
@@ -34,7 +34,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 ## Commands (fill in as they are created, keep this list current)
 - Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium`)
 - Dev server: `cd web && npm start` (http://localhost:4200)
-- Dev server on the local database: `cd web && npm run db:start` (starts the local Supabase stack in Docker and ensures the user `test@portfolio-tracker.com` with sample portfolios), then `npm run start:local` (http://localhost:4300) and sign in as that user. Stop the stack with `npm run db:stop` (data is kept). `npm run local:user -- other@example.com [--seed]` adds more local users. Magic-link emails land in Mailpit at http://127.0.0.1:54324. Uses `env.local.ts` and the `local` build configuration, so it can run next to `npm start`.
+- Dev server on the local database: `cd web && npm run db:start` (starts the local Supabase stack in Docker and ensures the user `test@portfolio-tracker.com` with sample portfolios), then `npm run start:local` (http://localhost:4300) and sign in as that user. Stop the stack with `npm run db:stop` (data is kept). `npm run local:user -- other@example.com [--seed]` adds more local users. Magic-link emails land in Mailpit at http://127.0.0.1:54324. Uses `env.local.ts` and the `local` build configuration, so it can run next to `npm start`. With `--seed` (as `db:start` does) the user also gets sample holdings, cards, bills, prices and 200 days of history, added only if that user has none.
 - Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
 - E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`

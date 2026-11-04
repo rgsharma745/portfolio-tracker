@@ -2,7 +2,9 @@
 
 You load your own data. Three options: the app's forms, Supabase's table editor (CSV import), or the SQL editor. Load in this order because later tables point to earlier ones.
 
-**Portfolios are easiest in the app.** On first sign-in the app asks you to create your first portfolio; add, rename, reorder or deactivate more in Settings › Portfolios. Rows created in the app get the right `owner_id` automatically. (Forms for holdings, savings and cards arrive with their pages; until then use CSV or SQL below.)
+**The app is the easiest way.** On first sign-in it asks you to create your first portfolio (more in Settings › Portfolios). Then use **Add fund**, **Add stock**, **Add grant**, **Add account** and **Add card** on each page; rows created in the app get the right `owner_id` automatically. On the Cards page, **Create this month's bills** adds a bill for every card that has a statement day and due day; enter each amount when the statement arrives and use **Mark paid**. CSV or SQL (below) is quicker for loading many rows at once.
+
+For stocks, enter either the amount invested or the average price; the app works out the other from the quantity. RSU tax rates are entered as a percentage (30 for 30%).
 
 **Try it locally first** if you like: `cd web && npm run db:start && npm run start:local` gives you a throwaway copy of the app and database on your machine (see AGENTS.md).
 
