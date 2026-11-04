@@ -5,17 +5,31 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeMode, ThemeService } from '../../core/theme/theme.service';
 import { DataCheckSection } from './data-check-section';
+import { ExportSection } from './export-section';
+import { JobsSection } from './jobs-section';
 import { PortfoliosSection } from './portfolios-section';
+import { PricesSection } from './prices-section';
 
-/** Settings: portfolios, data check, theme and account (price overrides etc. in Phase 6). */
+/** Settings: portfolios, data check, manual prices, job runs, theme, export and account. */
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, ButtonModule, SelectButtonModule, PortfoliosSection, DataCheckSection],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    SelectButtonModule,
+    PortfoliosSection,
+    DataCheckSection,
+    PricesSection,
+    JobsSection,
+    ExportSection,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col gap-4">
       <app-portfolios-section />
       <app-data-check-section />
+      <app-prices-section />
+      <app-jobs-section />
       <section class="app-card flex flex-col gap-3">
         <h2 class="section-title" id="theme-label">Theme</h2>
         <p-selectbutton
@@ -28,6 +42,7 @@ import { PortfoliosSection } from './portfolios-section';
           ariaLabelledBy="theme-label"
         />
       </section>
+      <app-export-section />
       <section class="app-card flex flex-col gap-3">
         <h2 class="section-title">Account</h2>
         <p class="m-0 text-sm">Signed in as {{ auth.user()?.email }}</p>
