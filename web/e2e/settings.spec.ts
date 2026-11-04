@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { type Page, expect, test } from '@playwright/test';
 import {
   SETTINGS_EMAIL,
   adminDelete,
   adminInsert,
+  adminUpsert,
   ensureUser,
   expectNoHorizontalScroll,
   seedPortfolios,
@@ -82,7 +84,7 @@ test('data check lists what cannot be valued', async ({ page }) => {
   const ids = await seedPortfolios(ownerId, ['Me', 'Old'], ['Old']);
   const me = ids['Me'];
   await adminDelete('job_runs', { job: 'eq.fetch_nav' });
-  await adminInsert('mf_nav_latest', [{ scheme_code: 'e2e-100', nav: 10, nav_date: '2026-11-03' }]);
+  await adminUpsert('mf_nav_latest', [{ scheme_code: 'e2e-100', nav: 10, nav_date: '2026-11-03' }]);
   await adminInsert('job_runs', [
     { job: 'fetch_nav', status: 'success', message: '{"unmatched":["e2e-404"]}' },
   ]);
@@ -120,4 +122,63 @@ test('data check lists what cannot be valued', async ({ page }) => {
 
   await adminDelete('job_runs', { job: 'eq.fetch_nav' });
   await adminDelete('mf_nav_latest', { scheme_code: 'eq.e2e-100' });
+});
+
+test('manual prices, job runs and data export', async ({ page }) => {
+  const ownerId = await ensureUser(SETTINGS_EMAIL);
+  const ids = await seedPortfolios(ownerId, ['Me']);
+  await adminDelete('stock_price_latest', { symbol: 'eq.E2EMANUAL' });
+  await adminDelete('job_runs', { job: 'eq.fetch_nav' });
+  await adminInsert('job_runs', [
+    {
+      job: 'fetch_nav',
+      status: 'success',
+      message: '{"updated":7,"unmatched":["1"]}',
+      finished_at: new Date().toISOString(),
+    },
+  ]);
+  await adminInsert('stock_holdings', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      market: 'US',
+      symbol: 'E2EMANUAL',
+      currency: 'USD',
+      quantity: 1,
+      invested: 10,
+    },
+  ]);
+
+  await signInWithMagicLink(page, SETTINGS_EMAIL);
+  await page.goto('/settings');
+
+  // Job runs: the NAV job's JSON message is summarised; jobs that never ran say so
+  await expect(page.getByTestId('job-fetch_nav')).toContainText('7 updated, 1 not found');
+  await expect(page.getByTestId('job-backup')).toContainText('Not run yet');
+
+  // Manual price: validation, then a USD price for a US stock
+  const prices = page.getByRole('region', { name: 'Manual prices' });
+  await prices.getByLabel('Symbol').fill('E2EMANUAL');
+  await prices.getByRole('button', { name: 'Set manual price' }).click();
+  await expect(prices.getByText('Enter the price.')).toBeVisible();
+  await prices.getByLabel('Price ($)').fill('12.5');
+  await prices.getByRole('button', { name: 'Set manual price' }).click();
+  const list = prices.getByRole('list', { name: 'Manual prices' });
+  await expect(list).toContainText('E2EMANUAL');
+  await expect(list).toContainText('$12.50');
+  await expectNoHorizontalScroll(page);
+
+  // Export downloads a JSON file with the owner's tables
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export all data (JSON)' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^portfolio-export-\d{4}-\d{2}-\d{2}\.json$/);
+  const data = JSON.parse(readFileSync(await file.path(), 'utf8'));
+  expect(data.tables.stock_holdings[0].symbol).toBe('E2EMANUAL');
+  expect(Object.keys(data.tables)).toContain('card_bills');
+
+  // Remove the manual price: the row goes, so the jobs take the symbol back
+  await prices.getByRole('button', { name: 'Remove manual price for E2EMANUAL' }).click();
+  await expect(prices.getByRole('list', { name: 'Manual prices' })).toBeHidden();
+  await adminDelete('job_runs', { job: 'eq.fetch_nav' });
 });

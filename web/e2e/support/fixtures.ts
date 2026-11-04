@@ -95,10 +95,19 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
   const mail = await request.newContext({ baseURL: localSupabase().mailpitUrl });
   await mail.delete('/api/v1/messages', { data: {} });
 
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByRole('button', { name: 'Email me a sign-in link' }).click();
-  await expect(page.getByText('Check your email.')).toBeVisible();
+  // Supabase sends one email per address per second, so back-to-back sign-ins can be
+  // refused; retry on a freshly loaded page so the result is always the new attempt's.
+  const sent = page.getByText('Check your email.');
+  const refused = page.getByText('Could not send the link');
+  for (let attempt = 0; ; attempt++) {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(email);
+    await page.getByRole('button', { name: 'Email me a sign-in link' }).click();
+    await expect(sent.or(refused)).toBeVisible();
+    if (await sent.isVisible()) break;
+    if (attempt === 2) throw new Error(`Supabase would not send a magic link to ${email}`);
+    await page.waitForTimeout(1500);
+  }
 
   let link = '';
   await expect
