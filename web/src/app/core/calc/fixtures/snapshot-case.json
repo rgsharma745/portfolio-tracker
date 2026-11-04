@@ -1,0 +1,129 @@
+{
+  "description": "Shared by core/calc/snapshot-parity.spec.ts and scripts/tests/test_calc.py: the daily snapshot job and the app must compute the same totals.",
+  "today": "2026-11-04",
+  "portfolios": [
+    { "id": "p-me", "owner_id": "o", "is_active": true },
+    { "id": "p-wife", "owner_id": "o", "is_active": true },
+    { "id": "p-old", "owner_id": "o", "is_active": false }
+  ],
+  "mf_nav_latest": [
+    { "scheme_code": "100", "nav": 50, "nav_date": "2026-11-03", "prev_nav": 49 },
+    { "scheme_code": "200", "nav": 20, "nav_date": "2026-10-20", "prev_nav": null }
+  ],
+  "mf_holdings": [
+    { "portfolio_id": "p-me", "scheme_code": "100", "units": 100, "invested": 4000 },
+    { "portfolio_id": "p-me", "scheme_code": "999", "units": 10, "invested": 100 },
+    { "portfolio_id": "p-me", "scheme_code": null, "units": 7, "invested": 70 },
+    { "portfolio_id": "p-wife", "scheme_code": "200", "units": 20, "invested": 500 },
+    { "portfolio_id": "p-wife", "scheme_code": " 100 ", "units": 5.5, "invested": 250 },
+    { "portfolio_id": "p-old", "scheme_code": "100", "units": 1000, "invested": 1 }
+  ],
+  "stock_price_latest": [
+    { "symbol": "INFY", "close": 1500, "price_date": "2026-11-04", "prev_close": 1480 },
+    { "symbol": "SMPL", "close": 60, "price_date": "2026-11-03", "prev_close": 62 }
+  ],
+  "fx_latest": [{ "pair": "USDINR", "rate": 85, "rate_date": "2026-11-04", "prev_rate": 84.5 }],
+  "stock_holdings": [
+    {
+      "portfolio_id": "p-me",
+      "market": "IN",
+      "symbol": "INFY",
+      "currency": "INR",
+      "quantity": 10,
+      "invested": 14000
+    },
+    {
+      "portfolio_id": "p-me",
+      "market": "US",
+      "symbol": "SMPL",
+      "currency": "USD",
+      "quantity": 10,
+      "invested": 700
+    },
+    {
+      "portfolio_id": "p-me",
+      "market": "IN",
+      "symbol": "NOPRICE",
+      "currency": "INR",
+      "quantity": 3,
+      "invested": 300
+    },
+    {
+      "portfolio_id": "p-wife",
+      "market": "US",
+      "symbol": "SMPL",
+      "currency": "USD",
+      "quantity": 2.5,
+      "invested": 150
+    }
+  ],
+  "rsu_grants": [
+    {
+      "portfolio_id": "p-me",
+      "symbol": "SMPL",
+      "units_granted": 100,
+      "units_vested": 40,
+      "units_sold_for_tax": 12,
+      "tax_rate": 0.3
+    },
+    {
+      "portfolio_id": "p-wife",
+      "symbol": "NOPRICE",
+      "units_granted": 10,
+      "units_vested": 10,
+      "units_sold_for_tax": 0,
+      "tax_rate": 0.3
+    }
+  ],
+  "savings_accounts": [
+    { "id": "s1", "portfolio_id": "p-me", "balance": 300000 },
+    { "id": "s2", "portfolio_id": "p-me", "balance": -500 },
+    { "id": "s3", "portfolio_id": "p-wife", "balance": 1234.56 }
+  ],
+  "card_bills": [
+    {
+      "portfolio_id": "p-me",
+      "statement_month": "2026-10-01",
+      "due_date": "2026-11-03",
+      "amount": 10000,
+      "paid_amount": 4000
+    },
+    {
+      "portfolio_id": "p-me",
+      "statement_month": "2026-11-01",
+      "due_date": "2026-12-03",
+      "amount": null,
+      "paid_amount": 0
+    },
+    {
+      "portfolio_id": "p-me",
+      "statement_month": "2026-09-01",
+      "due_date": "2026-10-03",
+      "amount": 2000,
+      "paid_amount": 3000
+    },
+    {
+      "portfolio_id": "p-wife",
+      "statement_month": "2026-10-01",
+      "due_date": "2026-11-08",
+      "amount": 1500,
+      "paid_amount": 0
+    }
+  ],
+  "expected": {
+    "p-me": {
+      "mf_value": 5000,
+      "stocks_value": 66000,
+      "rsu_vested_value": 204000,
+      "savings": 299500,
+      "card_dues": 6000
+    },
+    "p-wife": {
+      "mf_value": 675,
+      "stocks_value": 12750,
+      "rsu_vested_value": 0,
+      "savings": 1234.56,
+      "card_dues": 1500
+    }
+  }
+}

@@ -1,0 +1,118 @@
+"""Portfolio totals for the daily snapshot: the same formulas as web/src/app/core/calc.
+
+Kept in step with the TypeScript by a shared fixture
+(web/src/app/core/calc/fixtures/snapshot-case.json) that both test suites check.
+Money uses Decimal; amounts are rounded to paise only when stored.
+
+Rules (docs/DATA_MODEL.md): a holding without a price, or a USD holding without a USDINR
+rate, is left out of value; RSU value is vested units x price x USDINR; savings are summed;
+card dues are the sum of max(amount - paid, 0) over bills with an amount.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
+
+Row = Mapping[str, Any]
+ZERO = Decimal(0)
+PAISE = Decimal("0.01")
+
+
+def dec(value: Any) -> Decimal:
+    """Decimal from a JSON number or string, via str to avoid float noise."""
+    return ZERO if value is None else Decimal(str(value))
+
+
+@dataclass(frozen=True)
+class MarketData:
+    navs: dict[str, Decimal]
+    prices: dict[str, Decimal]
+    usd_inr: Decimal | None
+
+    @classmethod
+    def from_rows(cls, navs: Iterable[Row], prices: Iterable[Row], fx: Iterable[Row]) -> MarketData:
+        rate = next((dec(r["rate"]) for r in fx if r["pair"] == "USDINR"), None)
+        return cls(
+            navs={str(r["scheme_code"]): dec(r["nav"]) for r in navs},
+            prices={str(r["symbol"]): dec(r["close"]) for r in prices},
+            usd_inr=rate,
+        )
+
+
+@dataclass(frozen=True)
+class SnapshotValues:
+    mf_value: Decimal
+    stocks_value: Decimal
+    rsu_vested_value: Decimal
+    savings: Decimal
+    card_dues: Decimal
+
+    def rounded(self) -> dict[str, str]:
+        """For storage: numeric(18,2) as strings."""
+        return {
+            k: str(v.quantize(PAISE, rounding=ROUND_HALF_UP)) for k, v in self.__dict__.items()
+        }
+
+
+def _in(rows: Iterable[Row], portfolio_id: str) -> list[Row]:
+    return [r for r in rows if r["portfolio_id"] == portfolio_id]
+
+
+def mf_value(holdings: Iterable[Row], market: MarketData) -> Decimal:
+    total = ZERO
+    for h in holdings:
+        code = (h.get("scheme_code") or "").strip()
+        nav = market.navs.get(code) if code else None
+        if nav is not None:
+            total += dec(h["units"]) * nav
+    return total
+
+
+def stocks_value_inr(holdings: Iterable[Row], market: MarketData) -> Decimal:
+    total = ZERO
+    for h in holdings:
+        price = market.prices.get(h["symbol"])
+        if price is None:
+            continue
+        value = dec(h["quantity"]) * price
+        if h["currency"] == "USD":
+            if market.usd_inr is None:
+                continue
+            value *= market.usd_inr
+        total += value
+    return total
+
+
+def rsu_vested_inr(grants: Iterable[Row], market: MarketData) -> Decimal:
+    if market.usd_inr is None:
+        return ZERO
+    total = ZERO
+    for g in grants:
+        price = market.prices.get(g["symbol"])
+        if price is not None:
+            total += dec(g["units_vested"]) * price * market.usd_inr
+    return total
+
+
+def card_dues(bills: Iterable[Row]) -> Decimal:
+    return sum(
+        (max(dec(b["amount"]) - dec(b["paid_amount"]), ZERO) for b in bills if b["amount"] is not None),
+        ZERO,
+    )
+
+
+def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portfolio_id: str) -> SnapshotValues:
+    """
+    Totals for one portfolio. `data` holds the owner tables: mf_holdings, stock_holdings,
+    rsu_grants, savings_accounts and card_bills (each bill carrying its card's portfolio_id).
+    """
+    return SnapshotValues(
+        mf_value=mf_value(_in(data["mf_holdings"], portfolio_id), market),
+        stocks_value=stocks_value_inr(_in(data["stock_holdings"], portfolio_id), market),
+        rsu_vested_value=rsu_vested_inr(_in(data["rsu_grants"], portfolio_id), market),
+        savings=sum((dec(a["balance"]) for a in _in(data["savings_accounts"], portfolio_id)), ZERO),
+        card_dues=card_dues(_in(data["card_bills"], portfolio_id)),
+    )
