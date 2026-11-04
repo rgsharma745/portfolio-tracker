@@ -17,7 +17,11 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       { path: 'overview', title: 'Overview', loadComponent: comingSoon },
-      { path: 'mutual-funds', title: 'Mutual funds', loadComponent: comingSoon },
+      {
+        path: 'mutual-funds',
+        title: 'Mutual funds',
+        loadComponent: () => import('./features/mutual-funds/mf-page').then((m) => m.MfPage),
+      },
       { path: 'stocks', title: 'Stocks', loadComponent: comingSoon },
       { path: 'rsu', title: 'RSU', loadComponent: comingSoon },
       { path: 'savings', title: 'Savings', loadComponent: comingSoon },

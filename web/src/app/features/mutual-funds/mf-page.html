@@ -1,0 +1,266 @@
+@if (!holdings.loaded()) {
+  @if (holdings.error()) {
+    <app-error-state title="Could not load your funds" (retry)="holdings.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="pi-chart-line"
+    title="No mutual funds yet"
+    message="Add a fund with its units and the amount you invested. NAVs update every night."
+    actionLabel="Add fund"
+    (action)="add()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="stat-grid">
+      <app-stat-card label="Current value" [value]="totals().value" [compact]="bp.isMobile()" />
+      <app-stat-card label="Invested" [value]="totals().invested" [compact]="bp.isMobile()" />
+      <app-stat-card
+        label="Total P&L"
+        [value]="totals().pl"
+        [percent]="totals().plPercent"
+        [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Today"
+        [value]="totals().dayChange"
+        [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+    </div>
+    @if (totals().unpriced) {
+      <p class="note">
+        {{ totals().unpriced }} {{ totals().unpriced === 1 ? 'fund has' : 'funds have' }} no NAV yet
+        ({{ totals().unpricedInvested | money }} invested) and
+        {{ totals().unpriced === 1 ? 'is' : 'are' }} left out of these totals. See
+        <a routerLink="/settings">Settings › Data check</a>.
+      </p>
+    }
+
+    <div class="toolbar">
+      <p-iconfield class="toolbar-search">
+        <p-inputicon class="pi pi-search" />
+        <input
+          pInputText
+          type="search"
+          placeholder="Search funds"
+          aria-label="Search funds"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+      </p-iconfield>
+      <p-selectbutton
+        [options]="plFilters"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="plFilter()"
+        (ngModelChange)="plFilter.set($event)"
+        [allowEmpty]="false"
+        ariaLabelledBy="mf-filter-label"
+      />
+      <span id="mf-filter-label" class="visually-hidden">Show</span>
+      @if (bp.isMobile()) {
+        <p-select
+          [options]="sortOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="sort().key"
+          (ngModelChange)="setSortKey($event)"
+          ariaLabel="Sort by"
+        />
+        <button
+          pButton
+          type="button"
+          iconOnly
+          text
+          severity="secondary"
+          [attr.aria-label]="sort().order === 1 ? 'Sort descending' : 'Sort ascending'"
+          (click)="flipSort()"
+        >
+          <i
+            [class]="sort().order === 1 ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down'"
+            aria-hidden="true"
+          ></i>
+        </button>
+      }
+      <div class="toolbar-end">
+        <button pButton type="button" severity="secondary" (click)="exportCsv()">
+          <i class="pi pi-download" aria-hidden="true"></i>
+          Export CSV
+        </button>
+        <button pButton type="button" (click)="add()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Add fund
+        </button>
+      </div>
+    </div>
+
+    <app-data-table
+      label="Mutual fund holdings"
+      [rows]="visible()"
+      [columns]="columns"
+      [footer]="footer()"
+      [sort]="sort()"
+      (sortChange)="sort.set($event)"
+      emptyMessage="No funds match."
+      minWidth="64rem"
+    >
+      <ng-template appCell="name" let-row>
+        <div class="name-cell">
+          <span>{{ row.name }}</span>
+          <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+        </div>
+      </ng-template>
+      <ng-template appCell="nav" let-row>
+        <span class="app-num">{{ nav(row.nav) }}</span>
+      </ng-template>
+      <ng-template appCell="actions" let-row>
+        <div class="row-actions">
+          <button
+            pButton
+            type="button"
+            iconOnly
+            rounded
+            text
+            severity="secondary"
+            [attr.aria-label]="'Edit ' + row.name"
+            (click)="edit(row)"
+          >
+            <i class="pi pi-pencil" aria-hidden="true"></i>
+          </button>
+        </div>
+      </ng-template>
+      <ng-template appCard let-row>
+        <app-holding-card
+          [title]="row.name"
+          [value]="row.value"
+          [pl]="row.pl"
+          [plPercent]="row.plPercent"
+          [dayChange]="row.dayChange"
+          [meta]="row.navDate ? 'NAV ' + date(row.navDate) : ''"
+          (open)="edit(row)"
+        >
+          <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
+        </app-holding-card>
+      </ng-template>
+    </app-data-table>
+  </div>
+}
+
+<ng-template #tags let-row>
+  <span class="name-tags">
+    @if (showPortfolio()) {
+      <p-tag [value]="row.portfolio" severity="secondary" />
+    }
+    @if (row.value === null) {
+      <p-tag value="No NAV" severity="warn" />
+    } @else if (row.stale) {
+      <p-tag value="Stale" severity="warn" [title]="staleTitle(row)" />
+    }
+  </span>
+</ng-template>
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialog.isEdit() ? 'Edit fund' : 'Add fund'"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this fund?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="field">
+    <label for="mf-portfolio">Portfolio</label>
+    <p-select
+      inputId="mf-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="dialog.form().portfolioId"
+      (ngModelChange)="dialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (dialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="mf-name">Fund name</label>
+    <input
+      pInputText
+      id="mf-name"
+      autocomplete="off"
+      [ngModel]="dialog.form().schemeName"
+      (ngModelChange)="dialog.set('schemeName', $event)"
+    />
+    @if (dialog.errors().schemeName; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="mf-code">AMFI scheme code</label>
+    <input
+      pInputText
+      id="mf-code"
+      inputmode="numeric"
+      autocomplete="off"
+      aria-describedby="mf-code-help"
+      [ngModel]="dialog.form().schemeCode"
+      (ngModelChange)="dialog.set('schemeCode', $event)"
+    />
+    <p class="field-help" id="mf-code-help">
+      The number AMFI uses for this exact plan (e.g. Direct Growth). Find it on amfiindia.com under
+      NAV, or on mfapi.in. NAVs update nightly once it is set.
+    </p>
+    @if (dialog.errors().schemeCode; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="mf-folio">Folio (optional)</label>
+      <input
+        pInputText
+        id="mf-folio"
+        autocomplete="off"
+        [ngModel]="dialog.form().folio"
+        (ngModelChange)="dialog.set('folio', $event)"
+      />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="mf-units">Units</label>
+      <input
+        pInputText
+        id="mf-units"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().units"
+        (ngModelChange)="dialog.set('units', $event)"
+      />
+      @if (dialog.errors().units; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="mf-invested">Invested (₹)</label>
+      <input
+        pInputText
+        id="mf-invested"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().invested"
+        (ngModelChange)="dialog.set('invested', $event)"
+      />
+      @if (dialog.errors().invested; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+</app-edit-dialog>
