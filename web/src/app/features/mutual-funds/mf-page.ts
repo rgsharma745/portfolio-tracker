@@ -3,11 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { localIsoDate, sumValuations } from '../../core/calc/common';
 import { mfTotals } from '../../core/calc/mf';
@@ -26,16 +23,11 @@ import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorState } from '../../shared/ui/error-state';
 import { HoldingCard } from '../../shared/ui/holding-card';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
+import { ListToolbar } from '../../shared/ui/list-toolbar';
 import { MoneyPipe } from '../../shared/ui/money.pipe';
 import { StatCard } from '../../shared/ui/stat-card';
 import { MfForm, emptyMfForm, mfFormFrom, validateMfForm } from './mf-form';
 import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
-
-export const PL_FILTERS: { label: string; value: PlFilter }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Gainers', value: 'gainers' },
-  { label: 'Losers', value: 'losers' },
-];
 
 /** Mutual funds: totals, search/sort/filter, table or cards, add/edit/delete, CSV export. */
 @Component({
@@ -45,11 +37,8 @@ export const PL_FILTERS: { label: string; value: PlFilter }[] = [
     FormsModule,
     RouterLink,
     ButtonModule,
-    IconFieldModule,
-    InputIconModule,
     InputTextModule,
     SelectModule,
-    SelectButtonModule,
     TagModule,
     CardTemplate,
     CellTemplate,
@@ -59,6 +48,7 @@ export const PL_FILTERS: { label: string; value: PlFilter }[] = [
     ErrorState,
     HoldingCard,
     ListSkeleton,
+    ListToolbar,
     MoneyPipe,
     StatCard,
   ],
@@ -74,7 +64,6 @@ export class MfPage {
   protected readonly search = signal('');
   protected readonly plFilter = signal<PlFilter>('all');
   protected readonly sort = signal<Sort>({ key: 'value', order: -1 });
-  protected readonly plFilters = PL_FILTERS;
   protected readonly sortOptions = [
     { label: 'Current value', value: 'value' },
     { label: 'Name', value: 'name' },
@@ -150,14 +139,6 @@ export class MfPage {
 
   protected staleTitle(row: MfRow): string {
     return `NAV from ${formatDate(row.navDate)}: older than 4 days`;
-  }
-
-  protected setSortKey(key: string): void {
-    this.sort.set({ key, order: key === 'name' ? 1 : -1 });
-  }
-
-  protected flipSort(): void {
-    this.sort.update((s) => ({ ...s, order: s.order === 1 ? -1 : 1 }));
   }
 
   protected add(): void {

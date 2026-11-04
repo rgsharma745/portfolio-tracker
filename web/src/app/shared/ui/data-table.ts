@@ -33,6 +33,8 @@ export interface Column<T> {
   hiddenHeader?: boolean;
   /** Right-align a custom column (numeric types are right-aligned already). */
   alignEnd?: boolean;
+  /** How the totals row formats this column, when it differs from `type` (e.g. custom). */
+  footerType?: ColumnType;
 }
 
 /** `<ng-template appCell="key" let-row>` overrides how one column's cells render. */
@@ -119,10 +121,10 @@ export class CardTemplate {
                   <td [class.num]="isNumeric(col)">
                     @if (first && valueOf(totals, col) === undefined) {
                       Total
-                    } @else if (col.type !== 'custom' && valueOf(totals, col) !== undefined) {
+                    } @else if (footerColumn(col); as footerCol) {
                       <ng-container
                         [ngTemplateOutlet]="plainCell"
-                        [ngTemplateOutletContext]="{ $implicit: totals, col: col }"
+                        [ngTemplateOutletContext]="{ $implicit: totals, col: footerCol }"
                       />
                     }
                   </td>
@@ -290,6 +292,14 @@ export class DataTable<T extends object> {
 
   protected valueOf(row: object, col: Column<T>): unknown {
     return (row as Record<string, unknown>)[col.key];
+  }
+
+  /** The column as the totals row formats it, or null when it has no total. */
+  protected footerColumn(col: Column<T>): Column<T> | null {
+    const type = col.footerType ?? col.type;
+    const totals = this.footer();
+    if (!totals || type === 'custom' || totals[col.key] === undefined) return null;
+    return { ...col, type };
   }
 
   protected currencyOf(row: T, col: Column<T>): Currency {

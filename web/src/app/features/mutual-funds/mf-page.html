@@ -40,63 +40,16 @@
       </p>
     }
 
-    <div class="toolbar">
-      <p-iconfield class="toolbar-search">
-        <p-inputicon class="pi pi-search" />
-        <input
-          pInputText
-          type="search"
-          placeholder="Search funds"
-          aria-label="Search funds"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-        />
-      </p-iconfield>
-      <p-selectbutton
-        [options]="plFilters"
-        optionLabel="label"
-        optionValue="value"
-        [ngModel]="plFilter()"
-        (ngModelChange)="plFilter.set($event)"
-        [allowEmpty]="false"
-        ariaLabelledBy="mf-filter-label"
-      />
-      <span id="mf-filter-label" class="visually-hidden">Show</span>
-      @if (bp.isMobile()) {
-        <p-select
-          [options]="sortOptions"
-          optionLabel="label"
-          optionValue="value"
-          [ngModel]="sort().key"
-          (ngModelChange)="setSortKey($event)"
-          ariaLabel="Sort by"
-        />
-        <button
-          pButton
-          type="button"
-          iconOnly
-          text
-          severity="secondary"
-          [attr.aria-label]="sort().order === 1 ? 'Sort descending' : 'Sort ascending'"
-          (click)="flipSort()"
-        >
-          <i
-            [class]="sort().order === 1 ? 'pi pi-sort-amount-up-alt' : 'pi pi-sort-amount-down'"
-            aria-hidden="true"
-          ></i>
-        </button>
-      }
-      <div class="toolbar-end">
-        <button pButton type="button" severity="secondary" (click)="exportCsv()">
-          <i class="pi pi-download" aria-hidden="true"></i>
-          Export CSV
-        </button>
-        <button pButton type="button" (click)="add()">
-          <i class="pi pi-plus" aria-hidden="true"></i>
-          Add fund
-        </button>
-      </div>
-    </div>
+    <app-list-toolbar
+      searchLabel="Search funds"
+      addLabel="Add fund"
+      [sortOptions]="sortOptions"
+      [(search)]="search"
+      [(plFilter)]="plFilter"
+      [(sort)]="sort"
+      (add)="add()"
+      (export)="exportCsv()"
+    />
 
     <app-data-table
       label="Mutual fund holdings"
