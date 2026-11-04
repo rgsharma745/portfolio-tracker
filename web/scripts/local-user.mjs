@@ -1,11 +1,13 @@
 // Creates a user in the LOCAL Supabase stack so you can sign in to `npm run start:local`.
 // Usage: npm run local:user -- you@example.com [--seed]
-//   --seed  also creates two sample portfolios ("Me", "Wife") for that user.
+//   --seed  also creates two sample portfolios ("Me", "Wife") with sample holdings, cards and
+//           bills (only if the user has no funds yet), plus sample latest prices.
 // Sign-up is disabled, so users can only be created through the admin API. This script only
 // ever talks to the local stack (keys come from `supabase status`), never to production.
 import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { seedHoldings } from './local-seed.mjs';
 
 const email = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const seed = process.argv.includes('--seed');
@@ -60,6 +62,7 @@ if (seed) {
   });
   if (!res.ok) throw new Error(`Could not seed portfolios: ${await res.text()}`);
   console.log('Seeded portfolios: Me, Wife');
+  if (await seedHoldings(api, user.id)) console.log('Seeded sample holdings, cards and bills');
 }
 
 console.log(`
