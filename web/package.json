@@ -8,6 +8,7 @@
     "start": "ng serve",
     "start:local": "node scripts/set-env.mjs --local && ng serve --configuration local --port 4300",
     "db:start": "node scripts/local-stack.mjs start",
+    "db:reset": "node scripts/local-stack.mjs reset",
     "db:stop": "node scripts/local-stack.mjs stop",
     "local:user": "node scripts/local-user.mjs",
     "prebuild": "npm run env",

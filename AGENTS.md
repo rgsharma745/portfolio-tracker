@@ -40,7 +40,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`)
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on Cloudflare Pages (`CF_PAGES`) if the Supabase variables are missing.
-- Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change run `npx -y supabase@3.0.0 db reset` at the repo root, then `npm run db:start` again to recreate the test user.
+- Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
 - Scripts setup: `cd scripts && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
 - Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project)
