@@ -67,7 +67,7 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
   await expect(list).toContainText('E2E Corp');
   await expect(list).toContainText('≈ ₹');
   await screenshot(page, 'stocks-us', testInfo.project.name);
-  await page.getByRole('switch', { name: 'Show US stocks in INR' }).click();
+  await page.getByRole('switch', { name: 'Show in INR' }).click();
   await expect(stat('Current value')).toContainText('₹');
   await expect(stat('Current value')).not.toContainText('$');
   await expectNoHorizontalScroll(page);

@@ -26,14 +26,14 @@
         ariaLabelledBy="market-label"
       />
       @if (market() === 'US') {
-        <label class="inr-toggle">
+        <span class="inr-toggle">
           <p-toggleswitch
+            inputId="inr-toggle"
             [ngModel]="inInr()"
             (ngModelChange)="inInr.set($event)"
-            ariaLabel="Show US stocks in INR"
           />
-          <span aria-hidden="true">Show in INR</span>
-        </label>
+          <label for="inr-toggle">Show in INR</label>
+        </span>
       }
     </div>
 
