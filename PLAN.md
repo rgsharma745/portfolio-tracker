@@ -22,7 +22,7 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 - [x] **Human:** Create a GitHub repo (private) and push this folder as the first commit.
 - [x] **Human:** Create a Supabase project (free). Note project URL, anon key, service role key.
 - [x] **Human:** In Supabase Auth settings: disable "Allow new users to sign up". Enable email magic link (and optionally Google). Create the owner user manually (Auth > Users > Add user). Copy the user UUID.
-- [ ] **Human:** Create a Cloudflare account and a Worker connected to the GitHub repo (Pages at first; switched to Workers static assets, Cloudflare's recommended path, in Phase 9) (settings are filled in Phase 9).
+- [x] **Human:** Create a Cloudflare account and a Worker connected to the GitHub repo (Pages at first; switched to Workers static assets, Cloudflare's recommended path, in Phase 9) (settings are filled in Phase 9).
 - [x] Add `.gitignore` (node_modules, dist, `.env*` except `.env.example`, `scripts/data/`, `__pycache__`, `.angular`).
 
 **Acceptance:** repo exists, Supabase project exists with sign-up disabled, owner user exists.
@@ -111,11 +111,11 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 
 ## Phase 9: Deploy
 - [x] Workers static assets config (`web/wrangler.jsonc`: output folder, single-page-application fallback). Cloudflare now recommends Workers over Pages for new projects.
-- [ ] **Human:** create the Worker from the GitHub repo: root `web`, build `npm ci && npm run build`, deploy `npx wrangler deploy`, `NG_APP_*` as build variables (Node version comes from `web/.node-version`).
+- [x] **Human:** create the Worker from the GitHub repo: root `web`, build `npm ci && npm run build`, deploy `npx wrangler deploy`, `NG_APP_*` as build variables (Node version comes from `web/.node-version`).
 - [x] SPA fallback and security headers per `docs/SECURITY.md`. `npm run build` writes `_headers` (CSP with the Supabase origin from `NG_APP_SUPABASE_URL`, HSTS, nosniff, Referrer-Policy, frame-ancestors none). No `_redirects`: unknown paths get `index.html` through `not_found_handling: single-page-application`. Critical-CSS inlining is off because its inline script would be blocked by the CSP.
-- [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT` (`OWNER_USER_ID` turned out not to be needed).
+- [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (done), `BACKUP_AGE_RECIPIENT` (still to add, after `age-keygen`). `OWNER_USER_ID` turned out not to be needed. The repo was recreated on 5 Nov 2026 after GitHub stopped accepting ref updates on the original; the secrets were re-added there.
 - [ ] Optionally restrict access further with Cloudflare Access (free for up to 50 users) in front of the site.
-- [ ] Supabase Auth: set Site URL and redirect URLs to the deployed domain.
+- [x] Supabase Auth: set Site URL and redirect URLs to the deployed domain.
 
 **Acceptance:** production site loads over HTTPS, login works from phone and desktop, jobs run on schedule.
 
