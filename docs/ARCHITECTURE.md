@@ -7,7 +7,7 @@ Browser (Angular + PrimeNG, static)  --HTTPS-->  Supabase (Auth + Postgres + RLS
         | served by                                     | service role key (server side only)
 Cloudflare Workers (static)                   GitHub Actions (Python jobs)
                                                 |  AMFI NAV file, price providers, FX
-                                                +--> weekly encrypted backup (private repo)
+                                                +--> weekly encrypted backup (GitHub artifact, 90 days)
 ```
 There is no custom backend. The browser talks to Supabase directly using the anon key; Row Level Security (RLS) ensures only the signed-in owner can read or write their rows. Jobs that need to write shared market data (NAVs, prices, FX) run in GitHub Actions with the service role key.
 
@@ -15,16 +15,25 @@ There is no custom backend. The browser talks to Supabase directly using the ano
 ```
 web/
   src/app/
-    core/        auth, supabase client, data services, calc (pure functions), db.types.ts
-    features/    overview/ mutual-funds/ stocks/ rsu/ savings/ cards/ settings/ login/
-    shared/      ui components, pipes, directives, layout (shell, sidebar, bottom-nav)
+    core/        auth/ (session, guards), data/ (Supabase client and services), calc/ (pure
+                 functions + tests), pwa/ (update banner service), theme/ (PrimeNG preset), db.types.ts
+    features/    overview/ mutual-funds/ stocks/ rsu/ savings/ cards/ settings/ login/ welcome/
+    shared/      ui/ (DataTable, dialogs, stat cards, chart, …), layout/ (shell, nav), format/ (money,
+                 privacy, csv, sort, validation)
+  e2e/           Playwright specs (mobile, desktop, iPhone WebKit; accessibility.spec.ts runs axe)
+  scripts/       build and local-dev helpers: set-env, write-headers (CSP), local-stack/-user/-seed,
+                 make-icons, check-bundle-secrets
+  public/        manifest, icons, robots.txt
+  ngsw-config.json, wrangler.jsonc (Cloudflare Workers static assets)
 scripts/
   jobs/          fetch_nav.py fetch_prices.py providers.py snapshot.py backup.py keepalive.py
+  tools/         restore.py (restore a backup; run by hand, never scheduled)
   lib/           supabase_rest.py (REST client), jobs.py (run_job, job_runs), http.py, calc.py
-  tests/         pytest (including RLS tests)
-supabase/migrations/   0001_init.sql, ...
-.github/workflows/     ci.yml nav.yml prices.yml backup.yml
+  tests/         pytest (RLS, upserts, jobs, parsers, formula parity, restore)
+supabase/        migrations/ (0001_init.sql, …), templates/magic_link.html, config.toml (local stack)
+.github/workflows/  ci.yml, _run-job.yml (shared), nav.yml prices.yml snapshot.yml backup.yml keepalive.yml
 docs/
+renovate.json    dependency updates (Renovate app)
 ```
 
 ## Data flow

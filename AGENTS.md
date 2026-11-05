@@ -40,6 +40,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - App icons: `cd web && node scripts/make-icons.mjs` re-renders `public/icons/` (PNGs are committed)
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`; `postbuild` writes Cloudflare's `_headers` with the CSP). Cloudflare Workers Builds builds it from `web/` with `npm ci && npm run build` (Node from `web/.node-version`) and deploys with `npx wrangler deploy` (`web/wrangler.jsonc`). Preview the production build locally with `npx wrangler dev` in `web/`
+- Secret scan of the build: `cd web && node scripts/check-bundle-secrets.mjs dist` (CI runs it after the build; fails on an `sb_secret_` key or a service-role JWT)
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on a Cloudflare build (`WORKERS_CI` or `CF_PAGES`) if the Supabase variables are missing.
 - Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
@@ -82,11 +83,24 @@ See `docs/UI_SPEC.md`.
 - Commit style: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`). One logical change per commit.
 
 ## Workflow
+0. New session: read the **Status** section at the top of `PLAN.md` first; it says what is built, what is open and what is the owner's. Update it when work lands.
 1. Work through `PLAN.md` phase by phase. Tick the checkbox when a task is done and meets its acceptance criteria.
 2. Before finishing a phase: run lint, unit tests, build, and (if UI changed) Playwright. Report results.
 3. Stop at the end of each phase and summarise what was done and what the human must do next.
 4. If something in the docs is unclear or conflicts with reality (for example, a sheet column differs from `SHEET_MAPPING.md`), stop and ask rather than guess.
 5. Keep `docs/` updated when behaviour changes.
+
+6. Git: commit locally, one logical change per commit; never push (the owner pushes, and a push deploys the site). End commit messages with the `Co-Authored-By` line the session gives you.
+
+## Gotchas (learned the hard way)
+- **E2E hangs before any test starts:** a leftover `ng serve --configuration local --port 4300` from an earlier run accepts connections but never answers, and Playwright reuses it. Kill it (`lsof -iTCP:4300 -sTCP:LISTEN`) and rerun.
+- **Magic-link sign-in refused in tests:** Supabase sends one email per address per second; the e2e helper retries. Local `otp_length` is 8 to match production; the app accepts 6 to 10 digits.
+- **Never point the whole pytest suite at production:** the job tests write market data. Only `tests/test_rls.py` is safe there (it uses throwaway users).
+- **Production has no `supabase-js`:** use `core/data/supabase.client.ts` (`auth`, `from`). Realtime and storage are not available; the CSP has no `wss://`.
+- **A PrimeNG component not listed in `core/theme/preset.ts` renders unstyled:** add its Aura tokens there when you start using it.
+- **CSP:** `script-src 'self'` means no inline scripts (critical-CSS inlining is off for that reason). `npm run build` writes `_headers`; check new external origins there.
+- **Jobs and price sources:** fetch only codes and symbols present in the database, identify honestly as `portfolio-tracker-jobs/1.0`, never pose as a browser or get around bot checks (Stooq is out for that reason).
+- **The owner's data never goes in git, logs or chat:** tools print counts, not rows; decrypted backups stay out of the repo.
 
 ## Definition of done (every task)
 - Works at mobile and desktop widths

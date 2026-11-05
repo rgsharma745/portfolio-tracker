@@ -5,7 +5,7 @@ How to run, fix and recover the portfolio tracker. Commands run from the repo ro
 ## Where things live
 | What | Where |
 |---|---|
-| Site | Cloudflare › Workers & Pages › `portfolio-tracker` (deploys on every push to `main`) |
+| Site | https://portfolio-tracker.rgsharma745.workers.dev, from Cloudflare › Workers & Pages › `portfolio-tracker` (deploys on every push to `main`) |
 | Database and sign-in | Supabase project (Authentication, Table Editor, Project Settings › API Keys) |
 | Scheduled jobs and backups | GitHub › Actions (NAV, Prices, Snapshot, Backup, Keep-alive) |
 | Job results | The app: Settings › Job runs |

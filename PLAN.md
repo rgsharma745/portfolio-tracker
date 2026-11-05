@@ -4,6 +4,14 @@ Goal: replace the Google Sheet "Portfolio" with a secure, free, responsive websi
 
 Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop at the end of every phase for review.
 
+## Status (update this when work lands)
+_Last updated 5 Nov 2026._
+- **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run on schedule in GitHub Actions; backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
+- **Checks:** lint, 185 unit tests, 113 pytest, 76 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Open, owner only:** load the data and reconcile Overview totals with the Google Sheet (Phases 3, 6, 10); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
+- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PF, PPF, …) is not started.
+- **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
+
 ## Scope
 **v1 (this plan):** Overview, Mutual Funds (per portfolio), Stocks (India, US), RSU, Savings, Credit Cards, Settings, auth, daily NAV/price jobs, daily snapshots (history chart), monthly credit card bills, backups, PWA.
 **Backlog (v2, do not build now):** FD, PF, PPF, NPS, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR, Expenses, ESPP wallet.
