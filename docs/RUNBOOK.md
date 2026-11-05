@@ -6,7 +6,7 @@
 - Rotate Supabase keys: regenerate in the dashboard, update GitHub Secrets and the Cloudflare build variables (Worker › Settings › Build › Variables and secrets), redeploy.
 - Sign-in email (once, and after any Supabase project change): Supabase › Authentication › Emails › Magic link: subject `Your sign-in link`, body = the HTML in `supabase/templates/magic_link.html` (it adds the code that the iPhone home-screen app needs). The local stack reads the same file from `supabase/config.toml`.
 - Install the app: iPhone Safari › Share › Add to Home Screen; Android Chrome › menu › Install app. In the installed iPhone app, sign in with the code from the email (the link opens Safari, which has separate storage).
-- After a deploy, open apps show "A new version of the app is ready" with Reload; a closed app picks the new version up on its next start.
+- After a deploy, an open app shows "A new version of the app is ready" with Reload: when you return to it, within 30 minutes if it stays on screen, or straight after a reload (which still runs the old version until you tap Reload). Cloudflare takes a minute or two to finish the deploy first.
 - Add a new fund: Mutual Funds › Add fund, with its AMFI scheme code (amfiindia.com NAV pages or mfapi.in). Its NAV appears after the next NAV run.
 - A price is wrong or a source is down: Settings › Manual prices sets the price (or USD/INR) by hand; the jobs leave it alone until you remove it.
 - A job failed: open the GitHub Actions run, read the log, fix, and re-run with `workflow_dispatch`; jobs are idempotent.

@@ -7,7 +7,6 @@ import { AuthService } from '../../core/auth/auth.service';
 import { RefreshService } from '../../core/data/refresh.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { PageTitleStrategy } from '../../core/page-title.strategy';
-import { AppUpdateService } from '../../core/pwa/app-update.service';
 import { ThemeService } from '../../core/theme/theme.service';
 import { Welcome } from '../../features/welcome/welcome';
 import { amountsHidden, setAmountsHidden } from '../format/privacy';
@@ -43,7 +42,6 @@ export class Shell {
   protected readonly theme = inject(ThemeService);
   protected readonly refresher = inject(RefreshService);
   protected readonly portfolios = inject(PortfolioService);
-  protected readonly update = inject(AppUpdateService);
   protected readonly title = (inject(TitleStrategy) as PageTitleStrategy).current;
 
   protected readonly navItems = NAV_ITEMS;

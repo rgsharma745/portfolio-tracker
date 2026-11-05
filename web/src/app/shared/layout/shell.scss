@@ -201,18 +201,6 @@ $bottom-nav-height: 64px;
 }
 
 // ---------- Content ----------
-.update-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--app-hairline);
-  background: var(--app-bg-soft);
-  color: var(--app-text);
-  font-size: 14px;
-}
-
 .content {
   padding-top: 16px;
   padding-bottom: calc(#{$bottom-nav-height} + 24px + env(safe-area-inset-bottom));

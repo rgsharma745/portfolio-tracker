@@ -1,9 +1,14 @@
 import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 
+/** While the app is on screen, ask the server for a new deploy this often. */
+export const UPDATE_CHECK_MS = 30 * 60_000;
+
 /**
- * New deploys: the service worker downloads the new version in the background; this
- * offers a reload once it is ready, and checks again whenever the app comes back on screen.
+ * New deploys: the service worker downloads the new version in the background; this offers
+ * a reload once it is ready. Created at startup (app.config) so it never misses the
+ * "ready" message, and it checks at startup, on returning to the app, and every 30 minutes
+ * while visible (the service worker by itself only checks when the app is opened).
  */
 @Injectable({ providedIn: 'root' })
 export class AppUpdateService {
@@ -19,9 +24,15 @@ export class AppUpdateService {
     });
     // The cached version can no longer be served (e.g. files were removed): start fresh.
     this.updates.unrecoverable.subscribe(() => this.document.location.reload());
+
+    const visible = () => this.document.visibilityState === 'visible';
+    void this.check();
     this.document.addEventListener('visibilitychange', () => {
-      if (this.document.visibilityState === 'visible') void this.check();
+      if (visible()) void this.check();
     });
+    this.document.defaultView?.setInterval(() => {
+      if (visible()) void this.check();
+    }, UPDATE_CHECK_MS);
   }
 
   reload(): void {
@@ -30,9 +41,10 @@ export class AppUpdateService {
 
   private async check(): Promise<void> {
     try {
-      await this.updates.checkForUpdate();
+      // True also when a new version was downloaded earlier but this page still runs the old one.
+      if (await this.updates.checkForUpdate()) this.ready.set(true);
     } catch {
-      // Offline or the check failed; the next visit tries again.
+      // Offline, not yet registered, or the check failed; the next trigger tries again.
     }
   }
 }
