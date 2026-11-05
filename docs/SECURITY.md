@@ -64,7 +64,7 @@ Production checked 5 Nov 2026 from outside with the public anon key only (read-o
 - [ ] "Automatically expose new tables" is off (**human:** Supabase › Project Settings › Data API)
 - [x] anon and authenticated roles cannot execute the `upsert_*` functions (production: anon gets `permission denied for function upsert_fx_rate`; authenticated is covered by `test_upserts.py`)
 - [x] Service role key absent from `web/` and from the build output (no `sb_secret_`, `service_role` or service JWT in `dist/` or tracked `web/` files; `set-env.mjs` refuses one)
-- [ ] Security headers present on the live site (curl or securityheaders.com)
+- [x] Security headers present on the live site (curl, 5 Nov 2026: CSP, HSTS, X-Frame-Options DENY, nosniff, no-referrer, Permissions-Policy, X-Robots-Tag; no Cloudflare-injected scripts; `ngsw.json` no-cache)
 - [ ] Auth redirect URLs limited to the production domain and localhost (**human:** Supabase › Authentication › URL Configuration)
 - [ ] MFA enabled for the owner (recommended, **human**)
 - [ ] Backup restore tested once (a backup was decrypted on 5 Nov 2026; restoring into a database is a Phase 10 task)
