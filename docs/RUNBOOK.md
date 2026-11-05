@@ -10,3 +10,4 @@
 - Add a new fund: Mutual Funds › Add fund, with its AMFI scheme code (amfiindia.com NAV pages or mfapi.in). Its NAV appears after the next NAV run.
 - A price is wrong or a source is down: Settings › Manual prices sets the price (or USD/INR) by hand; the jobs leave it alone until you remove it.
 - A job failed: open the GitHub Actions run, read the log, fix, and re-run with `workflow_dispatch`; jobs are idempotent.
+- Check RLS on production (optional, creates and deletes two throwaway `pytest-…@example.com` users; your rows are never read or changed): `cd scripts && TEST_SUPABASE_URL=... TEST_SUPABASE_ANON_KEY=... TEST_SUPABASE_SERVICE_ROLE_KEY=... .venv/bin/pytest tests/test_rls.py`. Run only `test_rls.py` against production, never the whole suite (the job tests write market data).

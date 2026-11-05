@@ -55,14 +55,17 @@ Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that di
 - Backups are encrypted with `age` before leaving GitHub runners; keep the private key offline (password manager).
 
 ## Checklist (tick before go-live)
-- [ ] Sign-up disabled; only one user exists
-- [ ] RLS enabled on every table, verified by `scripts/tests/test_rls.py`
-- [ ] An unauthenticated request to every table returns no data
-- [ ] "Automatically expose new tables" is off and anon has no table privileges
-- [ ] anon and authenticated roles cannot execute the `upsert_*` functions
-- [ ] Service role key absent from `web/` and from the build output (grep the `dist` folder)
-- [ ] Security headers present (check with securityheaders.com or curl)
-- [ ] Auth redirect URLs limited to the production domain and localhost
-- [ ] MFA enabled for the owner (recommended)
-- [ ] Backup restore tested once
-- [ ] Renovate enabled for npm, pip and GitHub Actions (`renovate.json`; human installs the Renovate GitHub app)
+Production checked 5 Nov 2026 from outside with the public anon key only (read-only probe: auth settings, an anonymous read of every table and view, an anonymous call to `upsert_fx_rate`).
+- [x] Sign-up disabled (`/auth/v1/settings`: `disable_signup: true`; only the email provider is on; anonymous and phone sign-in off)
+- [ ] Only one user exists (**human:** Supabase › Authentication › Users shows just the owner)
+- [x] RLS enabled on every table, verified by `scripts/tests/test_rls.py` (CI and the local stack, same migrations). Optional on production: see RUNBOOK "Check RLS on production"
+- [x] An unauthenticated request to every table returns no data (production: all 13 tables and 3 views answer 401 `permission denied`)
+- [x] anon has no table privileges (production: `42501 permission denied` for every table and view, and the OpenAPI listing is refused, so nothing is exposed to anon)
+- [ ] "Automatically expose new tables" is off (**human:** Supabase › Project Settings › Data API)
+- [x] anon and authenticated roles cannot execute the `upsert_*` functions (production: anon gets `permission denied for function upsert_fx_rate`; authenticated is covered by `test_upserts.py`)
+- [x] Service role key absent from `web/` and from the build output (no `sb_secret_`, `service_role` or service JWT in `dist/` or tracked `web/` files; `set-env.mjs` refuses one)
+- [ ] Security headers present on the live site (curl or securityheaders.com)
+- [ ] Auth redirect URLs limited to the production domain and localhost (**human:** Supabase › Authentication › URL Configuration)
+- [ ] MFA enabled for the owner (recommended, **human**)
+- [ ] Backup restore tested once (a backup was decrypted on 5 Nov 2026; restoring into a database is a Phase 10 task)
+- [x] Renovate enabled for npm, pip and GitHub Actions (`renovate.json`; the app is installed and has opened its Dependency Dashboard)
