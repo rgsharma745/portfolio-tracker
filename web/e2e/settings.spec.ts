@@ -183,3 +183,73 @@ test('manual prices, job runs and data export', async ({ page }) => {
   await expect(prices.getByRole('list', { name: 'Manual prices' })).toBeHidden();
   await adminDelete('job_runs', { job: 'eq.fetch_nav' });
 });
+
+test('run NAVs and prices now from Job runs', async ({ page }) => {
+  // The Worker (/api/jobs/:job) is stubbed: it would dispatch real GitHub workflows.
+  await seedPortfolios(await ensureUser(SETTINGS_EMAIL), ['Me']);
+  await adminDelete('job_triggers', { job: 'in.(fetch_nav,fetch_prices)' });
+  const inHalfAnHour = new Date(Date.now() + 30 * 60_000).toISOString();
+  const calls: string[] = [];
+  await page.route('**/api/jobs/*', async (route) => {
+    const url = route.request().url();
+    // allHeaders(): WebKit leaves Authorization out of headers().
+    const auth = (await route.request().allHeaders())['authorization'] ?? '';
+    calls.push(`${route.request().method()} ${new URL(url).pathname} ${/^Bearer \S+$/.test(auth)}`);
+    if (url.endsWith('/fetch_nav')) {
+      await route.fulfill({
+        status: 202,
+        json: {
+          status: 'triggered',
+          nextAllowedAt: inHalfAnHour,
+          runUrl: 'https://github.com/owner/repo/actions/runs/1',
+        },
+      });
+    } else if (calls.filter((c) => c.includes('/fetch_prices')).length === 1) {
+      await route.fulfill({
+        status: 502,
+        json: { status: 'error', message: 'GitHub did not start the job. Try again.' },
+      });
+    } else {
+      await route.fulfill({
+        status: 429,
+        json: { status: 'cooldown', nextAllowedAt: inHalfAnHour },
+      });
+    }
+  });
+
+  await signInWithMagicLink(page, SETTINGS_EMAIL);
+  await page.goto('/settings');
+
+  const runNav = page.getByRole('button', { name: 'Run now: Mutual fund NAVs' });
+  const runPrices = page.getByRole('button', { name: 'Run now: Stock prices and USD/INR' });
+  await expect(runNav).toBeEnabled();
+  await expect(page.getByTestId('job-snapshot').getByRole('button')).toHaveCount(0);
+
+  // Started: locked for 30 minutes, with a link to the run
+  await runNav.click();
+  await expect(page.getByTestId('notice-fetch_nav')).toContainText('Started.');
+  await expect(page.getByTestId('notice-fetch_nav').getByRole('link')).toHaveAttribute(
+    'href',
+    'https://github.com/owner/repo/actions/runs/1',
+  );
+  await expect(page.getByTestId('next-fetch_nav')).toContainText('Available again at');
+  await expect(runNav).toBeDisabled();
+
+  // GitHub refused: explained, and the button stays usable
+  await runPrices.click();
+  await expect(page.getByTestId('notice-fetch_prices')).toContainText('GitHub did not start');
+  await expect(runPrices).toBeEnabled();
+
+  // Locked elsewhere (another device): shows when it frees up
+  await runPrices.click();
+  await expect(page.getByTestId('notice-fetch_prices')).toContainText('Already run');
+  await expect(runPrices).toBeDisabled();
+  await expectNoHorizontalScroll(page);
+
+  // Each call is a POST carrying the session token
+  expect(calls).toEqual([
+    'POST /api/jobs/fetch_nav true',
+    'POST /api/jobs/fetch_prices true',
+    'POST /api/jobs/fetch_prices true',
+  ]);
+});

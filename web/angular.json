@@ -88,10 +88,12 @@
               "buildTarget": "portfolio-tracker:build:production"
             },
             "development": {
-              "buildTarget": "portfolio-tracker:build:development"
+              "buildTarget": "portfolio-tracker:build:development",
+              "proxyConfig": "proxy.conf.json"
             },
             "local": {
               "buildTarget": "portfolio-tracker:build:local",
+              "proxyConfig": "proxy.conf.json",
               "prebundle": false
             }
           },
