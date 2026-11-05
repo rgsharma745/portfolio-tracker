@@ -1,11 +1,20 @@
-// Cloudflare Workers deploy: static assets only, no server code.
+// Cloudflare Workers deploy: static assets, plus one small Worker for /api/* (worker/index.ts),
+// which runs a scheduled job from Settings › Job runs (docs/ARCHITECTURE.md, "Run now").
 // Workers Builds runs `npm ci && npm run build` in web/, then `npx wrangler deploy`.
 // The NG_APP_* values are build variables (Settings › Build › Variables and secrets).
+// The Worker's runtime values are set in the dashboard (Settings › Variables and secrets), never
+// here: SUPABASE_URL, SUPABASE_ANON_KEY, GITHUB_REPO (owner/name) as text and GITHUB_TOKEN as a
+// secret. `keep_vars` stops a deploy from removing them. Locally they go in web/.dev.vars.
 {
   "name": "portfolio-tracker",
   "compatibility_date": "2026-10-01",
+  "main": "./worker/index.ts",
+  "keep_vars": true,
   "assets": {
     "directory": "./dist/portfolio-tracker/browser",
+    "binding": "ASSETS",
+    // Only /api/* reaches the Worker; everything else is served from the assets as before.
+    "run_worker_first": ["/api/*"],
     // Unknown paths (deep links like /mutual-funds) get index.html; the Angular router takes over.
     "not_found_handling": "single-page-application"
   }

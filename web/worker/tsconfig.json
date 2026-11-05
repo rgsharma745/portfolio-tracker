@@ -1,0 +1,18 @@
+// Type-checks the Cloudflare Worker (npm run typecheck:worker). Web-standard types only:
+// the Worker uses fetch, Request and Response, so no Workers type package is needed.
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2024", "DOM"],
+    "types": [],
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true
+  },
+  "include": ["./**/*.ts"]
+}
