@@ -22,6 +22,8 @@ Secrets and where each one is set:
 | age public key | the Backup job | GitHub secret `BACKUP_AGE_RECIPIENT` |
 | age private key *secret* | you, to decrypt | password manager only |
 | Gmail App Password *secret* | Supabase SMTP | Supabase › Authentication › Emails › SMTP Settings |
+| Supabase URL + publishable key, `GITHUB_REPO` | the Run now Worker | Cloudflare › Worker › Settings › Variables and secrets (runtime, *not* Build): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GITHUB_REPO` as Text |
+| GitHub fine-grained token *secret* | the Run now Worker | same place, `GITHUB_TOKEN` as Secret |
 
 ## Backups
 
@@ -85,7 +87,21 @@ Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com`
 
 GitHub can start scheduled runs 10 to 30 minutes late. Every run is listed in Settings › Job runs; a failed run also sends GitHub's failure email.
 
-**Run a job by hand:** GitHub › Actions › the job › Run workflow (or `gh workflow run nav.yml`). Jobs are idempotent: re-running one is always safe.
+**Run a job by hand:** in the app, Settings › Job runs › Run now (NAVs and prices; once every 30 minutes per job). Or GitHub › Actions › the job › Run workflow (or `gh workflow run nav.yml`), which has no lock. Jobs are idempotent: re-running one is always safe.
+
+**Run now says:**
+| Message | Cause | Fix |
+|---|---|---|
+| Already run in the last 30 minutes | the lock is working | wait until the time shown, or use GitHub › Actions |
+| Running jobs from the website is not set up | a Worker variable is missing | set the four values in "Set up Run now" below |
+| GitHub did not start the job | `GITHUB_TOKEN` expired, revoked or lacks Actions write; or `GITHUB_REPO` is wrong | make a new token (below); the lock was released, so retry at once |
+| Sign in again | the session expired | sign in again |
+
+### Set up Run now (once)
+1. GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token. Repository access: **only this repository**. Permissions: **Actions: Read and write** (nothing else). Pick an expiry and put the date in your calendar.
+2. Cloudflare › Workers & Pages › `portfolio-tracker` › Settings › Variables and secrets (runtime, not Build): add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (the same values as the `NG_APP_*` build variables), `GITHUB_REPO` (`owner/repo`) as Text, and `GITHUB_TOKEN` as Secret.
+3. Apply `supabase/migrations/0002_job_triggers.sql` to the production project (SQL editor or `supabase db push`), before the push that deploys the button.
+4. Open Settings › Job runs › Run now on NAVs. The row says "Started", a run appears in GitHub › Actions › NAV, and its result shows in Job runs a minute or two later.
 
 **A job failed:** open the run in GitHub › Actions, read the last lines of the log (the same message is in Settings › Job runs), then:
 | Message | Cause | Fix |
@@ -108,6 +124,7 @@ Do one at a time and check the app or a job afterwards.
 - **Supabase publishable key:** create a new publishable key › update the Cloudflare build variable `NG_APP_SUPABASE_ANON_KEY` › Deployments › Retry the latest build › once the site works with it (open apps show the update banner), delete the old key.
 - **Backup key:** `age-keygen` a new one, save it, update `BACKUP_AGE_RECIPIENT`. Keep the old private key for 90 days: older backups still need it.
 - **Gmail App Password:** Google Account › App passwords › revoke the old one and create a new one › Supabase › Authentication › Emails › SMTP Settings › paste it › send yourself a sign-in email.
+- **Run now GitHub token (before it expires):** generate a new fine-grained token as in "Set up Run now" › Cloudflare › Worker › Variables and secrets › `GITHUB_TOKEN` › replace › press Run now once to check › delete the old token in GitHub.
 - **PrimeUI licence (yearly):** update `NG_APP_PRIMEUI_LICENSE` in Cloudflare and retry the latest build. Without it PrimeNG shows a licence notice; nothing breaks.
 
 ## Everyday tasks

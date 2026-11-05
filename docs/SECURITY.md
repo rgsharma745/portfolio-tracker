@@ -8,6 +8,7 @@ This app holds personal financial data. Treat security as a feature.
 - Optional extra layer: Cloudflare Access (free) in front of the site.
 - Every owner table: `alter table ... enable row level security;` plus policies `using (owner_id = auth.uid()) with check (owner_id = auth.uid())`.
 - Shared market-data tables (`mf_nav_latest`, `stock_price_latest`, `fx_latest`, `job_runs`): RLS enabled with one policy allowing role `authenticated` to read and write (no `owner_id`; they hold no personal data). This lets the owner set manual overrides (`is_manual = true`) for a stock price or the USD/INR rate. Jobs write through the `upsert_*` functions, which only the `service_role` may execute (`security definer`, EXECUTE revoked from public, anon and authenticated) and which never overwrite `is_manual` rows.
+- `job_triggers` (Run now lock): RLS enabled; `authenticated` may only **select**. Writes happen only through `claim_job_trigger` and `release_job_trigger` (`security definer`, fixed 30-minute lock, allowlisted job names, refuse a caller without `auth.uid()`). EXECUTE is granted to `authenticated` and revoked from public and anon.
 - Privileges are granted explicitly in the migrations: `authenticated` gets select/insert/update/delete, `service_role` gets all, `anon` gets nothing (all privileges revoked). RLS then decides which rows.
 - Portfolios are labels under one owner, so no extra access rules are needed. If a second login is ever added, this design must be revisited.
 - Views use `security_invoker = true` so they respect the caller's RLS.
@@ -30,6 +31,7 @@ This app holds personal financial data. Treat security as a feature.
 - Frontend gets only the project URL and the anon key (safe by design when RLS is correct).
 - Service role key and backup recipient live in GitHub Actions Secrets (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT`) and a local `.env` (git-ignored). The jobs do not need the owner's UUID: they read the owner's rows with the service role and keep each row's `owner_id`.
 - Job logs and `job_runs` messages hold counts, codes and symbols only, never keys or row contents. The backup is encrypted in memory before it is written, so no plaintext copy exists on the runner's disk or in the artifact.
+- The Run now Worker holds `GITHUB_TOKEN`: a **fine-grained** personal access token for this repository only, with **Actions: read and write** and nothing else, and an expiry date. It is a Cloudflare Worker secret (never in `web/src`, `.env` or git). The worst a stolen token can do is start or cancel workflow runs; it cannot read code or secrets. The Worker has no Supabase service role key: it calls the database with the caller's own token, so an anonymous or forged request is refused by PostgREST before anything is dispatched. Each job can be dispatched at most once per 30 minutes, which caps any abuse of a stolen session. The Worker logs status codes only.
 - Rotate keys if ever leaked. Run a secret scanner (gitleaks) in CI.
 
 ## Web hardening (Cloudflare `_headers`, served by Workers static assets)
@@ -44,6 +46,7 @@ This app holds personal financial data. Treat security as a feature.
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://YOUR-PROJECT.supabase.co; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 ```
+The `_headers` file covers static assets only. The Worker sets its own headers on `/api` responses (`Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, JSON only). The app calls `/api` on its own origin, so `connect-src 'self'` already allows it.
 `style-src 'unsafe-inline'` is needed because PrimeNG writes its theme into `<style>` tags. The production build does not inline critical CSS: that feature adds an inline script, which `script-src 'self'` blocks (the page would load unstyled).
 Adjust the CSP if Angular or PrimeNG needs additional sources, but never use `unsafe-eval` and never allow `*` for `script-src`.
 Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that disallows all.

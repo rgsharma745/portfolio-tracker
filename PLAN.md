@@ -7,7 +7,8 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 ## Status (update this when work lands)
 _Last updated 5 Nov 2026._
 - **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run on schedule in GitHub Actions; backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
-- **Checks:** lint, 185 unit tests, 113 pytest, 76 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Checks:** lint, 194 unit tests + 13 Worker tests, 122 pytest, 79 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Just built (Phase 11, not deployed yet):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Before pushing, the owner applies migration 0002 to production and sets the Worker's GitHub token and variables (RUNBOOK › Set up Run now).
 - **Open, owner only:** load the data and reconcile Overview totals with the Google Sheet (Phases 3, 6, 10); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
 - **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PF, PPF, …) is not started.
 - **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
@@ -137,6 +138,15 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [ ] **Human:** run both systems in parallel for 1 to 2 weeks, then retire the sheet (keep it read-only as an archive).
 
 **Acceptance:** totals reconcile; owner signs off.
+
+## Phase 11: Run jobs from the website
+- [x] Migration `0002_job_triggers.sql`: `job_triggers` (one row per job) with `claim_job_trigger` (atomic 30-minute lock) and `release_job_trigger`; RLS read-only for `authenticated`, nothing for anon. Tested in `scripts/tests/test_job_triggers.py` and `test_rls.py`.
+- [x] Cloudflare Worker `web/worker/` for `POST /api/jobs/:job` (`fetch_nav` → `nav.yml`, `fetch_prices` → `prices.yml`): checks the sign-in and takes the lock through Supabase with the caller's token, dispatches the GitHub workflow, releases the lock if GitHub refuses. Only `/api/*` runs the Worker. Tests: `npm run test:worker`.
+- [x] Settings › Job runs: Run now on NAVs and prices, "Available again at …", result or reason under the row, Job runs re-checked after two minutes. Playwright at all three viewports with `/api` stubbed.
+- [ ] **Human:** create the fine-grained GitHub token and the four Worker variables (docs/RUNBOOK.md › Set up Run now).
+- [ ] **Human:** apply `0002_job_triggers.sql` to production before pushing, then push and press Run now once.
+
+**Acceptance:** Run now starts the workflow and shows its result in Job runs; a second press within 30 minutes is refused with the time it frees up; no GitHub or service key in the bundle.
 
 ## Later (owner to define)
 - [ ] **RSU + ESOP:** revisit the RSU after-tax formula (currently `units_granted * price * (1 - tax_rate)`, kept as is for now) and add ESOP handling. Needs a schema change (new migration) and the owner's rules before any work starts.

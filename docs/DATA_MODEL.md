@@ -31,6 +31,7 @@ The same fund or stock can appear in several portfolios (different rows, same `s
 | `stock_price_latest` | `symbol` | `close`, `price_date`, `prev_close`, `prev_price_date`, `source`, `is_manual` |
 | `fx_latest` | `pair` (e.g. `USDINR`) | `rate`, `rate_date`, `prev_rate`, `prev_rate_date`, `is_manual` |
 | `job_runs` | id | `job`, `status`, `message`, `started_at`, `finished_at` |
+| `job_triggers` | `job` (`fetch_nav`, `fetch_prices`) | `triggered_at`, `triggered_by`: the last Run now from the website. One row per job, written only by `claim_job_trigger` / `release_job_trigger` (30-minute lock, docs/ARCHITECTURE.md) |
 
 Each table holds one row per fund, stock or pair that you actually own (a few dozen rows in total). It never grows.
 

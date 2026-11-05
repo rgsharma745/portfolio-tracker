@@ -11,7 +11,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 - Supabase: Postgres, Auth, Row Level Security. Client: Supabase's `@supabase/auth-js` + `@supabase/postgrest-js` (the parts of `supabase-js` the app uses; see `core/data/supabase.client.ts`)
 - Charts: Chart.js used directly through the shared `app-line-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
 - Jobs and scripts: Python 3.15 (`scripts/`), run by GitHub Actions
-- Hosting: Cloudflare Workers with static assets (`web/wrangler.jsonc`; static build, no SSR, no Worker code)
+- Hosting: Cloudflare Workers with static assets (`web/wrangler.jsonc`; static build, no SSR). The only Worker code is `web/worker/`, which handles `/api/*` (today just `POST /api/jobs/:job`, "Run now" in Settings); every other path is served straight from the assets. Keep it that small: no data API, RLS stays the authorization layer
 - Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
 
 ### PrimeNG licensing guards
@@ -35,11 +35,12 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium webkit`)
 - Dev server: `cd web && npm start` (http://localhost:4200)
 - Dev server on the local database: `cd web && npm run db:start` (starts the local Supabase stack in Docker and ensures the user `test@portfolio-tracker.com` with sample portfolios), then `npm run start:local` (http://localhost:4300) and sign in as that user. Stop the stack with `npm run db:stop` (data is kept). `npm run local:user -- other@example.com [--seed]` adds more local users. Magic-link emails land in Mailpit at http://127.0.0.1:54324. Uses `env.local.ts` and the `local` build configuration, so it can run next to `npm start`. With `--seed` (as `db:start` does) the user also gets sample holdings, cards, bills, prices and 200 days of history, added only if that user has none.
-- Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
+- Unit tests: `cd web && npm test` (Vitest, single run, then the Worker's tests via `npm run test:worker`; `npm run test:watch` to watch the app's). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
 - E2E: `cd web && npm run e2e` (Playwright: Chrome at 390x844 and 1440x900, and WebKit as an iPhone 15; `npx playwright test --project=iphone` runs only the iPhone pass). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - App icons: `cd web && node scripts/make-icons.mjs` re-renders `public/icons/` (PNGs are committed)
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`; `postbuild` writes Cloudflare's `_headers` with the CSP). Cloudflare Workers Builds builds it from `web/` with `npm ci && npm run build` (Node from `web/.node-version`) and deploys with `npx wrangler deploy` (`web/wrangler.jsonc`). Preview the production build locally with `npx wrangler dev` in `web/`
+- Worker locally: copy `web/.dev.vars.example` to `web/.dev.vars` (git-ignored; Supabase values from `npx supabase status`, a test GitHub token), `npm run build`, then `npx wrangler dev` in `web/` (port 8787). `npm start` and `npm run start:local` proxy `/api` there (`web/proxy.conf.json`). E2E stubs `/api` instead.
 - Secret scan of the build: `cd web && node scripts/check-bundle-secrets.mjs dist` (CI runs it after the build; fails on an `sb_secret_` key or a service-role JWT)
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on a Cloudflare build (`WORKERS_CI` or `CF_PAGES`) if the Supabase variables are missing.
 - Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
@@ -98,6 +99,8 @@ See `docs/UI_SPEC.md`.
 - **Never point the whole pytest suite at production:** the job tests write market data. Only `tests/test_rls.py` is safe there (it uses throwaway users).
 - **Production has no `supabase-js`:** use `core/data/supabase.client.ts` (`auth`, `from`). Realtime and storage are not available; the CSP has no `wss://`.
 - **A PrimeNG component not listed in `core/theme/preset.ts` renders unstyled:** add its Aura tokens there when you start using it.
+- **Run now must never reach GitHub from tests:** E2E stubs `/api/jobs/*` with `page.route`; read headers there with `allHeaders()` (WebKit leaves `Authorization` out of `headers()`). The Worker's `GITHUB_TOKEN` is a Cloudflare secret only, never in `web/src`, `.env` or git.
+- **The 30-minute lock lives in the database** (`job_triggers`, `claim_job_trigger`); `COOLDOWN_MS` in `job-trigger.service.ts` must match it.
 - **CSP:** `script-src 'self'` means no inline scripts (critical-CSS inlining is off for that reason). `npm run build` writes `_headers`; check new external origins there.
 - **Jobs and price sources:** fetch only codes and symbols present in the database, identify honestly as `portfolio-tracker-jobs/1.0`, never pose as a browser or get around bot checks (Stooq is out for that reason).
 - **The owner's data never goes in git, logs or chat:** tools print counts, not rows; decrypted backups stay out of the repo.

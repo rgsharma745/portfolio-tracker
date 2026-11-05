@@ -75,7 +75,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Sorted: overdue first, then by due date; paid bills last.
 
 ### Settings
-Manage portfolios (add, rename, reorder, deactivate; delete only with a strong warning because it removes that portfolio's holdings), theme (system/light/dark), manual price override for a stock or the USD/INR rate, last job runs (NAV, prices, backup, with status and time), export all data as JSON, sign out.
+Manage portfolios (add, rename, reorder, deactivate; delete only with a strong warning because it removes that portfolio's holdings), theme (system/light/dark), manual price override for a stock or the USD/INR rate, last job runs (NAV, prices, backup, with status and time), and a Run now button for NAVs and prices (disabled for 30 minutes after a run, showing "Available again at …"; the result, a link to the GitHub run or the reason it did not start appears under the row as a status message), export all data as JSON, sign out.
 
 ## Interaction details
 - Pull-to-refresh behavior on mobile is replaced by a visible Refresh button (re-queries Supabase).

@@ -3,13 +3,17 @@
 ## Overview
 ```
 Browser (Angular + PrimeNG, static)  --HTTPS-->  Supabase (Auth + Postgres + RLS)
-        ^                                              ^
-        | served by                                     | service role key (server side only)
-Cloudflare Workers (static)                   GitHub Actions (Python jobs)
-                                                |  AMFI NAV file, price providers, FX
-                                                +--> weekly encrypted backup (GitHub artifact, 90 days)
+        ^      |                                       ^      ^
+        |      | POST /api/jobs/:job (owner's token)    |      | claim_job_trigger (owner's token)
+        |      v                                       |      |
+Cloudflare Workers (static assets + /api Worker) -----+------+
+                       |  workflow_dispatch (GITHUB_TOKEN)
+                       v                       | service role key (server side only)
+                 GitHub Actions (Python jobs) -+
+                       |  AMFI NAV file, price providers, FX
+                       +--> weekly encrypted backup (GitHub artifact, 90 days)
 ```
-There is no custom backend. The browser talks to Supabase directly using the anon key; Row Level Security (RLS) ensures only the signed-in owner can read or write their rows. Jobs that need to write shared market data (NAVs, prices, FX) run in GitHub Actions with the service role key.
+There is no custom data backend. The browser talks to Supabase directly using the anon key; Row Level Security (RLS) ensures only the signed-in owner can read or write their rows. Jobs that need to write shared market data (NAVs, prices, FX) run in GitHub Actions with the service role key.
 
 ## Repo layout
 ```
@@ -20,6 +24,7 @@ web/
     features/    overview/ mutual-funds/ stocks/ rsu/ savings/ cards/ settings/ login/ welcome/
     shared/      ui/ (DataTable, dialogs, stat cards, chart, …), layout/ (shell, nav), format/ (money,
                  privacy, csv, sort, validation)
+  worker/        Cloudflare Worker for /api/* (jobs.ts: Run now), its tests and tsconfig
   e2e/           Playwright specs (mobile, desktop, iPhone WebKit; accessibility.spec.ts runs axe)
   scripts/       build and local-dev helpers: set-env, write-headers (CSP), local-stack/-user/-seed,
                  make-icons, check-bundle-secrets
@@ -68,6 +73,13 @@ renovate.json    dependency updates (Renovate app)
 
 Every job records one `job_runs` row (status, JSON summary or the error, start and finish time) and exits non-zero on failure, so GitHub emails the owner; Settings › Job runs shows the last run of each. All jobs are idempotent: re-running a day changes nothing or replaces that day's values. The scheduled workflows share `.github/workflows/_run-job.yml` and need the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (and `BACKUP_AGE_RECIPIENT` for backups). Each can also be run by hand (`workflow_dispatch`).
 
+**Run now (from the website):** Settings › Job runs has a Run now button for NAVs (`fetch_nav`) and prices (`fetch_prices`). It posts to the Worker at `/api/jobs/:job` (same origin, so the CSP is unchanged) with the owner's Supabase access token. The Worker (`web/worker/jobs.ts`):
+1. Allows only `fetch_nav` → `nav.yml` and `fetch_prices` → `prices.yml`.
+2. Calls `claim_job_trigger` through PostgREST with the anon key and the owner's token. A bad or expired token fails there (401), so this also checks the sign-in. The function takes the job's slot in `job_triggers` in one statement, or says when it frees up: a job can be triggered once every **30 minutes**. While locked the Worker answers 429 with `Retry-After`.
+3. Dispatches the workflow on `main` with `GITHUB_TOKEN`. It answers 202 with the time the lock ends (and the run's link). If GitHub refuses, it calls `release_job_trigger` so the owner can retry at once, and answers 502.
+
+The lock counts manual triggers only; scheduled runs do not take it. The workflows' `concurrency` group still queues a manual run behind a scheduled one. The app reads `job_triggers` to show "Available again at …", also for a run started from another device. Worker settings: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GITHUB_REPO` (text) and `GITHUB_TOKEN` (secret), set in Cloudflare and kept across deploys (`keep_vars`).
+
 **Price sources** (`scripts/jobs/providers.py`, one `PriceProvider` interface):
 - India stocks: NSE's official daily bhavcopy (one CSV of all closing prices; the job looks back over weekends and holidays), then Yahoo Finance (`SYMBOL.NS`) for any symbol it lacks.
 - US stocks and RSU symbols: Yahoo Finance's chart endpoint. It is unofficial and may change; Stooq, the planned US source, now blocks scripts with a browser check. Alternatives if Yahoo breaks: a free Alpha Vantage or Finnhub key, or a published GOOGLEFINANCE price sheet.
@@ -78,11 +90,11 @@ Every job records one `job_runs` row (status, JSON summary or the error, start a
 
 ## Environments
 - `local`: Supabase CLI local stack (`npx supabase start` at the repo root; Docker required). It applies `supabase/migrations/` and mirrors the production auth/API settings from `supabase/config.toml`. Database tests and type generation run against it by default. Never test against production data with destructive scripts.
-- `production`: the live Supabase project and the Cloudflare Worker (static assets).
+- `production`: the live Supabase project and the Cloudflare Worker (static assets plus `/api`).
 
 ## Decisions log
 - Static SPA (no SSR) to stay free and simple.
-- No custom API: RLS is the authorization layer.
+- No custom data API: RLS is the authorization layer. The one Worker endpoint (`/api/jobs/:job`) only starts a GitHub workflow; it reaches the database with the caller's own token, never the service role key.
 - Python for jobs: parsing and data scripts are simpler there; frontend stays pure TypeScript.
 - PrimeNG kept under its free Community License; Chart.js used directly instead of PrimeNG Chart (moving to PRO).
 - Hosting on Cloudflare Workers static assets rather than Pages (Cloudflare's recommended path for new projects).
