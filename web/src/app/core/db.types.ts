@@ -161,6 +161,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      job_triggers: {
+        Row: {
+          job: string;
+          triggered_at: string;
+          triggered_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          job: string;
+          triggered_at: string;
+          triggered_by?: string | null;
+        };
+        Update: {
+          job?: string;
+          triggered_at?: string;
+          triggered_by?: string | null;
+        };
+        Relationships: [];
+      };
       mf_holdings: {
         Row: {
           created_at: string;
@@ -612,6 +631,15 @@ export type Database = {
       };
     };
     Functions: {
+      claim_job_trigger: {
+        Args: { p_job: string };
+        Returns: {
+          claimed: boolean;
+          claimed_at: string;
+          next_allowed_at: string;
+        }[];
+      };
+      release_job_trigger: { Args: { p_at: string; p_job: string }; Returns: undefined };
       upsert_fx_rate: {
         Args: { p_date: string; p_pair: string; p_rate: number };
         Returns: undefined;

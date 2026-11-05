@@ -18,7 +18,7 @@ OWNER_TABLES = [
     "portfolios", "mf_holdings", "stock_holdings", "rsu_grants", "savings_accounts",
     "credit_cards", "card_bills", "portfolio_snapshots", "settings",
 ]
-MARKET_TABLES = ["mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs"]
+MARKET_TABLES = ["mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers"]
 VIEWS = ["v_mf_holdings", "v_stock_holdings", "v_card_bills"]
 
 
