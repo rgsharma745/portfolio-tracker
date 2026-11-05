@@ -10,7 +10,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 - PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities. PrimeNG is under the PrimeUI license (not MIT): the owner uses a free Community License key, supplied as `NG_APP_PRIMEUI_LICENSE` and renewed yearly
 - Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
 - Charts: Chart.js used directly through the shared `app-line-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
-- Jobs and scripts: Python 3.12 (`scripts/`), run by GitHub Actions
+- Jobs and scripts: Python 3.15 (`scripts/`), run by GitHub Actions
 - Hosting: Cloudflare Workers with static assets (`web/wrangler.jsonc`; static build, no SSR, no Worker code)
 - Tests: Vitest or Jasmine for unit tests, Playwright for end-to-end, pytest for scripts
 
@@ -42,7 +42,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Environment: `web/scripts/set-env.mjs` runs before start/build/test/lint and writes the git-ignored `web/src/environments/env.ts` from `NG_APP_SUPABASE_URL`, `NG_APP_SUPABASE_ANON_KEY` and `NG_APP_PRIMEUI_LICENSE`. It reads the process environment first, then `web/.env`, then the repo-root `.env`. It refuses a service-role/secret key and fails on a Cloudflare build (`WORKERS_CI` or `CF_PAGES`) if the Supabase variables are missing.
 - Local database: `cd web && npm run db:start` / `npm run db:stop` (Docker required). After a migration change, or to wipe local data, run `npm run db:reset` (local only: re-applies `supabase/migrations/` and recreates the test user).
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
-- Scripts setup: `cd scripts && python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
+- Scripts setup: `cd scripts && python3.15 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
 - Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project). The backup round-trip test runs only where `age` is installed (CI installs it).
 - Run a job: `cd scripts && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... .venv/bin/python -m jobs.fetch_nav` (also `fetch_prices`, `snapshot`, `backup`, `keepalive`). Against the local stack, take both values from `npx supabase status` (API URL and service role key). In GitHub: Actions › the job's workflow › Run workflow. Jobs fetch only the codes and symbols present in the database and identify themselves honestly (never as a browser).
 
