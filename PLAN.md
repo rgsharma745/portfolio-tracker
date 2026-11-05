@@ -105,7 +105,7 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [ ] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android.
 - [ ] Accessibility: keyboard navigation, focus states, labels on icon buttons, contrast AA in both themes, color is never the only signal for gain/loss (also show +/- sign).
 - [ ] Performance: lazy-load feature routes, initial JS under ~300 KB gzip, Lighthouse mobile performance >= 90.
-- [ ] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
+- [x] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
 
 ## Phase 9: Deploy
 - [x] Workers static assets config (`web/wrangler.jsonc`: output folder, single-page-application fallback). Cloudflare now recommends Workers over Pages for new projects.

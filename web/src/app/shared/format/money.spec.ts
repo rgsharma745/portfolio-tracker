@@ -1,4 +1,5 @@
 import { MISSING, formatMoney, formatPercent } from './money';
+import { MASK, setAmountsHidden } from './privacy';
 
 describe('formatMoney', () => {
   it('groups INR in lakhs and crores with no decimals by default', () => {
@@ -36,6 +37,24 @@ describe('formatMoney', () => {
     expect(formatMoney(null)).toBe(MISSING);
     expect(formatMoney(undefined)).toBe(MISSING);
     expect(formatMoney(Number.NaN)).toBe(MISSING);
+  });
+});
+
+describe('privacy mode', () => {
+  afterEach(() => setAmountsHidden(false));
+
+  it('masks every amount, sign and compact form included, and remembers the choice', () => {
+    setAmountsHidden(true);
+    expect(formatMoney(5674412)).toBe(MASK);
+    expect(formatMoney(-1234.5, 'USD', { sign: true })).toBe(MASK);
+    expect(formatMoney(5674412, 'INR', { compact: true })).toBe(MASK);
+    expect(localStorage.getItem('pt.hideAmounts')).toBe('1');
+  });
+
+  it('still shows a dash for missing values and leaves percentages alone', () => {
+    setAmountsHidden(true);
+    expect(formatMoney(null)).toBe(MISSING);
+    expect(formatPercent(12.345)).toBe('+12.35%');
   });
 });
 

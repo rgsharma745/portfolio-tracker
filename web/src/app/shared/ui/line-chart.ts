@@ -21,6 +21,7 @@ import {
 } from 'chart.js';
 import { ThemeService } from '../../core/theme/theme.service';
 import { Currency, formatMoney } from '../format/money';
+import { amountsHidden } from '../format/privacy';
 import { formatDate } from '../format/number';
 
 // Register only what the line chart uses, so the bundle stays small.
@@ -84,6 +85,7 @@ export class LineChart {
     afterRenderEffect(() => {
       const points = this.points();
       this.theme.isDark();
+      amountsHidden();
       this.render(points);
     });
     inject(DestroyRef).onDestroy(() => this.chart?.destroy());
@@ -152,6 +154,8 @@ export class LineChart {
             grid: { color: grid },
             border: { display: false },
             ticks: {
+              // In privacy mode every tick would read ••••; the line's shape is enough.
+              display: !amountsHidden(),
               color: muted,
               maxTicksLimit: 5,
               precision: 0,

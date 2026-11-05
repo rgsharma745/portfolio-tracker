@@ -25,7 +25,7 @@
 - `PortfolioSwitcher` (All, then one entry per active portfolio; segmented control or dropdown on desktop, a chip row or bottom sheet on mobile; persisted in settings; default All)
 - `PageHeader` (title, last-updated time, refresh button)
 - States: skeleton loading, empty state with a call to action, error state with retry
-- Privacy toggle in the top bar: masks all money with ••••
+- Privacy toggle in the top bar: masks all money with •••• (eye button; remembered on this device). Percentages, units and names stay visible; the chart hides its money axis; CSV export keeps real values. Amounts typed into an edit form are not masked
 
 ## Pages
 

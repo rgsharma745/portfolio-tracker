@@ -1,3 +1,5 @@
+import { MASK, amountsHidden } from './privacy';
+
 export type Currency = 'INR' | 'USD';
 
 export interface MoneyFormatOptions {
@@ -14,13 +16,17 @@ const LAKH = 1e5;
 const CRORE = 1e7;
 export const MISSING = '—';
 
-/** Formats money for display. Rounding happens here only, never in stored values. */
+/**
+ * Formats money for display. Rounding happens here only, never in stored values.
+ * In privacy mode every amount prints as ••••, sign included.
+ */
 export function formatMoney(
   value: number | null | undefined,
   currency: Currency = 'INR',
   options: MoneyFormatOptions = {},
 ): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return MISSING;
+  if (amountsHidden()) return MASK;
 
   const abs = Math.abs(value);
   if (options.compact && currency === 'INR' && abs >= LAKH) {

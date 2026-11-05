@@ -53,6 +53,20 @@
           rounded
           text
           severity="secondary"
+          aria-label="Hide amounts"
+          [attr.aria-pressed]="amountsHidden()"
+          [title]="amountsHidden() ? 'Show amounts' : 'Hide amounts'"
+          (click)="togglePrivacy()"
+        >
+          <i [class]="amountsHidden() ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+        </button>
+        <button
+          pButton
+          type="button"
+          iconOnly
+          rounded
+          text
+          severity="secondary"
           [attr.aria-label]="theme.isDark() ? 'Switch to light theme' : 'Switch to dark theme'"
           (click)="theme.toggle()"
         >

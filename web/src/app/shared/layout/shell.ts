@@ -9,6 +9,7 @@ import { PortfolioService } from '../../core/data/portfolio.service';
 import { PageTitleStrategy } from '../../core/page-title.strategy';
 import { ThemeService } from '../../core/theme/theme.service';
 import { Welcome } from '../../features/welcome/welcome';
+import { amountsHidden, setAmountsHidden } from '../format/privacy';
 import { ErrorState } from '../ui/error-state';
 import { ListSkeleton } from '../ui/list-skeleton';
 import { NAV_ITEMS } from './nav-items';
@@ -47,10 +48,15 @@ export class Shell {
   protected readonly primaryItems = NAV_ITEMS.filter((item) => item.primary);
   protected readonly moreItems = NAV_ITEMS.filter((item) => !item.primary);
   protected readonly moreOpen = signal(false);
+  protected readonly amountsHidden = amountsHidden;
   /** PrimeNG renders the drawer as an <aside>; expose it as the modal dialog it is. */
   protected readonly sheetPt = {
     root: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'More' },
   };
+
+  protected togglePrivacy(): void {
+    setAmountsHidden(!amountsHidden());
+  }
 
   protected signOut(): void {
     this.moreOpen.set(false);

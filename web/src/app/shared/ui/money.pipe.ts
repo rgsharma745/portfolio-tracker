@@ -1,8 +1,11 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { Currency, MoneyFormatOptions, formatMoney, formatPercent } from '../format/money';
 
-/** `{{ value | money }}`, `{{ value | money: 'USD' }}`, `{{ pl | money: 'INR' : { sign: true } }}` */
-@Pipe({ name: 'money' })
+/**
+ * `{{ value | money }}`, `{{ value | money: 'USD' }}`, `{{ pl | money: 'INR' : { sign: true } }}`
+ * Impure so it re-runs when privacy mode flips; it is cheap and lists are a few dozen rows.
+ */
+@Pipe({ name: 'money', pure: false })
 export class MoneyPipe implements PipeTransform {
   transform(
     value: number | null | undefined,
