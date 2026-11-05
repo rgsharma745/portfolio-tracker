@@ -45,6 +45,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Generate DB types: `cd web && npm run gen:types` (from the local database; CI fails if `db.types.ts` is out of date)
 - Scripts setup: `cd scripts && python3.15 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
 - Scripts tests: `cd scripts && .venv/bin/pytest` (targets the local database; set `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY` to target another project). The backup round-trip test runs only where `age` is installed (CI installs it).
+- Restore a backup: `cd scripts && .venv/bin/python -m tools.restore <backup.json.age> --identity <key.txt> [--replace | --owner-email you@example.com]` (shows a plan, asks to type RESTORE; steps in docs/RUNBOOK.md › Restore a backup)
 - Run a job: `cd scripts && SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... .venv/bin/python -m jobs.fetch_nav` (also `fetch_prices`, `snapshot`, `backup`, `keepalive`). Against the local stack, take both values from `npx supabase status` (API URL and service role key). In GitHub: Actions › the job's workflow › Run workflow. Jobs fetch only the codes and symbols present in the database and identify themselves honestly (never as a browser).
 
 ## Hard rules

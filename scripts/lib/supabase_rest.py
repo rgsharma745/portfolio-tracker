@@ -125,6 +125,23 @@ class SupabaseRest:
         resp.raise_for_status()
         return str(resp.json()["id"])
 
+    def admin_find_user(self, email: str) -> str | None:
+        """The id of the user with this email, or None. Fine for a handful of users."""
+        resp = self.request("GET", "/auth/v1/admin/users", params={"per_page": "1000"})
+        resp.raise_for_status()
+        wanted = email.strip().lower()
+        for user in resp.json().get("users", []):
+            if str(user.get("email", "")).lower() == wanted:
+                return str(user["id"])
+        return None
+
+    def admin_user_exists(self, user_id: str) -> bool:
+        resp = self.request("GET", f"/auth/v1/admin/users/{user_id}")
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return True
+
     def admin_delete_user(self, user_id: str) -> None:
         resp = self.request("DELETE", f"/auth/v1/admin/users/{user_id}")
         if resp.status_code != 404:

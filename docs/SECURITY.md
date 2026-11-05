@@ -67,5 +67,5 @@ Production checked 5 Nov 2026 from outside with the public anon key only (read-o
 - [x] Security headers present on the live site (curl, 5 Nov 2026: CSP, HSTS, X-Frame-Options DENY, nosniff, no-referrer, Permissions-Policy, X-Robots-Tag; no Cloudflare-injected scripts; `ngsw.json` no-cache)
 - [x] Auth redirect URLs limited to the production domain and localhost (owner confirmed in Supabase › Authentication › URL Configuration)
 - [x] MFA enabled for the owner (Supabase account, 5 Nov 2026)
-- [ ] Backup restore tested once (a backup was decrypted on 5 Nov 2026; restoring into a database is a Phase 10 task)
+- [ ] Backup restore tested once (restore tool tested on the local stack with encrypted backups in `test_restore.py`; **human:** rehearse with a real backup, docs/RUNBOOK.md › Rehearse a restore)
 - [x] Renovate enabled for npm, pip and GitHub Actions (`renovate.json`; the app is installed and has opened its Dependency Dashboard)

@@ -123,7 +123,8 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [ ] Full Playwright suite on Chromium plus WebKit mobile emulation; manual test on a real phone.
 - [ ] Reconcile: compare Overview totals with the Google Sheet for the same day (MF, Stocks, RSU, Savings, Card dues).
 - [ ] Security checklist in `docs/SECURITY.md` fully ticked.
-- [ ] Write `docs/RUNBOOK.md`: how to restore from backup, rotate keys, add a new fund, fix a failed job.
+- [x] Write `docs/RUNBOOK.md`: how to restore from backup, rotate keys, add a new fund, fix a failed job. Restore is `scripts/tools/restore.py` (plan, typed confirmation, rollback on failure, `--replace`, `--owner-email` for a new project), tested in `scripts/tests/test_restore.py`.
+- [ ] **Human:** rehearse a restore once: a real backup into the local database (docs/RUNBOOK.md › Rehearse a restore).
 - [ ] **Human:** run both systems in parallel for 1 to 2 weeks, then retire the sheet (keep it read-only as an archive).
 
 **Acceptance:** totals reconcile; owner signs off.
