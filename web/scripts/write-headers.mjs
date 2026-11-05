@@ -45,6 +45,14 @@ const headers = `/*
   X-Robots-Tag: noindex, nofollow
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: ${csp}
+
+# The service worker and its manifest must be re-checked on every visit, or updates stall.
+/ngsw-worker.js
+  Cache-Control: no-cache
+/ngsw.json
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
 `;
 
 writeFileSync(resolve(outDir, '_headers'), headers);

@@ -75,6 +75,13 @@
       </div>
     </header>
 
+    @if (update.ready()) {
+      <div class="update-banner" role="status">
+        <span>A new version of the app is ready.</span>
+        <button pButton type="button" size="small" (click)="update.reload()">Reload</button>
+      </div>
+    }
+
     <main class="app-page content">
       @if (!portfolios.loaded()) {
         @if (portfolios.error()) {
