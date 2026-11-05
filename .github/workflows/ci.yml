@@ -64,7 +64,7 @@ jobs:
       - name: Playwright
         working-directory: web
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
           npm run e2e
       - uses: actions/upload-artifact@v7
         if: failure()

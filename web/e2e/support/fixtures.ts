@@ -1,4 +1,10 @@
-import { type APIRequestContext, type Page, expect, request } from '@playwright/test';
+import {
+  type APIRequestContext,
+  type Page,
+  expect,
+  request,
+  type TestInfo,
+} from '@playwright/test';
 import { localSupabase } from './local-supabase';
 
 export const OWNER_EMAIL = 'e2e-owner@example.com';
@@ -157,4 +163,9 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow, 'horizontal page overflow (px)').toBeLessThanOrEqual(0);
+}
+
+/** Phone-sized projects: Chrome at 390x844 and WebKit as an iPhone. */
+export function isMobile(testInfo: TestInfo): boolean {
+  return testInfo.project.name === 'mobile' || testInfo.project.name === 'iphone';
 }

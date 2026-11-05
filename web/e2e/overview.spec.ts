@@ -9,6 +9,7 @@ import {
   seedPortfolios,
   signInWithMagicLink,
   statCard,
+  isMobile,
 } from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -18,7 +19,7 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString
 test('overview: totals, allocation, history and summary by portfolio', async ({
   page,
 }, testInfo) => {
-  const mobile = testInfo.project.name === 'mobile';
+  const mobile = isMobile(testInfo);
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me', 'Wife']);
   await adminUpsert('mf_nav_latest', [

@@ -9,6 +9,7 @@ import {
   expectNoHorizontalScroll,
   seedPortfolios,
   signInWithMagicLink,
+  isMobile,
 } from './support/fixtures';
 
 // A dedicated user: these tests add, rename and delete portfolios.
@@ -48,7 +49,7 @@ test('manage portfolios: add, rename, reorder, deactivate, delete', async ({ pag
   // Deactivate: tagged, and gone from the switcher
   await page.getByRole('switch', { name: 'Wife active' }).click();
   await expect(page.getByTestId('portfolio-Wife').getByText('Inactive')).toBeVisible();
-  if (testInfo.project.name === 'mobile') {
+  if (isMobile(testInfo)) {
     await expect(page.getByRole('group', { name: 'Portfolio' }).getByRole('button')).toHaveText([
       'All',
       'Me',
@@ -61,13 +62,13 @@ test('manage portfolios: add, rename, reorder, deactivate, delete', async ({ pag
   const dialog = page.getByRole('dialog', { name: 'Delete Children?' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('0 mutual fund holdings')).toBeVisible();
-  if (testInfo.project.name === 'mobile') {
+  if (isMobile(testInfo)) {
     // Polls because the dialog scales in when it opens.
     await expect
       .poll(async () => (await dialog.boundingBox())?.width, {
         message: 'dialog is a full-screen sheet on mobile',
       })
-      .toBe(390);
+      .toBe(page.viewportSize()?.width);
   }
   const confirm = dialog.getByRole('button', { name: 'Delete permanently' });
   await expect(confirm).toBeDisabled();

@@ -8,12 +8,13 @@ import {
   seedPortfolios,
   signInWithMagicLink,
   statCard,
+  isMobile,
 } from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('savings: total, shares, edit a balance, add and delete', async ({ page }, testInfo) => {
-  const mobile = testInfo.project.name === 'mobile';
+  const mobile = isMobile(testInfo);
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me', 'Wife']);
   await adminInsert('savings_accounts', [

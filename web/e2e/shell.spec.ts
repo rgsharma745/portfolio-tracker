@@ -1,5 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
-import { expectNoHorizontalScroll } from './support/fixtures';
+import { expectNoHorizontalScroll, isMobile } from './support/fixtures';
 
 const PAGES = [
   { label: 'Overview', heading: 'Overview' },
@@ -25,7 +25,7 @@ test.describe('app shell', () => {
 
   test('every page is reachable from the navigation', async ({ page }, testInfo) => {
     await page.goto('/overview');
-    const mobile = testInfo.project.name === 'mobile';
+    const mobile = isMobile(testInfo);
     for (const target of PAGES) {
       if (!mobile) {
         await sidebar(page).getByRole('link', { name: target.label }).click();
@@ -71,7 +71,7 @@ test.describe('app shell', () => {
   });
 
   test('touch targets in the bottom bar are at least 44px', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'mobile only');
+    test.skip(!isMobile(testInfo), 'mobile only');
     await page.goto('/overview');
     for (const tab of await bottomNav(page).locator('.tab').all()) {
       const box = await tab.boundingBox();

@@ -9,6 +9,7 @@ import {
   seedPortfolios,
   signInWithMagicLink,
   statCard,
+  isMobile,
 } from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -16,7 +17,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
 
 test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, testInfo) => {
-  const mobile = testInfo.project.name === 'mobile';
+  const mobile = isMobile(testInfo);
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me']);
   await adminUpsert('stock_price_latest', [

@@ -32,11 +32,11 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 ```
 
 ## Commands (fill in as they are created, keep this list current)
-- Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium`)
+- Install: `cd web && npm ci` (first time for E2E: `npx playwright install chromium webkit`)
 - Dev server: `cd web && npm start` (http://localhost:4200)
 - Dev server on the local database: `cd web && npm run db:start` (starts the local Supabase stack in Docker and ensures the user `test@portfolio-tracker.com` with sample portfolios), then `npm run start:local` (http://localhost:4300) and sign in as that user. Stop the stack with `npm run db:stop` (data is kept). `npm run local:user -- other@example.com [--seed]` adds more local users. Magic-link emails land in Mailpit at http://127.0.0.1:54324. Uses `env.local.ts` and the `local` build configuration, so it can run next to `npm start`. With `--seed` (as `db:start` does) the user also gets sample holdings, cards, bills, prices and 200 days of history, added only if that user has none.
 - Unit tests: `cd web && npm test` (Vitest, single run; `npm run test:watch` to watch). `npm run test:coverage` also fails if `core/calc` coverage drops below 90% (CI runs this one; HTML report in `web/coverage/`)
-- E2E: `cd web && npm run e2e` (Playwright at 390x844 and 1440x900). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
+- E2E: `cd web && npm run e2e` (Playwright: Chrome at 390x844 and 1440x900, and WebKit as an iPhone 15; `npx playwright test --project=iphone` runs only the iPhone pass). Requires the local database (below). It serves the app with `npm run start:local` (port 4300, `local` build configuration, separate `env.local.ts`), so it never touches a dev server on 4200 or production. Sign-in uses a real magic link read from the local Mailpit.
 - App icons: `cd web && node scripts/make-icons.mjs` re-renders `public/icons/` (PNGs are committed)
 - Lint and format check: `cd web && npm run lint` (ESLint + Prettier check); fix formatting with `npm run format`
 - Build: `cd web && npm run build` (output `web/dist/portfolio-tracker/browser`; `postbuild` writes Cloudflare's `_headers` with the CSP). Cloudflare Workers Builds builds it from `web/` with `npm ci && npm run build` (Node from `web/.node-version`) and deploys with `npx wrangler deploy` (`web/wrangler.jsonc`). Preview the production build locally with `npx wrangler dev` in `web/`

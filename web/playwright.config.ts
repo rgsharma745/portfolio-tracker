@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * E2E runs against the local Supabase stack, never production: `npm run start:local`
  * serves the app on port 4300 (no clash with `npm start` on 4200) built with local keys.
- * Viewports from docs/UI_SPEC.md: every page is checked at mobile and desktop size.
+ * Viewports from docs/UI_SPEC.md: every page is checked at mobile and desktop size, and in
+ * WebKit as an iPhone.
  */
 const OWNER_STATE = 'playwright/.auth/owner.json';
 const PORT = 4300;
@@ -30,6 +31,12 @@ export default defineConfig({
         hasTouch: true,
         storageState: OWNER_STATE,
       },
+    },
+    {
+      // Safari's engine with an iPhone's screen, touch and user agent (docs/UI_SPEC.md: iOS).
+      name: 'iphone',
+      dependencies: ['setup'],
+      use: { ...devices['iPhone 15'], storageState: OWNER_STATE },
     },
     {
       name: 'desktop',

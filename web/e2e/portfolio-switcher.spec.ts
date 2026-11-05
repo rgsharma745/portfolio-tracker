@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { isMobile } from './support/fixtures';
 
 test.describe('portfolio switcher', () => {
   test('defaults to All and remembers the choice across reloads', async ({ page }, testInfo) => {
     await page.goto('/overview');
 
-    if (testInfo.project.name === 'mobile') {
+    if (isMobile(testInfo)) {
       const chips = page.getByRole('group', { name: 'Portfolio' });
       await expect(chips.getByRole('button')).toHaveText(['All', 'Me', 'Wife']);
       await chips.getByRole('button', { name: 'All' }).click();

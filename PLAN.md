@@ -120,7 +120,8 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 **Acceptance:** production site loads over HTTPS, login works from phone and desktop, jobs run on schedule.
 
 ## Phase 10: QA and cutover
-- [ ] Full Playwright suite on Chromium plus WebKit mobile emulation; manual test on a real phone.
+- [x] Full Playwright suite on Chromium plus WebKit mobile emulation (`iphone` project: WebKit as an iPhone 15; 76 tests pass across mobile, desktop and iPhone).
+- [ ] **Human:** manual test on a real phone (install to the home screen, sign in with the code, add and edit a holding, toggle hide amounts and dark mode).
 - [ ] Reconcile: compare Overview totals with the Google Sheet for the same day (MF, Stocks, RSU, Savings, Card dues).
 - [ ] Security checklist in `docs/SECURITY.md` fully ticked.
 - [x] Write `docs/RUNBOOK.md`: how to restore from backup, rotate keys, add a new fund, fix a failed job. Restore is `scripts/tools/restore.py` (plan, typed confirmation, rollback on failure, `--replace`, `--owner-email` for a new project), tested in `scripts/tests/test_restore.py`.
