@@ -97,13 +97,13 @@ Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the
 - [x] Failure notification: workflow failure emails the owner (GitHub default) and also write a `job_runs` row (name, status, message, time). Show last-run status in Settings.
 
 **Acceptance:** manual `workflow_dispatch` of each job succeeds; re-running creates no duplicates; NAV date shown in the MF page advances.
-- [ ] **Human:** add the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `BACKUP_AGE_RECIPIENT` (make the key with `age-keygen`, keep the private half offline; see `docs/RUNBOOK.md`), push, then run each workflow once from the Actions tab and check Settings › Job runs.
+- [x] **Human:** add the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `BACKUP_AGE_RECIPIENT` (make the key with `age-keygen`, keep the private half offline; see `docs/RUNBOOK.md`), push, then run each workflow once from the Actions tab and check Settings › Job runs.
 
 Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; Stooq now blocks scripts), Frankfurter (USD/INR), AMFI (NAVs); see `docs/ARCHITECTURE.md`. Backups go to a 90-day workflow artifact (owner's choice). Only held codes and symbols are fetched and stored.
 
 ## Phase 8: PWA, accessibility, performance
 - [x] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android. Sign-in also accepts the code from the email, because the iPhone home-screen app cannot use a link that opens in Safari.
-- [ ] **Human:** paste `supabase/templates/magic_link.html` into Supabase › Authentication › Emails › Magic link (see docs/RUNBOOK.md), then install the app on your phone and sign in with the code.
+- [x] **Human:** paste `supabase/templates/magic_link.html` into Supabase › Authentication › Emails › Magic link (see docs/RUNBOOK.md), then install the app on your phone and sign in with the code. Editing templates needed custom SMTP (Gmail App Password); the project sends 8-digit codes.
 - [x] Accessibility: keyboard navigation, focus states, labels on icon buttons, contrast AA in both themes, color is never the only signal for gain/loss (also show +/- sign). `e2e/accessibility.spec.ts` runs axe-core (WCAG 2.1 A/AA) on every page and an edit dialog, light and dark, phone and desktop, and checks dialogs open and close from the keyboard with focus returned.
 - [ ] Performance: lazy-load feature routes, initial JS under ~300 KB gzip, Lighthouse mobile performance >= 90. Done: feature routes lazy, initial JS 176 KB gzip (from 199), Lighthouse mobile 89–91 on the local production build (accessibility 100, best practices 100).
 - [ ] **Human:** run https://pagespeed.web.dev on the live `/login` URL (mobile) to confirm >= 90 on Cloudflare's edge.
@@ -113,7 +113,7 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [x] Workers static assets config (`web/wrangler.jsonc`: output folder, single-page-application fallback). Cloudflare now recommends Workers over Pages for new projects.
 - [x] **Human:** create the Worker from the GitHub repo: root `web`, build `npm ci && npm run build`, deploy `npx wrangler deploy`, `NG_APP_*` as build variables (Node version comes from `web/.node-version`).
 - [x] SPA fallback and security headers per `docs/SECURITY.md`. `npm run build` writes `_headers` (CSP with the Supabase origin from `NG_APP_SUPABASE_URL`, HSTS, nosniff, Referrer-Policy, frame-ancestors none). No `_redirects`: unknown paths get `index.html` through `not_found_handling: single-page-application`. Critical-CSS inlining is off because its inline script would be blocked by the CSP.
-- [ ] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (done), `BACKUP_AGE_RECIPIENT` (still to add, after `age-keygen`). `OWNER_USER_ID` turned out not to be needed. The repo was recreated on 5 Nov 2026 after GitHub stopped accepting ref updates on the original; the secrets were re-added there.
+- [x] **Human:** add GitHub secrets: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_AGE_RECIPIENT` (all set 5 Nov 2026; a backup was downloaded and decrypted). `OWNER_USER_ID` turned out not to be needed. The repo was recreated on 5 Nov 2026 after GitHub stopped accepting ref updates on the original; the secrets were re-added there.
 - [ ] Optionally restrict access further with Cloudflare Access (free for up to 50 users) in front of the site.
 - [x] Supabase Auth: set Site URL and redirect URLs to the deployed domain.
 
