@@ -41,7 +41,11 @@ module.exports = defineConfig([
         {
           paths: [
             {
-              name: '@supabase/supabase-js',
+              name: '@supabase/auth-js',
+              message: 'Import Supabase only in src/app/core/data/ and core/auth/.',
+            },
+            {
+              name: '@supabase/postgrest-js',
               message: 'Import Supabase only in src/app/core/data/.',
             },
           ],

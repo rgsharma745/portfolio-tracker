@@ -15,7 +15,8 @@ const env = loadEnv();
 let connect = "'self'";
 if (env.NG_APP_SUPABASE_URL) {
   const url = new URL(env.NG_APP_SUPABASE_URL);
-  connect += ` ${url.origin} wss://${url.host}`;
+  // REST and auth only: the app has no realtime client, so no wss:// either.
+  connect += ` ${url.origin}`;
 } else if (env.WORKERS_CI || env.CF_PAGES) {
   console.error('write-headers: NG_APP_SUPABASE_URL must be set.');
   process.exit(1);

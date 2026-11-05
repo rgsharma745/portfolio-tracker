@@ -8,7 +8,7 @@ Personal portfolio tracker for ONE login (the owner), with several portfolios un
 ## Tech stack (do not swap without asking)
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
 - PrimeNG (Aura theme, light and dark) for UI components; Tailwind CSS only for layout utilities. PrimeNG is under the PrimeUI license (not MIT): the owner uses a free Community License key, supplied as `NG_APP_PRIMEUI_LICENSE` and renewed yearly
-- Supabase: Postgres, Auth, Row Level Security. Client: `@supabase/supabase-js`
+- Supabase: Postgres, Auth, Row Level Security. Client: Supabase's `@supabase/auth-js` + `@supabase/postgrest-js` (the parts of `supabase-js` the app uses; see `core/data/supabase.client.ts`)
 - Charts: Chart.js used directly through the shared `app-line-chart` component (not PrimeNG Chart, which is deprecated in favor of paid PrimeUI PRO Charts)
 - Jobs and scripts: Python 3.15 (`scripts/`), run by GitHub Actions
 - Hosting: Cloudflare Workers with static assets (`web/wrangler.jsonc`; static build, no SSR, no Worker code)

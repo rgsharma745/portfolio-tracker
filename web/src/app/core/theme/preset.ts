@@ -1,5 +1,44 @@
 import { definePreset } from '@primeuix/themes';
-import Aura from '@primeuix/themes/aura';
+import AuraBase from '@primeuix/themes/aura/base';
+import button from '@primeuix/themes/aura/button';
+import datatable from '@primeuix/themes/aura/datatable';
+import dialog from '@primeuix/themes/aura/dialog';
+import drawer from '@primeuix/themes/aura/drawer';
+import iconfield from '@primeuix/themes/aura/iconfield';
+import inputtext from '@primeuix/themes/aura/inputtext';
+import message from '@primeuix/themes/aura/message';
+import select from '@primeuix/themes/aura/select';
+import selectbutton from '@primeuix/themes/aura/selectbutton';
+import skeleton from '@primeuix/themes/aura/skeleton';
+import tag from '@primeuix/themes/aura/tag';
+import textarea from '@primeuix/themes/aura/textarea';
+import togglebutton from '@primeuix/themes/aura/togglebutton';
+import toggleswitch from '@primeuix/themes/aura/toggleswitch';
+
+/**
+ * Aura with only the components this app uses. The full `@primeuix/themes/aura` carries
+ * tokens for 90+ components (~130 kB, all in the first download). Using a PrimeNG component
+ * that is not listed here leaves it unstyled: add its tokens below.
+ */
+const Aura = {
+  ...AuraBase,
+  components: {
+    button,
+    datatable,
+    dialog,
+    drawer,
+    iconfield,
+    inputtext,
+    message,
+    select,
+    selectbutton,
+    skeleton,
+    tag,
+    textarea,
+    togglebutton,
+    toggleswitch,
+  },
+};
 
 /**
  * Aura preset tuned to the visual style in docs/UI_SPEC.md:

@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { LoginPage } from './features/login/login-page';
 
 export const routes: Routes = [
   {
     path: 'login',
     title: 'Sign in',
     canActivate: [guestGuard],
-    loadComponent: () => import('./features/login/login-page').then((m) => m.LoginPage),
+    // Eager: a signed-out first visit then needs no second round trip before it can paint.
+    component: LoginPage,
   },
   {
     path: '',

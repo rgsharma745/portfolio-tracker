@@ -14,7 +14,7 @@ This app holds personal financial data. Treat security as a feature.
 - Never expose the `service_role` key to the browser.
 
 ## Supabase project settings (set when creating the project; keep `supabase/config.toml` in sync)
-- Data API: **enabled** (supabase-js and the jobs use it).
+- Data API: **enabled** (the app and the jobs use it).
 - Automatically expose new tables: **off**. New tables get no privileges until a migration grants them (`auto_expose_new_tables = false` locally).
 - Automatic RLS: **on** (event trigger enables RLS on new public tables as a safety net).
 - Auth: email provider on (magic link), "Allow new users to sign up" **off** (`enable_signup = false` locally), Site URL and redirect URLs limited to localhost and the production domain.
@@ -42,7 +42,7 @@ This app holds personal financial data. Treat security as a feature.
   X-Frame-Options: DENY
   X-Robots-Tag: noindex, nofollow
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://YOUR-PROJECT.supabase.co wss://YOUR-PROJECT.supabase.co; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://YOUR-PROJECT.supabase.co; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 ```
 `style-src 'unsafe-inline'` is needed because PrimeNG writes its theme into `<style>` tags. The production build does not inline critical CSS: that feature adds an inline script, which `script-src 'self'` blocks (the page would load unstyled).
 Adjust the CSP if Angular or PrimeNG needs additional sources, but never use `unsafe-eval` and never allow `*` for `script-src`.

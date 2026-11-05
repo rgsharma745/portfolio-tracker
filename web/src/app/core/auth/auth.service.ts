@@ -1,6 +1,6 @@
 import { DOCUMENT, Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from '@supabase/auth-js';
 import { SUPABASE } from '../data/supabase.client';
 
 /**
