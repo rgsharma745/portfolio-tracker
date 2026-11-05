@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { expectNoHorizontalScroll } from './support/fixtures';
+import {
+  OWNER_EMAIL,
+  ensureUser,
+  expectNoHorizontalScroll,
+  requestSignInEmail,
+  screenshot,
+} from './support/fixtures';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -32,5 +38,22 @@ test.describe('login', () => {
     await page.getByLabel('Email').fill('nobody-here@example.com');
     await page.getByRole('button', { name: 'Email me a sign-in link' }).click();
     await expect(page.getByText('Check your email.')).toBeVisible();
+  });
+
+  test('signs in with the 6-digit code from the email', async ({ page }, testInfo) => {
+    await ensureUser(OWNER_EMAIL);
+    const html = await requestSignInEmail(page, OWNER_EMAIL);
+    const code = html.match(/<strong[^>]*>(\d{6})<\/strong>/)?.[1] ?? '';
+    expect(code, 'code in the email').toMatch(/^\d{6}$/);
+
+    const field = page.getByLabel('Or enter the 6-digit code from the email');
+    await field.fill('000000');
+    await page.getByRole('button', { name: 'Sign in with code' }).click();
+    await expect(page.getByText('That code is wrong or has expired.')).toBeVisible();
+    await screenshot(page, 'login-code', testInfo.project.name);
+
+    await field.fill(code);
+    await page.getByRole('button', { name: 'Sign in with code' }).click();
+    await expect(page).toHaveURL(/\/overview$/);
   });
 });

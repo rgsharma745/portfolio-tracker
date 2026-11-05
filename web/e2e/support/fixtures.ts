@@ -92,6 +92,18 @@ export async function adminDelete(table: string, filters: Record<string, string>
 
 /** Signs in through the real flow: request a magic link, read it from Mailpit, open it. */
 export async function signInWithMagicLink(page: Page, email: string): Promise<void> {
+  const html = await requestSignInEmail(page, email);
+  const link = (html.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/)?.[1] ?? '').replaceAll(
+    '&amp;',
+    '&',
+  );
+  expect(link, 'sign-in link in the email').not.toBe('');
+  await page.goto(link);
+  await expect(page).toHaveURL(/\/overview$/);
+}
+
+/** Asks for a sign-in email on /login and returns its HTML (link and 6-digit code). */
+export async function requestSignInEmail(page: Page, email: string): Promise<string> {
   const mail = await request.newContext({ baseURL: localSupabase().mailpitUrl });
   await mail.delete('/api/v1/messages', { data: {} });
 
@@ -109,26 +121,20 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
     await page.waitForTimeout(1500);
   }
 
-  let link = '';
+  let html = '';
   await expect
     .poll(
       async () => {
         const found = await mail.get('/api/v1/search', { params: { query: `to:${email}` } });
         const [message] = (await found.json()).messages ?? [];
         if (!message) return '';
-        const body = await (await mail.get(`/api/v1/message/${message.ID}`)).json();
-        link = (body.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/)?.[1] ?? '').replaceAll(
-          '&amp;',
-          '&',
-        );
-        return link;
+        html = (await (await mail.get(`/api/v1/message/${message.ID}`)).json()).HTML;
+        return html;
       },
-      { message: 'magic link email', timeout: 15_000 },
+      { message: 'sign-in email', timeout: 15_000 },
     )
     .not.toBe('');
-
-  await page.goto(link);
-  await expect(page).toHaveURL(/\/overview$/);
+  return html;
 }
 
 /** A stat card by its exact label. */

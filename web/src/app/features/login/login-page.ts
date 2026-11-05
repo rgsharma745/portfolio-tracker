@@ -3,9 +3,11 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
+type CodeStatus = 'idle' | 'checking' | 'wrong';
 
 /** Email magic-link sign-in. No sign-up: only the owner's account exists. */
 @Component({
@@ -25,10 +27,34 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
               If {{ email.value }} is registered, a sign-in link is on its way. It works once and
               expires in an hour.
             </p>
-            <button pButton type="button" text (click)="status.set('idle')">
-              Use a different email
-            </button>
           </div>
+          <form class="flex flex-col gap-3" [formGroup]="codeForm" (ngSubmit)="verify()" novalidate>
+            <label for="code" class="field-label">Or enter the 6-digit code from the email</label>
+            <input
+              pInputText
+              id="code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              [formControl]="code"
+              [attr.aria-invalid]="codeStatus() === 'wrong'"
+              aria-describedby="code-help"
+            />
+            <small id="code-help" [class]="codeStatus() === 'wrong' ? 'app-down' : 'muted'">
+              {{
+                codeStatus() === 'wrong'
+                  ? 'That code is wrong or has expired.'
+                  : 'Use the code when the link opens in a different browser, such as the app on your home screen.'
+              }}
+            </small>
+            <button pButton type="submit" [disabled]="codeStatus() === 'checking'">
+              {{ codeStatus() === 'checking' ? 'Checking…' : 'Sign in with code' }}
+            </button>
+          </form>
+          <button pButton type="button" text (click)="status.set('idle')">
+            Use a different email
+          </button>
         } @else {
           <p class="login-text">Sign in with a one-time link sent to your email.</p>
           <form class="flex flex-col gap-3" [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -103,12 +129,16 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
 })
 export class LoginPage {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly email = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.email],
   });
   protected readonly form = new FormGroup({ email: this.email });
+  protected readonly code = new FormControl('', { nonNullable: true });
+  protected readonly codeForm = new FormGroup({ code: this.code });
+  protected readonly codeStatus = signal<CodeStatus>('idle');
   protected readonly status = signal<Status>('idle');
   protected readonly submitted = signal(false);
 
@@ -125,6 +155,21 @@ export class LoginPage {
       this.status.set('sent');
     } catch {
       this.status.set('error');
+    }
+  }
+
+  protected async verify(): Promise<void> {
+    const code = this.code.value.replace(/\D/g, '');
+    if (code.length !== 6) {
+      this.codeStatus.set('wrong');
+      return;
+    }
+    this.codeStatus.set('checking');
+    try {
+      await this.auth.verifyCode(this.email.value.trim(), code);
+      await this.router.navigateByUrl('/');
+    } catch {
+      this.codeStatus.set('wrong');
     }
   }
 }

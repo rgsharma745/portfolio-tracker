@@ -52,6 +52,21 @@ export class AuthService {
     }
   }
 
+  /**
+   * Signs in with the 6-digit code from the same email. Needed for the app installed on an
+   * iPhone home screen: it has its own storage, so a link that opens in Safari signs in
+   * Safari, not the app. Throws on a wrong or expired code.
+   */
+  async verifyCode(email: string, code: string): Promise<void> {
+    const { data, error } = await this.supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+    if (error) throw error;
+    this.session.set(data.session);
+  }
+
   async signOut(): Promise<void> {
     await this.supabase.auth.signOut();
     this.session.set(null);

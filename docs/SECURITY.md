@@ -49,7 +49,7 @@ Adjust the CSP if Angular or PrimeNG needs additional sources, but never use `un
 Add `<meta name="robots" content="noindex,nofollow">` and a `robots.txt` that disallows all.
 
 ## Data handling
-- The service worker must never cache Supabase API responses.
+- The service worker must never cache Supabase API responses. `ngsw-config.json` has asset groups only (the app's own files) and no data groups, so every Supabase request goes to the network. Privacy mode only masks the screen; it is not access control.
 - No analytics or third-party trackers.
 - No financial values in URLs, logs or error reports.
 - Backups are encrypted with `age` before leaving GitHub runners; keep the private key offline (password manager).

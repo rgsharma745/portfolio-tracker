@@ -247,6 +247,13 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Sign-in email with both the link and the 6-digit code (the code signs in the app
+# installed on an iPhone home screen). Production uses the same HTML, pasted into
+# Supabase › Authentication › Emails › Magic link (docs/RUNBOOK.md).
+[auth.email.template.magic_link]
+subject = "Your sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

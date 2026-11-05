@@ -102,7 +102,8 @@ Put code in `scripts/jobs/`, workflows in `.github/workflows/`. All jobs use the
 Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; Stooq now blocks scripts), Frankfurter (USD/INR), AMFI (NAVs); see `docs/ARCHITECTURE.md`. Backups go to a 90-day workflow artifact (owner's choice). Only held codes and symbols are fetched and stored.
 
 ## Phase 8: PWA, accessibility, performance
-- [ ] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android.
+- [x] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android. Sign-in also accepts the 6-digit code from the email, because the iPhone home-screen app cannot use a link that opens in Safari.
+- [ ] **Human:** paste `supabase/templates/magic_link.html` into Supabase › Authentication › Emails › Magic link (see docs/RUNBOOK.md), then install the app on your phone and sign in with the code.
 - [ ] Accessibility: keyboard navigation, focus states, labels on icon buttons, contrast AA in both themes, color is never the only signal for gain/loss (also show +/- sign).
 - [ ] Performance: lazy-load feature routes, initial JS under ~300 KB gzip, Lighthouse mobile performance >= 90.
 - [x] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
