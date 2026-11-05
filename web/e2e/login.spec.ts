@@ -40,13 +40,13 @@ test.describe('login', () => {
     await expect(page.getByText('Check your email.')).toBeVisible();
   });
 
-  test('signs in with the 6-digit code from the email', async ({ page }, testInfo) => {
+  test('signs in with the code from the email', async ({ page }, testInfo) => {
     await ensureUser(OWNER_EMAIL);
     const html = await requestSignInEmail(page, OWNER_EMAIL);
-    const code = html.match(/<strong[^>]*>(\d{6})<\/strong>/)?.[1] ?? '';
-    expect(code, 'code in the email').toMatch(/^\d{6}$/);
+    const code = html.match(/<strong[^>]*>(\d{6,10})<\/strong>/)?.[1] ?? '';
+    expect(code, 'code in the email').toMatch(/^\d{6,10}$/);
 
-    const field = page.getByLabel('Or enter the 6-digit code from the email');
+    const field = page.getByLabel('Or enter the code from the email');
     await field.fill('000000');
     await page.getByRole('button', { name: 'Sign in with code' }).click();
     await expect(page.getByText('That code is wrong or has expired.')).toBeVisible();

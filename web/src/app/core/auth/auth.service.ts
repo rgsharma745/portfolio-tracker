@@ -53,7 +53,7 @@ export class AuthService {
   }
 
   /**
-   * Signs in with the 6-digit code from the same email. Needed for the app installed on an
+   * Signs in with the code (6 to 10 digits) from the same email. Needed for the app installed on an
    * iPhone home screen: it has its own storage, so a link that opens in Safari signs in
    * Safari, not the app. Throws on a wrong or expired code.
    */

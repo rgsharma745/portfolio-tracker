@@ -102,7 +102,7 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
   await expect(page).toHaveURL(/\/overview$/);
 }
 
-/** Asks for a sign-in email on /login and returns its HTML (link and 6-digit code). */
+/** Asks for a sign-in email on /login and returns its HTML (link and code). */
 export async function requestSignInEmail(page: Page, email: string): Promise<string> {
   const mail = await request.newContext({ baseURL: localSupabase().mailpitUrl });
   await mail.delete('/api/v1/messages', { data: {} });

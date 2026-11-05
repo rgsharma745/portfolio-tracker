@@ -29,14 +29,14 @@ type CodeStatus = 'idle' | 'checking' | 'wrong';
             </p>
           </div>
           <form class="flex flex-col gap-3" [formGroup]="codeForm" (ngSubmit)="verify()" novalidate>
-            <label for="code" class="field-label">Or enter the 6-digit code from the email</label>
+            <label for="code" class="field-label">Or enter the code from the email</label>
             <input
               pInputText
               id="code"
               type="text"
               inputmode="numeric"
               autocomplete="one-time-code"
-              maxlength="6"
+              maxlength="10"
               [formControl]="code"
               [attr.aria-invalid]="codeStatus() === 'wrong'"
               aria-describedby="code-help"
@@ -160,7 +160,8 @@ export class LoginPage {
 
   protected async verify(): Promise<void> {
     const code = this.code.value.replace(/\D/g, '');
-    if (code.length !== 6) {
+    // Supabase codes are 6 to 10 digits (Auth › Providers › Email › OTP length).
+    if (code.length < 6 || code.length > 10) {
       this.codeStatus.set('wrong');
       return;
     }

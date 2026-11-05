@@ -233,7 +233,7 @@ secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.
-otp_length = 6
+otp_length = 8  # matches the production project
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
@@ -247,7 +247,7 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Sign-in email with both the link and the 6-digit code (the code signs in the app
+# Sign-in email with both the link and the code (the code signs in the app
 # installed on an iPhone home screen). Production uses the same HTML, pasted into
 # Supabase › Authentication › Emails › Magic link (docs/RUNBOOK.md).
 [auth.email.template.magic_link]
