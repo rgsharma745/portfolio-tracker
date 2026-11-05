@@ -7,7 +7,7 @@ import { SkeletonModule } from 'primeng/skeleton';
   imports: [SkeletonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="app-card flex flex-col gap-4" aria-busy="true" aria-label="Loading">
+    <div class="app-card flex flex-col gap-4" role="status" aria-busy="true" aria-label="Loading">
       @for (row of rowIndexes(); track row) {
         <div class="flex items-center justify-between gap-4">
           <p-skeleton width="45%" height="1rem" />

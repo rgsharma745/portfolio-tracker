@@ -129,6 +129,7 @@
   [modal]="true"
   [draggable]="false"
   [header]="'Delete ' + (deleting()?.name ?? '') + '?'"
+  closeAriaLabel="Close"
   styleClass="app-dialog"
 >
   @if (deleting(); as portfolio) {

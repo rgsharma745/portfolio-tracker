@@ -54,6 +54,12 @@ export const AppPreset = definePreset(Aura, {
     button: {
       root: { borderRadius: '9999px' },
     },
+    // Unselected segments of a select button (1M/6M/…, India/US): Aura's surface 500 is
+    // 3.4:1 on its surface 100 track; 600 meets AA.
+    togglebutton: {
+      root: { color: 'light-dark({surface.600}, {surface.400})' },
+      icon: { color: 'light-dark({surface.600}, {surface.400})' },
+    },
     // Holdings tables: roomy rows, a soft header band and a totals bar (UI_SPEC).
     datatable: {
       headerCell: { padding: '0.75rem 1rem' },

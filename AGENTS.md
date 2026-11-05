@@ -67,7 +67,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Desktop: left sidebar navigation, full data tables with sorting, filtering and totals.
 - No horizontal page scroll on any viewport. Wide tables scroll inside their own container.
 - Respect `prefers-color-scheme`; support a manual light/dark toggle. Respect iOS safe-area insets.
-- Every new page needs a Playwright check at 390x844 and 1440x900.
+- Every new page needs a Playwright check at 390x844 and 1440x900, and an entry in `e2e/accessibility.spec.ts` (axe-core, WCAG 2.1 AA, both themes).
 See `docs/UI_SPEC.md`.
 
 ## Code conventions

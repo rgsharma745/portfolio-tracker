@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -22,7 +31,9 @@ let nextId = 0;
       [modal]="true"
       [draggable]="false"
       [header]="header()"
+      closeAriaLabel="Close"
       styleClass="app-dialog"
+      (onHide)="restoreFocus()"
     >
       <form [id]="formId" class="form-grid" (ngSubmit)="save.emit()" novalidate>
         <ng-content />
@@ -115,10 +126,24 @@ export class EditDialog {
   protected readonly formId = `edit-form-${nextId++}`;
   protected readonly confirming = signal(false);
 
+  private readonly document = inject(DOCUMENT);
+  /** The control that opened the dialog, focused again when it closes (WCAG 2.4.3). */
+  private opener: HTMLElement | null = null;
+
   constructor() {
-    // Each opening starts without a pending delete confirmation.
     effect(() => {
-      if (this.visible()) this.confirming.set(false);
+      if (!this.visible()) return;
+      // Runs before the dialog renders and moves focus inside it.
+      const active = this.document.activeElement;
+      this.opener = active instanceof HTMLElement && active !== this.document.body ? active : null;
+      // Each opening starts without a pending delete confirmation.
+      this.confirming.set(false);
     });
+  }
+
+  protected restoreFocus(): void {
+    // After a delete the opener (an Edit button in that row) may be gone.
+    if (this.opener?.isConnected) this.opener.focus();
+    this.opener = null;
   }
 }

@@ -126,6 +126,8 @@ $bottom-nav-height: 64px;
 
 :host-context(.app-dark) .side-link.active {
   background: color-mix(in srgb, var(--p-primary-color) 18%, transparent);
+  // primary-400 on this tint is 4.4:1; 300 keeps AA.
+  color: var(--p-primary-300);
 }
 
 .sign-out {

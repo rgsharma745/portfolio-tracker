@@ -82,7 +82,7 @@ test('cards: summary, earlier bills, create, enter amount, mark paid', async ({
   await expect(statCard(page, 'Awaiting statement')).toContainText('0');
 
   // Mark the overdue bill paid: next due moves on
-  await earlier.getByRole('button', { name: 'Mark E2E Rewards paid' }).click();
+  await earlier.getByRole('button', { name: 'Mark paid: E2E Rewards' }).click();
   await expect(earlier).toBeHidden();
   await expect(statCard(page, 'Total pending')).toContainText('₹5,500');
   await expect(nextDue).toContainText('E2E Travel');

@@ -104,7 +104,7 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 ## Phase 8: PWA, accessibility, performance
 - [x] PWA: manifest, icons, service worker (cache app shell only, never cache API responses containing financial data), installable on iOS and Android. Sign-in also accepts the 6-digit code from the email, because the iPhone home-screen app cannot use a link that opens in Safari.
 - [ ] **Human:** paste `supabase/templates/magic_link.html` into Supabase › Authentication › Emails › Magic link (see docs/RUNBOOK.md), then install the app on your phone and sign in with the code.
-- [ ] Accessibility: keyboard navigation, focus states, labels on icon buttons, contrast AA in both themes, color is never the only signal for gain/loss (also show +/- sign).
+- [x] Accessibility: keyboard navigation, focus states, labels on icon buttons, contrast AA in both themes, color is never the only signal for gain/loss (also show +/- sign). `e2e/accessibility.spec.ts` runs axe-core (WCAG 2.1 A/AA) on every page and an edit dialog, light and dark, phone and desktop, and checks dialogs open and close from the keyboard with focus returned.
 - [ ] Performance: lazy-load feature routes, initial JS under ~300 KB gzip, Lighthouse mobile performance >= 90.
 - [x] Privacy mode: a "hide amounts" toggle (masks all money values with ••••) persisted locally, useful in public.
 

@@ -4,7 +4,7 @@
 - Mobile first, designed at 390x844, scaled up to 1440x900 and beyond.
 - Numbers are the hero: large, tabular figures (`font-variant-numeric: tabular-nums`), INR in `en-IN` grouping (₹56,74,412), gains green with `+`, losses red with `-`.
 - Calm and dense on desktop, airy and thumb-friendly on mobile.
-- Light and dark themes, both AA contrast.
+- Light and dark themes, both AA contrast (checked by axe-core in `e2e/accessibility.spec.ts`). Light muted text is `#6b717c` and gain green `#077a4a` so they pass on white and the grey bands; unselected select-button segments use surface 600. Dialogs return focus to the control that opened them.
 
 ## Breakpoints and layout
 | Viewport | Navigation | Holdings display | Dialogs |

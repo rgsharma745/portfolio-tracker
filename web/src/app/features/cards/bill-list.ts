@@ -61,7 +61,7 @@ import { BillRow, STATUS_LABEL, STATUS_SEVERITY, dueLabel } from './bill-rows';
               type="button"
               size="small"
               [disabled]="paying() === row.id"
-              [attr.aria-label]="'Mark ' + row.name + ' paid'"
+              [attr.aria-label]="'Mark paid: ' + row.name"
               (click)="markPaid.emit(row)"
             >
               Mark paid
@@ -120,7 +120,7 @@ import { BillRow, STATUS_LABEL, STATUS_SEVERITY, dueLabel } from './bill-rows';
                 type="button"
                 class="pay"
                 [disabled]="paying() === row.id"
-                [attr.aria-label]="'Mark ' + row.name + ' paid'"
+                [attr.aria-label]="'Mark paid: ' + row.name"
                 (click)="markPaid.emit(row)"
               >
                 <i class="pi pi-check" aria-hidden="true"></i>

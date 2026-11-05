@@ -6,14 +6,14 @@
   --app-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
   // Gain/loss colors are text-only, never backgrounds. Both pass WCAG AA on their surface.
-  --app-up: #098551;
+  --app-up: #077a4a; // AA 4.5:1 on white, surface 50 and 100 (totals rows, toggles)
   --app-down: #cf202f;
 
   --app-bg: var(--p-surface-0);
   --app-bg-soft: var(--p-surface-50);
   --app-text: var(--p-surface-950);
   --app-text-body: var(--p-surface-600);
-  --app-text-muted: var(--p-surface-500);
+  --app-text-muted: #6b717c; // between surface 500 and 600: AA 4.5:1 on white and on surface 50
   --app-hairline: var(--p-surface-200);
 
   // Chart series, fixed order (validated for colour-blind separation; see docs/UI_SPEC.md).
