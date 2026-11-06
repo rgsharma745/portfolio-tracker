@@ -17,9 +17,10 @@ The SQL lives in `supabase/migrations/0001_init.sql`; this doc explains intent. 
 | `stock_holdings` | Stocks (India and US) | `portfolio_id`, `market` (IN/US), `symbol`, `name`, `currency`, `quantity`, `avg_price`, `invested` |
 | `rsu_grants` | RSU grants | `portfolio_id`, `symbol`, `grant_label`, `grant_date`, `units_granted`, `units_vested`, `units_sold_for_tax`, `tax_rate` |
 | `savings_accounts` | Bank balances | `portfolio_id`, `bank`, `balance` |
+| `pf_entries` | Provident fund passbook: one row per company, wage month and type | `portfolio_id`, `company`, `wage_month` (first of month), `contribution_type` (`monthly` or `interest`), `employee_amount`, `employer_amount`, `pension_amount`; unique (owner, portfolio, company, wage_month, type). Interest rows sit in **March** of the financial year and have pension 0 (enforced). The one ledger in the app, by the owner's choice |
 | `credit_cards` | The card itself | `portfolio_id`, `name`, `bank`, `bill_day`, `due_day`, `is_active` |
 | `card_bills` | One row per card per month | `card_id`, `statement_month` (first of month), `due_date`, `amount` (null = not received yet), `paid_amount`, `paid_on`, `notes`; unique (card_id, statement_month) |
-| `portfolio_snapshots` | Daily totals per portfolio | `portfolio_id`, `snap_date`, `mf_value`, `stocks_value`, `rsu_vested_value`, `savings`, `card_dues` |
+| `portfolio_snapshots` | Daily totals per portfolio | `portfolio_id`, `snap_date`, `mf_value`, `stocks_value`, `rsu_vested_value`, `savings`, `card_dues`, `pf_balance` (0 on days before PF was added) |
 | `settings` | Preferences | `key`, `value` (jsonb) |
 
 The same fund or stock can appear in several portfolios (different rows, same `scheme_code`/`symbol`). Deleting a portfolio deletes its holdings (cascade), so the UI must ask for explicit confirmation and suggest "deactivate" instead.
@@ -76,11 +77,12 @@ Let `nav` be the latest NAV and `prev_nav` the previous stored NAV (equal to `na
   - sellable units = `units_vested - units_sold_for_tax`; pending vesting = `units_granted - units_vested`
   - after-tax value USD = `units_granted * price * (1 - tax_rate)` (verify against the sheet in Phase 3; the sheet is the reference)
   - INR values = USD value * USDINR
+- **PF** (`core/calc/pf.ts`, and `pf_balance` in `scripts/lib/calc.py`): balance = employee + employer amounts of every row (monthly contributions and interest). Pension (EPS) = sum of `pension_amount`, shown on its own and **not** part of the balance (it is not withdrawable like PF). Employee and employer totals count monthly rows; Interest = employee + employer of interest rows. Financial years run April to March; a year's interest is recorded in its March. "Add next month" = the month after a company's last monthly row, with the same three amounts.
 - Savings total = sum of balances. An account's share (the share bar) = its balance / the sum of positive balances, so an overdrawn account shows 0% and never pushes others past 100%.
 - **Missing prices:** a holding without a NAV or price (or a USD holding without a USDINR rate, when shown in INR) has no value, P&L or day change. Totals leave it out of value, invested and P&L alike (so value - invested = P&L) and report it separately as "N holdings, ₹X invested, not valued" for the UI to flag. RSU units still count; only their values are left out.
 - **Day change in INR** for USD holdings = USD day change * today's USDINR rate; the exchange-rate move itself is not counted.
 - **Portfolio scope:** every total is computed for the selected portfolio, or for all active portfolios when "All" is selected. **The default is All (family total).**
-- Overview combined = MF + Stocks (INR). RSU vested value, Savings and Card dues are shown as separate cards.
+- Overview combined = MF + Stocks (INR). RSU vested value, Savings, PF and Card dues are shown as separate cards; PF is part of the allocation bar.
 
 ## Rules
 - Money and units use `numeric`, never float.

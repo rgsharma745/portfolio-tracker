@@ -7,15 +7,16 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 ## Status (update this when work lands)
 _Last updated 5 Nov 2026._
 - **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run on schedule in GitHub Actions; backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
-- **Checks:** lint, 194 unit tests + 13 Worker tests, 124 pytest, 79 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Checks:** lint, 212 unit tests + 13 Worker tests, 138 pytest, 82 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
 - **Phase 11 (live, 6 Nov 2026):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Migrations 0002 and 0003 applied to production; Worker token and variables set; More sheet redesigned as square tiles.
+- **Phase 12 (built 6 Nov 2026, not deployed):** PF (provident fund) page, Overview PF card, allocation and history. Before pushing, the owner applies `0004_pf.sql` to production, then loads past months (docs/DATA_ENTRY.md).
 - **Open, owner only:** finish reconciling with the Google Sheet: Mutual funds, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check (Phases 3, 6, 10); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
-- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PF, PPF, …) is not started.
+- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PPF, NPS, …) is not started; PF is built (Phase 12).
 - **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
 
 ## Scope
 **v1 (this plan):** Overview, Mutual Funds (per portfolio), Stocks (India, US), RSU, Savings, Credit Cards, Settings, auth, daily NAV/price jobs, daily snapshots (history chart), monthly credit card bills, backups, PWA.
-**Backlog (v2, do not build now):** FD, PF, PPF, NPS, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR, Expenses, ESPP wallet.
+**Backlog (v2, do not build now):** FD, PPF, NPS, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR, Expenses, ESPP wallet.
 
 ## Assumptions (confirm with the owner if any is wrong)
 - One login (the owner). No public sign-up. Several **portfolios** (for example Me and Wife) live under that one login; there are no per-portfolio logins.
@@ -148,6 +149,17 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [x] **Human:** apply `0002_job_triggers.sql` and `0003_tighten_shared_tables.sql` to production before pushing, then push and press Run now once.
 
 **Acceptance:** Run now starts the workflow and shows its result in Job runs; a second press within 30 minutes is refused with the time it frees up; no GitHub or service key in the bundle.
+
+## Phase 12: Provident fund (PF)
+The owner asked for PF tracked like the sheet's PF tab: one row per company, wage month and contribution type (monthly or interest) with employee, employer and pension amounts. This is the app's one ledger (AGENTS.md rule 5 exception).
+- [x] Migration `0004_pf.sql`: `pf_entries` (owner RLS; interest only in March with pension 0; unique per company, month and type) and `portfolio_snapshots.pf_balance`. Tested in `test_pf.py`, `test_rls.py`, backup/restore round trip; a test keeps the backup and app-export table lists identical.
+- [x] Calculations `core/calc/pf.ts` (balance = employee + employer + interest, pension apart, financial years, next-month draft) with Python parity in `lib/calc.py` and the shared fixture; the snapshot job writes `pf_balance`.
+- [x] PF page: stat cards, by company with Add next month, passbook table/cards filtered by company and financial year, add/edit/delete dialog (monthly or interest). Nav item PF; More sheet in three columns. E2E at all three viewports; axe in both themes including the dialog.
+- [x] Overview: PF card (cards 4 across on desktop), PF in the allocation bar (fifth series colour), history switch MF + stocks / PF.
+- [ ] **Human:** apply `0004_pf.sql` to production (SQL editor), then push.
+- [ ] **Human:** load past PF months (Add next month in the app, or CSV/SQL per docs/DATA_ENTRY.md) and check the PF balance against the passbook or the sheet's PF tab.
+
+**Acceptance:** the PF balance and pension match the passbook; adding a month is one tap on Add next month and Save; the next morning's snapshot shows a PF point in the history chart.
 
 ## Later (owner to define)
 - [ ] **RSU + ESOP:** revisit the RSU after-tax formula (currently `units_granted * price * (1 - tax_rate)`, kept as is for now) and add ESOP handling. Needs a schema change (new migration) and the owner's rules before any work starts.

@@ -9,7 +9,7 @@
 ## Breakpoints and layout
 | Viewport | Navigation | Holdings display | Dialogs |
 |---|---|---|---|
-| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: RSU, Savings, Cards, Settings as square icon tiles in one row, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
+| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: RSU, Savings, PF, Cards, Settings as icon tiles in three columns, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
 | 768-1023px (tablet) | Collapsible left rail (icons) | Table with sticky first column | Centered dialog |
 | >= 1024px (desktop) | Left sidebar with labels | Full PrimeNG table: sort, filter, totals footer | Centered dialog |
 - Max content width 1200px, centered. Page padding 16px mobile, 24px desktop.
@@ -34,9 +34,9 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, Card dues (red if > 0). Mobile: 2 columns with Combined full width; from 1024px: 3 columns, so the six cards make two even rows.
-- Allocation (MF, Stocks, RSU vested, Savings) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
-- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All.
+- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), Card dues (red if > 0). Mobile: 2 columns with Combined full width; from 1024px: 4 columns with Combined spanning two, so the seven cards make two full rows.
+- Allocation (MF, Stocks, RSU vested, Savings, PF) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks and the PF balance (the PF line starts at its first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, Today). On mobile, becomes stacked rows.
 
 ### Mutual Funds
@@ -63,6 +63,12 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 ### Savings
 - Total card, accounts count, largest account.
 - List sorted by balance with a share-of-total bar. Tap a balance to edit inline (dialog on mobile). Add / delete account.
+
+### Provident fund
+- Stat cards: PF balance (employee + employer + interest), Employee, Employer, Interest, Pension (EPS) marked "Not in the PF balance". Mobile: 2 columns with the balance full width; from 1024px: one row of five.
+- By company: one line per company (and portfolio in All mode) with its balance, pension and last wage month, and an **Add next month** button (the month after the last contribution, same amounts). Header actions: New company, Add interest, and Add next month (for the most recent company) when there is more than one company.
+- Passbook: filters for company and financial year; desktop table (Wage month with an "Interest FY …" tag on interest rows, Company, Employee, Employer, Pension) with sorting and a totals row; mobile cards (month · company, contribution, then the amounts). Tap or the pencil edits; delete from the dialog with confirmation.
+- Dialog: Type (Monthly / Interest), Portfolio, Company (suggests known companies; picking one while adding refills its next month), Wage month and Year selects (Interest: a financial-year select, stored as its March), Employee, Employer, and Pension for monthly rows (empty = 0).
 
 ### Cards (monthly bill management)
 - Month selector at the top (previous / next, defaults to the current month).
@@ -94,7 +100,7 @@ A calm, institutional finance look. Layout and density follow this spec; the loo
 - **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
 - **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
-- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..4` in a fixed order (blue, orange, aqua, yellow; light and dark steps), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
+- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..5` in a fixed order (blue, orange, aqua, yellow, purple; light and dark steps; purple is PF and carries white labels at 5.8:1), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
 
 ## Responsive test matrix (Playwright)
 Run every page at 360x740, 390x844, 768x1024, 1024x768, 1440x900. Assert: no horizontal page scroll, bottom nav visible only below 768px, sidebar visible only at 1024px and above, primary stat cards visible without scrolling on the Overview page at 390x844.
