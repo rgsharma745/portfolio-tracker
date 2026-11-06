@@ -100,7 +100,7 @@ GitHub can start scheduled runs 10 to 30 minutes late. Every run is listed in Se
 ### Set up Run now (once)
 1. GitHub › Settings › Developer settings › Fine-grained tokens › Generate new token. Repository access: **only this repository**. Permissions: **Actions: Read and write** (nothing else). Pick an expiry and put the date in your calendar.
 2. Cloudflare › Workers & Pages › `portfolio-tracker` › Settings › Variables and secrets (runtime, not Build): add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (the same values as the `NG_APP_*` build variables), `GITHUB_REPO` (`owner/repo`) as Text, and `GITHUB_TOKEN` as Secret.
-3. Apply `supabase/migrations/0002_job_triggers.sql` to the production project (SQL editor or `supabase db push`), before the push that deploys the button.
+3. Apply `supabase/migrations/0002_job_triggers.sql`, then `0003_tighten_shared_tables.sql`, to the production project (SQL editor or `supabase db push`), before the push that deploys the button.
 4. Open Settings › Job runs › Run now on NAVs. The row says "Started", a run appears in GitHub › Actions › NAV, and its result shows in Job runs a minute or two later.
 
 **A job failed:** open the run in GitHub › Actions, read the last lines of the log (the same message is in Settings › Job runs), then:

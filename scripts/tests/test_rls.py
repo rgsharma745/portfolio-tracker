@@ -114,6 +114,22 @@ def test_cannot_insert_rows_owned_by_someone_else(
     assert resp.status_code in (401, 403), resp.text
 
 
+@pytest.mark.parametrize("table,row", [
+    ("job_runs", {"job": "pytest", "status": "success"}),
+    ("mf_nav_latest", {"scheme_code": "pytest-ro", "nav": 1, "nav_date": "2026-10-31"}),
+])
+def test_job_written_tables_are_read_only_for_users(
+    anon: SupabaseRest, user_a: AuthUser, table: str, row: dict[str, Any]
+) -> None:
+    # Only the jobs (service role) write these; the app just reads them.
+    t = user_a.token
+    assert anon.select(table, token=t, limit="1").status_code == 200
+    assert anon.insert(table, row, token=t).status_code in (401, 403)
+    key = "job" if table == "job_runs" else "scheme_code"
+    assert anon.update(table, {key: "pytest-x"}, token=t, **{key: "neq.none"}).status_code in (401, 403)
+    assert anon.delete(table, token=t, **{key: "neq.none"}).status_code in (401, 403)
+
+
 def test_authenticated_can_override_market_data(
     anon: SupabaseRest, user_a: AuthUser, test_key: str
 ) -> None:
