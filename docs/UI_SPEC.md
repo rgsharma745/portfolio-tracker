@@ -9,7 +9,7 @@
 ## Breakpoints and layout
 | Viewport | Navigation | Holdings display | Dialogs |
 |---|---|---|---|
-| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (RSU, Savings, Cards, Settings) | Card list (one card per holding) | Full-screen sheet |
+| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: RSU, Savings, Cards, Settings as square icon tiles in one row, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
 | 768-1023px (tablet) | Collapsible left rail (icons) | Table with sticky first column | Centered dialog |
 | >= 1024px (desktop) | Left sidebar with labels | Full PrimeNG table: sort, filter, totals footer | Centered dialog |
 - Max content width 1200px, centered. Page padding 16px mobile, 24px desktop.

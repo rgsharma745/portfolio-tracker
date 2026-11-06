@@ -50,6 +50,12 @@ export class Shell {
   protected readonly moreOpen = signal(false);
   protected readonly amountsHidden = amountsHidden;
   /** PrimeNG renders the drawer as an <aside>; expose it as the modal dialog it is. */
+  /** PrimeNG gives a bottom drawer a fixed 10rem height, which cut the sheet off: size to content. */
+  protected readonly sheetStyle = {
+    height: 'auto',
+    maxHeight: '85dvh',
+    borderRadius: '20px 20px 0 0',
+  };
   protected readonly sheetPt = {
     root: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'More' },
   };

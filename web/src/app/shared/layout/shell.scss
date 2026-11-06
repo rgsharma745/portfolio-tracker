@@ -261,32 +261,74 @@ $bottom-nav-height: 64px;
 }
 
 // ---------- More sheet ----------
-.more-links {
-  display: flex;
-  flex-direction: column;
+// Square tiles, icon over label like the bottom bar, then Sign out on its own row.
+.more-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   margin: 0;
-  padding: 0 0 env(safe-area-inset-bottom);
+  padding: 0;
   list-style: none;
 }
 
-.more-link {
+.more-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  aspect-ratio: 1;
+  min-height: 64px;
+  padding: 4px;
+  border: 1px solid var(--app-hairline);
+  border-radius: 16px;
+  color: var(--app-text);
+  font: 600 13px var(--app-font-sans);
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  i {
+    font-size: 1.35rem;
+    color: var(--app-text-muted);
+  }
+
+  &.active {
+    border-color: var(--p-primary-color);
+    color: var(--p-primary-color);
+
+    i {
+      color: inherit;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.more-sign-out {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  min-height: 52px;
-  padding: 0 8px;
-  border: 0;
-  border-bottom: 1px solid var(--app-hairline);
+  min-height: 48px;
+  margin: 16px 0 env(safe-area-inset-bottom);
+  border: 1px solid var(--app-hairline);
+  border-radius: 999px;
   background: transparent;
   color: var(--app-text);
-  font: 500 16px var(--app-font-sans);
-  text-align: left;
-  text-decoration: none;
+  font: 500 15px var(--app-font-sans);
   cursor: pointer;
 
   i {
-    width: 1.25rem;
     color: var(--app-text-muted);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
   }
 }

@@ -119,23 +119,29 @@
     position="bottom"
     header="More"
     ariaCloseLabel="Close"
+    [style]="sheetStyle"
     [pt]="sheetPt"
   >
-    <ul class="more-links">
+    <ul class="more-tiles">
       @for (item of moreItems; track item.path) {
         <li>
-          <a class="more-link" [routerLink]="item.path" (click)="moreOpen.set(false)">
+          <a
+            class="more-tile"
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            [attr.aria-label]="item.label"
+            (click)="moreOpen.set(false)"
+          >
             <i [class]="'pi ' + item.icon" aria-hidden="true"></i>
-            <span>{{ item.label }}</span>
+            <span>{{ item.shortLabel }}</span>
           </a>
         </li>
       }
-      <li>
-        <button type="button" class="more-link" (click)="signOut()">
-          <i class="pi pi-sign-out" aria-hidden="true"></i>
-          <span>Sign out</span>
-        </button>
-      </li>
     </ul>
+    <button type="button" class="more-sign-out" (click)="signOut()">
+      <i class="pi pi-sign-out" aria-hidden="true"></i>
+      <span>Sign out</span>
+    </button>
   </p-drawer>
 </div>
