@@ -8,8 +8,8 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 _Last updated 5 Nov 2026._
 - **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run on schedule in GitHub Actions; backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
 - **Checks:** lint, 194 unit tests + 13 Worker tests, 124 pytest, 79 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
-- **Just built (Phase 11, not deployed yet):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Before pushing, the owner applies migrations 0002 and 0003 to production and sets the Worker's GitHub token and variables (RUNBOOK › Set up Run now).
-- **Open, owner only:** load the data and reconcile Overview totals with the Google Sheet (Phases 3, 6, 10); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
+- **Phase 11 (live, 6 Nov 2026):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Migrations 0002 and 0003 applied to production; Worker token and variables set; More sheet redesigned as square tiles.
+- **Open, owner only:** finish reconciling with the Google Sheet: Mutual funds, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check (Phases 3, 6, 10); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
 - **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PF, PPF, …) is not started.
 - **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
 
@@ -131,7 +131,7 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 ## Phase 10: QA and cutover
 - [x] Full Playwright suite on Chromium plus WebKit mobile emulation (`iphone` project: WebKit as an iPhone 15; 76 tests pass across mobile, desktop and iPhone).
 - [ ] **Human:** manual test on a real phone (install to the home screen, sign in with the code, add and edit a holding, toggle hide amounts and dark mode).
-- [ ] Reconcile: compare Overview totals with the Google Sheet for the same day (MF, Stocks, RSU, Savings, Card dues).
+- [ ] Reconcile: compare Overview totals with the Google Sheet for the same day. MF, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check.
 - [ ] Security checklist in `docs/SECURITY.md` fully ticked.
 - [x] Write `docs/RUNBOOK.md`: how to restore from backup, rotate keys, add a new fund, fix a failed job. Restore is `scripts/tools/restore.py` (plan, typed confirmation, rollback on failure, `--replace`, `--owner-email` for a new project), tested in `scripts/tests/test_restore.py`.
 - [ ] **Human:** rehearse a restore once: a real backup into the local database (docs/RUNBOOK.md › Rehearse a restore).
@@ -143,9 +143,9 @@ Notes: sources are NSE bhavcopy (India), Yahoo Finance (US, and India fallback; 
 - [x] Migration `0002_job_triggers.sql`: `job_triggers` (one row per job) with `claim_job_trigger` (atomic 30-minute lock) and `release_job_trigger`; RLS read-only for `authenticated`, nothing for anon. Tested in `scripts/tests/test_job_triggers.py` and `test_rls.py`.
 - [x] Cloudflare Worker `web/worker/` for `POST /api/jobs/:job` (`fetch_nav` → `nav.yml`, `fetch_prices` → `prices.yml`): checks the sign-in and takes the lock through Supabase with the caller's token, dispatches the GitHub workflow, releases the lock if GitHub refuses. Only `/api/*` runs the Worker. Tests: `npm run test:worker`.
 - [x] Settings › Job runs: Run now on NAVs and prices, "Available again at …", result or reason under the row, Job runs re-checked after two minutes. Playwright at all three viewports with `/api` stubbed.
-- [ ] **Human:** create the fine-grained GitHub token and the four Worker variables (docs/RUNBOOK.md › Set up Run now).
+- [x] **Human:** create the fine-grained GitHub token and the four Worker variables (docs/RUNBOOK.md › Set up Run now).
 - [x] Security Advisor follow-up (`0003_tighten_shared_tables.sql`): `rls_auto_enable()` no longer callable by anon or authenticated; `job_runs` and `mf_nav_latest` read-only for signed-in users.
-- [ ] **Human:** apply `0002_job_triggers.sql` and `0003_tighten_shared_tables.sql` to production before pushing, then push and press Run now once.
+- [x] **Human:** apply `0002_job_triggers.sql` and `0003_tighten_shared_tables.sql` to production before pushing, then push and press Run now once.
 
 **Acceptance:** Run now starts the workflow and shows its result in Job runs; a second press within 30 minutes is refused with the time it frees up; no GitHub or service key in the bundle.
 
