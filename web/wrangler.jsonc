@@ -17,5 +17,14 @@
     "run_worker_first": ["/api/*"],
     // Unknown paths (deep links like /mutual-funds) get index.html; the Angular router takes over.
     "not_found_handling": "single-page-application"
+  },
+  // Workers Logs (free: 200k events a day, 3 days). The Worker logs status codes only.
+  // Invocation logs are off: they would record each /api request, which carries the owner's
+  // Supabase token in Authorization.
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
   }
 }
