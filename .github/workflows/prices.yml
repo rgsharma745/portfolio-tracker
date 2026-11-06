@@ -1,11 +1,14 @@
 name: Prices
 
 # Stock prices (NSE bhavcopy, Yahoo) and USD/INR (Frankfurter), for the symbols held only.
-# Weekdays at 19:00 IST (after NSE publishes the day's bhavcopy) and 04:00 IST (after the US close).
+# 19:13 IST Mon–Fri (after NSE publishes the day's bhavcopy) and 04:23 IST Tue–Sat (after the
+# US close of Mon–Fri). Times are IST (timezone key); odd minutes avoid GitHub's busy hour start.
 on:
   schedule:
-    - cron: '30 13 * * 1-5'
-    - cron: '30 22 * * 1-5'
+    - cron: '13 19 * * 1-5'
+      timezone: Asia/Kolkata
+    - cron: '23 4 * * 2-6'
+      timezone: Asia/Kolkata
   workflow_dispatch:
 
 permissions:

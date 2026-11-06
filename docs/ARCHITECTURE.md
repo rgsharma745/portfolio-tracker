@@ -65,11 +65,13 @@ renovate.json    dependency updates (Renovate app)
 ## Jobs
 | Job | Schedule | Writes | Notes |
 |---|---|---|---|
-| fetch_nav (`nav.yml`) | daily 18:00 and 01:30 UTC (23:30 and 07:00 IST) | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
-| fetch_prices (`prices.yml`) | weekdays 13:30 and 22:30 UTC (19:00 and 04:00 IST) | `stock_price_latest`, `fx_latest` via upsert functions | Only symbols in `stock_holdings` and `rsu_grants`; USD/INR only when something is in USD; skips `is_manual` rows. Sources below |
-| snapshot (`snapshot.yml`) | daily 02:00 UTC (07:30 IST) | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
-| backup (`backup.yml`) | Sundays 03:00 UTC | workflow artifact, 90 days | All owner tables as JSON, encrypted with `age` in memory before writing |
-| keepalive (`keepalive.yml`) | Wednesdays 06:00 UTC | none | One tiny select so the free project never pauses |
+| fetch_nav (`nav.yml`) | daily 23:17 and 07:07 IST | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
+| fetch_prices (`prices.yml`) | 19:13 IST Mon–Fri and 04:23 IST Tue–Sat (after the US close) | `stock_price_latest`, `fx_latest` via upsert functions | Only symbols in `stock_holdings` and `rsu_grants`; USD/INR only when something is in USD; skips `is_manual` rows. Sources below |
+| snapshot (`snapshot.yml`) | daily 07:47 IST | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
+| backup (`backup.yml`) | Sundays 08:41 IST | workflow artifact, 90 days | All owner tables as JSON, encrypted with `age` in memory before writing |
+| keepalive (`keepalive.yml`) | Wednesdays 11:19 IST | none | One tiny select so the free project never pauses |
+
+Schedules are written in IST (`timezone: Asia/Kolkata` on each cron) at odd minutes: GitHub delays, and under heavy load drops, scheduled runs, most of all at the start of the hour. A late or missing run can be started from Settings › Job runs › Run now.
 
 Every job records one `job_runs` row (status, JSON summary or the error, start and finish time) and exits non-zero on failure, so GitHub emails the owner; Settings › Job runs shows the last run of each. All jobs are idempotent: re-running a day changes nothing or replaces that day's values. The scheduled workflows share `.github/workflows/_run-job.yml` and need the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (and `BACKUP_AGE_RECIPIENT` for backups). Each can also be run by hand (`workflow_dispatch`).
 

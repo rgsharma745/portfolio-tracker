@@ -79,13 +79,13 @@ Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com`
 
 | Job | When (IST) | Writes |
 |---|---|---|
-| NAV | 23:30 daily, retry 07:00 | mutual fund NAVs (AMFI) for the codes you hold |
-| Prices | 19:00 and 04:00, weekdays | stock prices (NSE, then Yahoo) for the symbols you hold, and USD/INR |
-| Snapshot | 07:30 daily | one history row per active portfolio (Overview chart) |
-| Backup | Sunday 08:30 | encrypted backup artifact |
-| Keep-alive | Wednesday | one tiny query so the free project never pauses |
+| NAV | 23:17 daily, retry 07:07 | mutual fund NAVs (AMFI) for the codes you hold |
+| Prices | 19:13 Mon–Fri, 04:23 Tue–Sat (after the US close) | stock prices (NSE, then Yahoo) for the symbols you hold, and USD/INR |
+| Snapshot | 07:47 daily | one history row per active portfolio (Overview chart) |
+| Backup | Sunday 08:41 | encrypted backup artifact |
+| Keep-alive | Wednesday 11:19 | one tiny query so the free project never pauses |
 
-GitHub can start scheduled runs 10 to 30 minutes late. Every run is listed in Settings › Job runs; a failed run also sends GitHub's failure email.
+Schedules are set in IST in the workflow files (`timezone: Asia/Kolkata`). GitHub can still start a scheduled run late (on 5 Nov 2026 the NAV run started over 5 hours late) or, under heavy load, skip it; the odd minutes make that less likely. If NAVs look stale, use Settings › Job runs › Run now. Every run is listed in Settings › Job runs; a failed run also sends GitHub's failure email.
 
 **Run a job by hand:** in the app, Settings › Job runs › Run now (NAVs and prices; once every 30 minutes per job). Or GitHub › Actions › the job › Run workflow (or `gh workflow run nav.yml`), which has no lock. Jobs are idempotent: re-running one is always safe.
 

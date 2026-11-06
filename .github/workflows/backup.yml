@@ -2,10 +2,11 @@ name: Backup
 
 # Weekly: every owner table as JSON, encrypted with age (public key in BACKUP_AGE_RECIPIENT),
 # uploaded as a workflow artifact kept 90 days. The plaintext never touches disk.
-# Restore: docs/RUNBOOK.md. Sundays 08:30 IST.
+# Restore: docs/RUNBOOK.md. Sundays 08:41 IST (timezone key; odd minute avoids the busy hour start).
 on:
   schedule:
-    - cron: '0 3 * * 0'
+    - cron: '41 8 * * 0'
+      timezone: Asia/Kolkata
   workflow_dispatch:
 
 permissions:

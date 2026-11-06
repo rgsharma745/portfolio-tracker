@@ -1,9 +1,11 @@
 name: Keep-alive
 
 # A trivial weekly query so the free Supabase project never pauses, even if other jobs stop.
+# Wednesdays 11:19 IST (timezone key; odd minute avoids GitHub's busy hour start).
 on:
   schedule:
-    - cron: '0 6 * * 3'
+    - cron: '19 11 * * 3'
+      timezone: Asia/Kolkata
   workflow_dispatch:
 
 permissions:

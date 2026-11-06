@@ -1,10 +1,11 @@
 name: Snapshot
 
 # One portfolio_snapshots row per active portfolio for the day, after the night's NAV and
-# price runs: 07:30 IST.
+# price runs: 07:47 IST (timezone key; odd minute avoids GitHub's busy hour start).
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '47 7 * * *'
+      timezone: Asia/Kolkata
   workflow_dispatch:
 
 permissions:

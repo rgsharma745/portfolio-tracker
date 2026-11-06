@@ -1,11 +1,14 @@
 name: NAV
 
 # Mutual fund NAVs from AMFI, for the scheme codes held only.
-# 23:30 IST, and a retry at 07:00 IST (GitHub cron is UTC).
+# 23:17 IST, and a retry at 07:07 IST (before the 07:47 snapshot). Times are IST (timezone key).
+# Odd minutes on purpose: GitHub delays, and sometimes drops, runs at the busy start of the hour.
 on:
   schedule:
-    - cron: '0 18 * * *'
-    - cron: '30 1 * * *'
+    - cron: '17 23 * * *'
+      timezone: Asia/Kolkata
+    - cron: '7 7 * * *'
+      timezone: Asia/Kolkata
   workflow_dispatch:
 
 permissions:
