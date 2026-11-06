@@ -6,7 +6,8 @@ Money uses Decimal; amounts are rounded to paise only when stored.
 
 Rules (docs/DATA_MODEL.md): a holding without a price, or a USD holding without a USDINR
 rate, is left out of value; RSU value is vested units x price x USDINR; savings are summed;
-card dues are the sum of max(amount - paid, 0) over bills with an amount.
+card dues are the sum of max(amount - paid, 0) over bills with an amount; the PF balance is
+employee + employer amounts over all PF rows (monthly and interest), pension left out.
 """
 
 from __future__ import annotations
@@ -49,6 +50,7 @@ class SnapshotValues:
     rsu_vested_value: Decimal
     savings: Decimal
     card_dues: Decimal
+    pf_balance: Decimal
 
     def rounded(self) -> dict[str, str]:
         """For storage: numeric(18,2) as strings."""
@@ -104,10 +106,16 @@ def card_dues(bills: Iterable[Row]) -> Decimal:
     )
 
 
+def pf_balance(entries: Iterable[Row]) -> Decimal:
+    """Employee + employer amounts of every PF row (contributions and interest); EPS excluded."""
+    return sum((dec(e["employee_amount"]) + dec(e["employer_amount"]) for e in entries), ZERO)
+
+
 def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portfolio_id: str) -> SnapshotValues:
     """
     Totals for one portfolio. `data` holds the owner tables: mf_holdings, stock_holdings,
-    rsu_grants, savings_accounts and card_bills (each bill carrying its card's portfolio_id).
+    rsu_grants, savings_accounts, card_bills (each bill carrying its card's portfolio_id) and
+    pf_entries.
     """
     return SnapshotValues(
         mf_value=mf_value(_in(data["mf_holdings"], portfolio_id), market),
@@ -115,4 +123,5 @@ def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portf
         rsu_vested_value=rsu_vested_inr(_in(data["rsu_grants"], portfolio_id), market),
         savings=sum((dec(a["balance"]) for a in _in(data["savings_accounts"], portfolio_id)), ZERO),
         card_dues=card_dues(_in(data["card_bills"], portfolio_id)),
+        pf_balance=pf_balance(_in(data["pf_entries"], portfolio_id)),
     )

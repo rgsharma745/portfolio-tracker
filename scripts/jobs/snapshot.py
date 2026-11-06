@@ -34,6 +34,9 @@ def load(db: SupabaseRest) -> tuple[list[dict[str, Any]], dict[str, list[dict[st
         "rsu_grants": fetch_all(db, "rsu_grants", "portfolio_id,symbol,units_vested"),
         "savings_accounts": fetch_all(db, "savings_accounts", "portfolio_id,balance"),
         "card_bills": bills,
+        "pf_entries": fetch_all(
+            db, "pf_entries", "portfolio_id,employee_amount,employer_amount"
+        ),
     }
     market = MarketData.from_rows(
         fetch_all(db, "mf_nav_latest", "scheme_code,nav"),

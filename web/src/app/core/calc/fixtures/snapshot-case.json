@@ -110,20 +110,29 @@
       "paid_amount": 0
     }
   ],
+  "pf_entries": [
+    { "id": "pf1", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-09-01", "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
+    { "id": "pf2", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
+    { "id": "pf3", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-03-01", "contribution_type": "interest", "employee_amount": 12000.5, "employer_amount": 4100, "pension_amount": 0 },
+    { "id": "pf4", "portfolio_id": "p-wife", "company": "Beta", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 900.1, "employer_amount": 275, "pension_amount": 625 },
+    { "id": "pf5", "portfolio_id": "p-old", "company": "Gone", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 5000, "employer_amount": 5000, "pension_amount": 0 }
+  ],
   "expected": {
     "p-me": {
       "mf_value": 5000,
       "stocks_value": 66000,
       "rsu_vested_value": 204000,
       "savings": 299500,
-      "card_dues": 6000
+      "card_dues": 6000,
+      "pf_balance": 20801
     },
     "p-wife": {
       "mf_value": 675,
       "stocks_value": 12750,
       "rsu_vested_value": 0,
       "savings": 1234.56,
-      "card_dues": 1500
+      "card_dues": 1500,
+      "pf_balance": 1175.1
     }
   }
 }
