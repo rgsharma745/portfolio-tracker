@@ -31,6 +31,7 @@ TABLES = (
     "stock_holdings",
     "rsu_grants",
     "savings_accounts",
+    "pf_entries",
     "credit_cards",
     "card_bills",
     "portfolio_snapshots",

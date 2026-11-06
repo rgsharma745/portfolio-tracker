@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 import json
+from pathlib import Path
+import re
 import shutil
 import subprocess
-from collections.abc import Iterator
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -47,6 +48,9 @@ def seed(db: SupabaseRest, owner_id: str) -> None:
     add(db, "rsu_grants", {**o, "portfolio_id": p, "symbol": "AAPL", "grant_label": "G1",
                            "units_granted": 100, "units_vested": 40, "tax_rate": "0.3"})
     add(db, "savings_accounts", {**o, "portfolio_id": p, "bank": "HDFC", "balance": "-1500.50"})
+    add(db, "pf_entries", {**o, "portfolio_id": p, "company": "Acme", "wage_month": "2026-10-01",
+                           "contribution_type": "monthly", "employee_amount": "1800.00",
+                           "employer_amount": "550.00", "pension_amount": "1250"})
     card = add(db, "credit_cards", {**o, "portfolio_id": p, "name": "Card", "bill_day": 14,
                                     "due_day": 3})
     add(db, "card_bills", {**o, "card_id": card, "statement_month": "2026-10-01",
@@ -259,3 +263,11 @@ def test_cli_into_a_new_owner_by_email(
     assert tool.main([str(path), "--owner-email", email.upper(), "--yes"]) == 0
     assert counts(service, new_owner.id) == {t: len(rows) for t, rows in backup.items()}
     assert tool.main([str(path), "--owner-email", "nobody@example.com", "--yes"]) == 1
+
+
+def test_backup_covers_the_same_tables_as_the_app_export() -> None:
+    # The owner's JSON export (Settings) and the weekly backup must list the same tables.
+    source = (Path(__file__).resolve().parents[2]
+              / "web/src/app/core/data/export.service.ts").read_text()
+    block = source[source.index("EXPORT_TABLES = ["):source.index("] as const")]
+    assert re.findall(r"'([a-z_]+)'", block) == list(TABLES)

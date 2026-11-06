@@ -256,12 +256,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      pf_entries: {
+        Row: {
+          company: string;
+          contribution_type: string;
+          created_at: string;
+          employee_amount: number;
+          employer_amount: number;
+          id: string;
+          owner_id: string;
+          pension_amount: number;
+          portfolio_id: string;
+          updated_at: string;
+          wage_month: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          company: string;
+          contribution_type: string;
+          created_at?: string;
+          employee_amount?: number;
+          employer_amount?: number;
+          id?: string;
+          owner_id?: string;
+          pension_amount?: number;
+          portfolio_id: string;
+          updated_at?: string;
+          wage_month: string;
+        };
+        Update: {
+          company?: string;
+          contribution_type?: string;
+          created_at?: string;
+          employee_amount?: number;
+          employer_amount?: number;
+          id?: string;
+          owner_id?: string;
+          pension_amount?: number;
+          portfolio_id?: string;
+          updated_at?: string;
+          wage_month?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pf_entries_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       portfolio_snapshots: {
         Row: {
           card_dues: number;
           id: string;
           mf_value: number;
           owner_id: string;
+          pf_balance: number;
           portfolio_id: string;
           rsu_vested_value: number;
           savings: number;
@@ -274,6 +326,7 @@ export type Database = {
           id?: string;
           mf_value?: number;
           owner_id?: string;
+          pf_balance?: number;
           portfolio_id: string;
           rsu_vested_value?: number;
           savings?: number;
@@ -285,6 +338,7 @@ export type Database = {
           id?: string;
           mf_value?: number;
           owner_id?: string;
+          pf_balance?: number;
           portfolio_id?: string;
           rsu_vested_value?: number;
           savings?: number;
