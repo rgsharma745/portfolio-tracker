@@ -7,6 +7,7 @@ const PAGES = [
   { label: 'Stocks', heading: 'Stocks' },
   { label: 'RSU', heading: 'RSU' },
   { label: 'Savings', heading: 'Savings' },
+  { label: 'Provident fund', heading: 'Provident fund' },
   { label: 'Credit cards', heading: 'Credit cards' },
   { label: 'Settings', heading: 'Settings' },
 ];

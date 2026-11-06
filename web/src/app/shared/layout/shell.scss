@@ -262,9 +262,10 @@ $bottom-nav-height: 64px;
 
 // ---------- More sheet ----------
 // Square tiles, icon over label like the bottom bar, then Sign out on its own row.
+// Three columns: five pages make two even-looking rows (3 + 2).
 .more-tiles {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -277,8 +278,7 @@ $bottom-nav-height: 64px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  aspect-ratio: 1;
-  min-height: 64px;
+  min-height: 76px;
   padding: 4px;
   border: 1px solid var(--app-hairline);
   border-radius: 16px;

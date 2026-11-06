@@ -11,7 +11,16 @@ import {
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const PAGES = ['/overview', '/mutual-funds', '/stocks', '/rsu', '/savings', '/cards', '/settings'];
+const PAGES = [
+  '/overview',
+  '/mutual-funds',
+  '/stocks',
+  '/rsu',
+  '/savings',
+  '/pf',
+  '/cards',
+  '/settings',
+];
 /** WCAG 2.1 A and AA, the level docs/UI_SPEC.md asks for. */
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -76,6 +85,25 @@ for (const theme of ['light', 'dark'] as const) {
     await adminInsert('savings_accounts', [
       { owner_id: ownerId, portfolio_id: ids['Wife'], bank: 'E2E Bank', balance: 4000 },
     ]);
+    const pf = { owner_id: ownerId, portfolio_id: ids['Me'], company: 'E2E Tech' };
+    await adminInsert('pf_entries', [
+      {
+        ...pf,
+        wage_month: monthStart,
+        contribution_type: 'monthly',
+        employee_amount: 1800,
+        employer_amount: 550,
+        pension_amount: 1250,
+      },
+      {
+        ...pf,
+        wage_month: '2026-03-01',
+        contribution_type: 'interest',
+        employee_amount: 1000,
+        employer_amount: 500,
+        pension_amount: 0,
+      },
+    ]);
     const [card] = await adminInsert('credit_cards', [
       { owner_id: ownerId, portfolio_id: ids['Me'], name: 'E2E Card', bill_day: 1, due_day: 20 },
     ]);
@@ -99,6 +127,16 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
       await audit(page, `${theme} ${path}`);
     }
+
+    // The PF dialog, with its type switch and month pickers.
+    await page.goto('/pf');
+    await page.getByRole('button', { name: 'Add next month for E2E Tech' }).click();
+    const pfDialog = page.getByRole('dialog', { name: 'Add PF month' });
+    await expect(pfDialog).toBeVisible();
+    await expect(pfDialog.locator(':focus')).toHaveCount(1);
+    await page.waitForTimeout(400); // let the open animation finish before checking contrast
+    await audit(page, `${theme} /pf dialog`);
+    await page.getByRole('button', { name: 'Cancel' }).click();
 
     // An edit dialog, opened and closed from the keyboard; focus returns to its button.
     await page.goto('/mutual-funds');

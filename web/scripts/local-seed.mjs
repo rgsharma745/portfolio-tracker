@@ -236,6 +236,50 @@ export async function seedHoldings(api, ownerId) {
   return true;
 }
 
+/**
+ * Sample PF passbook: 18 months for one company in "Me", 6 for "Wife", and last year's
+ * interest. Added only if the user has no PF rows yet (independent of the other holdings).
+ */
+export async function seedPf(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/pf_entries?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  const months = (portfolioId, company, count, employee, employer, pension) =>
+    Array.from({ length: count }, (_, i) => ({
+      owner_id: ownerId,
+      portfolio_id: portfolioId,
+      company,
+      wage_month: monthStart(-count + i),
+      contribution_type: 'monthly',
+      employee_amount: employee,
+      employer_amount: employer,
+      pension_amount: pension,
+    }));
+  const now = new Date();
+  const lastMarch = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  await insert(api, 'pf_entries', [
+    ...months(id.Me, 'Sample Tech Pvt Ltd', 18, 7200, 5950, 1250),
+    ...months(id.Wife, 'Sample Bank Ltd', 6, 3600, 2350, 1250),
+    {
+      owner_id: ownerId,
+      portfolio_id: id.Me,
+      company: 'Sample Tech Pvt Ltd',
+      wage_month: `${lastMarch}-03-01`,
+      contribution_type: 'interest',
+      employee_amount: 18240.5,
+      employer_amount: 14110,
+      pension_amount: 0,
+    },
+  ]);
+  return true;
+}
+
 /** Adds sample daily history for the history chart, unless the user already has some. */
 export async function seedHistory(api, ownerId) {
   const existing = await (
@@ -271,6 +315,7 @@ function sampleHistory(me, wife) {
         rsu_vested_value: 0,
         savings: 0,
         card_dues: 0,
+        pf_balance: Math.round(base * 0.45 * (1 + drift * 0.08)),
       });
     }
   }

@@ -1,0 +1,358 @@
+@if (!pf.loaded()) {
+  @if (pf.error()) {
+    <app-error-state title="Could not load your PF" (retry)="pf.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (rows().length === 0) {
+  <app-empty-state
+    icon="pi-building-columns"
+    title="No PF entries yet"
+    message="Add each month's contribution from your PF passbook: employee, employer and pension. After the first month, Add next month fills in the same amounts for you."
+    actionLabel="Add first month"
+    (action)="addCompany()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="stat-grid pf-stats">
+      <app-stat-card
+        label="PF balance"
+        [value]="totals().balance"
+        note="Employee + employer + interest"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card label="Employee" [value]="totals().employee" [compact]="bp.isMobile()" />
+      <app-stat-card label="Employer" [value]="totals().employer" [compact]="bp.isMobile()" />
+      <app-stat-card label="Interest" [value]="totals().interest" [compact]="bp.isMobile()" />
+      <app-stat-card
+        label="Pension (EPS)"
+        [value]="totals().pension"
+        note="Not in the PF balance"
+        [compact]="bp.isMobile()"
+      />
+    </div>
+
+    <section class="app-card companies" aria-labelledby="companies-title">
+      <div class="section-head">
+        <h2 class="section-title" id="companies-title">By company</h2>
+        <div class="head-actions">
+          <button pButton type="button" text (click)="addCompany()">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+            New company
+          </button>
+          <button pButton type="button" severity="secondary" (click)="addInterest()">
+            <i class="pi pi-percentage" aria-hidden="true"></i>
+            Add interest
+          </button>
+          @if (companies().length > 1) {
+            <button pButton type="button" (click)="addNextMonth()">
+              <i class="pi pi-calendar-plus" aria-hidden="true"></i>
+              Add next month
+            </button>
+          }
+        </div>
+      </div>
+      <ul class="company-list" aria-label="PF by company">
+        @for (c of companies(); track c.portfolioId + c.company) {
+          <li class="company" [attr.data-testid]="'pf-company-' + c.company">
+            <div class="company-main">
+              <span class="company-name">
+                {{ c.company }}
+                @if (showPortfolio()) {
+                  <p-tag [value]="c.portfolio" severity="secondary" />
+                }
+              </span>
+              <span class="company-balance app-num">{{ c.balance | money }}</span>
+            </div>
+            <div class="company-sub">
+              <span
+                >Pension <span class="app-num">{{ c.pension | money }}</span></span
+              >
+              <span>Last month {{ monthText(c.lastWageMonth) }}</span>
+              <button
+                pButton
+                type="button"
+                size="small"
+                class="next-button"
+                [attr.aria-label]="'Add next month for ' + c.company"
+                (click)="addNextFor(c.company, c.portfolioId)"
+              >
+                Add next month
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="page-stack" aria-labelledby="entries-title">
+      <div class="section-head">
+        <h2 class="section-title" id="entries-title">Passbook</h2>
+        <div class="filters">
+          <p-select
+            [options]="companyOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="companyFilter()"
+            (ngModelChange)="companyFilter.set($event)"
+            ariaLabel="Company"
+          />
+          <p-select
+            [options]="fyOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="fyFilter()"
+            (ngModelChange)="fyFilter.set($event)"
+            ariaLabel="Financial year"
+          />
+        </div>
+      </div>
+
+      <app-data-table
+        label="PF entries"
+        [rows]="visible()"
+        [columns]="columns"
+        [footer]="footer()"
+        [sort]="sort()"
+        (sortChange)="sort.set($event)"
+        emptyMessage="No entries match."
+        minWidth="44rem"
+      >
+        <ng-template appCell="month" let-row>
+          <span class="month-cell">
+            {{ row.monthLabel }}
+            @if (row.type === 'interest') {
+              <p-tag [value]="'Interest ' + fyText(row.fy)" severity="info" />
+            }
+          </span>
+        </ng-template>
+        <ng-template appCell="company" let-row>
+          <span class="name-cell">
+            <span>{{ row.company }}</span>
+            @if (showPortfolio()) {
+              <span class="name-tags"><p-tag [value]="row.portfolio" severity="secondary" /></span>
+            }
+          </span>
+        </ng-template>
+        <ng-template appFooter="month" let-t>
+          <span class="name-title">Total</span>
+          <span class="cell-sub"
+            >{{ visible().length }} {{ visible().length === 1 ? 'entry' : 'entries' }}</span
+          >
+        </ng-template>
+        <ng-template appFooter="company" let-t></ng-template>
+        <ng-template appCell="actions" let-row>
+          <div class="row-actions">
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              [attr.aria-label]="'Edit ' + row.company + ' ' + row.monthLabel"
+              (click)="edit(row)"
+            >
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+            </button>
+          </div>
+        </ng-template>
+        <ng-template appCard let-row>
+          <button type="button" class="app-card entry-card" (click)="edit(row)">
+            <span class="entry-top">
+              <span class="entry-title">{{ row.monthLabel }} · {{ row.company }}</span>
+              <span class="app-num">{{ row.employee + row.employer | money }}</span>
+            </span>
+            <span class="entry-meta">
+              @if (row.type === 'interest') {
+                <p-tag [value]="'Interest ' + fyText(row.fy)" severity="info" />
+              }
+              @if (showPortfolio()) {
+                <p-tag [value]="row.portfolio" severity="secondary" />
+              }
+              <span
+                >Employee <span class="app-num">{{ row.employee | money }}</span></span
+              >
+              <span
+                >Employer <span class="app-num">{{ row.employer | money }}</span></span
+              >
+              @if (row.type === 'monthly') {
+                <span
+                  >Pension <span class="app-num">{{ row.pension | money }}</span></span
+                >
+              }
+            </span>
+          </button>
+        </ng-template>
+      </app-data-table>
+      @if (visible().length === 0) {
+        <button pButton type="button" text (click)="clearFilters()">Clear filters</button>
+      }
+    </section>
+  </div>
+}
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialogTitle()"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this PF entry?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="field">
+    <span id="pf-type-label" class="field-label">Type</span>
+    <p-selectbutton
+      [options]="typeOptions"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="dialog.form().type"
+      (ngModelChange)="setType($event)"
+      ariaLabelledBy="pf-type-label"
+    />
+  </div>
+  <div class="field">
+    <label for="pf-portfolio">Portfolio</label>
+    <p-select
+      inputId="pf-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="dialog.form().portfolioId"
+      (ngModelChange)="dialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (dialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="pf-company">Company</label>
+    <input
+      pInputText
+      id="pf-company"
+      autocomplete="off"
+      list="pf-companies"
+      [maxlength]="companyMax"
+      [ngModel]="dialog.form().company"
+      (ngModelChange)="dialog.set('company', $event)"
+      (change)="setCompany(dialog.form().company)"
+    />
+    <datalist id="pf-companies">
+      @for (c of knownCompanies(); track c) {
+        <option [value]="c"></option>
+      }
+    </datalist>
+    @if (dialog.errors().company; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  @if (dialog.form().type === 'monthly') {
+    <div class="form-row">
+      <div class="field">
+        <label for="pf-month">Wage month</label>
+        <p-select
+          inputId="pf-month"
+          [options]="monthOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="dialog.form().month"
+          (ngModelChange)="dialog.set('month', $event)"
+          appendTo="body"
+        />
+        @if (dialog.errors().month; as e) {
+          <p class="field-error">{{ e }}</p>
+        }
+      </div>
+      <div class="field">
+        <label for="pf-year">Year</label>
+        <p-select
+          inputId="pf-year"
+          [options]="yearOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="dialog.form().year"
+          (ngModelChange)="dialog.set('year', $event)"
+          appendTo="body"
+        />
+        @if (dialog.errors().year; as e) {
+          <p class="field-error">{{ e }}</p>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="field">
+      <label for="pf-fy">Financial year</label>
+      <p-select
+        inputId="pf-fy"
+        [options]="dialogFyOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="dialog.form().fy"
+        (ngModelChange)="dialog.set('fy', $event)"
+        appendTo="body"
+        ariaDescribedBy="pf-fy-help"
+      />
+      <p class="field-help" id="pf-fy-help">{{ interestHint() }}</p>
+      @if (dialog.errors().fy; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  }
+  <div class="form-row">
+    <div class="field">
+      <label for="pf-employee">{{
+        dialog.form().type === 'interest' ? 'Employee interest (₹)' : 'Employee (₹)'
+      }}</label>
+      <input
+        pInputText
+        id="pf-employee"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().employee"
+        (ngModelChange)="dialog.set('employee', $event)"
+      />
+      @if (dialog.errors().employee; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="pf-employer">{{
+        dialog.form().type === 'interest' ? 'Employer interest (₹)' : 'Employer (₹)'
+      }}</label>
+      <input
+        pInputText
+        id="pf-employer"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().employer"
+        (ngModelChange)="dialog.set('employer', $event)"
+      />
+      @if (dialog.errors().employer; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  @if (dialog.form().type === 'monthly') {
+    <div class="field">
+      <label for="pf-pension">Pension, EPS (₹)</label>
+      <input
+        pInputText
+        id="pf-pension"
+        inputmode="decimal"
+        autocomplete="off"
+        aria-describedby="pf-pension-help"
+        [ngModel]="dialog.form().pension"
+        (ngModelChange)="dialog.set('pension', $event)"
+      />
+      <p class="field-help" id="pf-pension-help">Leave empty if there is no pension share.</p>
+      @if (dialog.errors().pension; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  }
+</app-edit-dialog>

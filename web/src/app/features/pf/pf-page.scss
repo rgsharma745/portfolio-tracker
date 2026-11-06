@@ -1,0 +1,147 @@
+// Five stat cards: the balance spans the first row on mobile (2 columns), all in one row on
+// desktop.
+.pf-stats {
+  > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+    > :first-child {
+      grid-column: auto;
+    }
+  }
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.head-actions,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filters p-select {
+  min-width: 10rem;
+}
+
+.companies {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.company-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.company {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.company-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.company-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.company-balance {
+  flex-shrink: 0;
+  font-size: 17px;
+}
+
+.company-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.next-button {
+  min-height: 44px;
+  margin-left: auto;
+}
+
+.month-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+// Mobile: one card per entry; the whole card opens it for editing.
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.entry-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.entry-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+}
