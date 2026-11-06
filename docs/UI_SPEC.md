@@ -68,7 +68,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Stat cards: PF balance (employee + employer + interest), Employee, Employer, Interest, Pension (EPS) marked "Not in the PF balance". Mobile: 2 columns with the balance full width; from 1024px: one row of five.
 - By company: one line per company (and portfolio in All mode) with its balance, pension and last wage month, and an **Add next month** button (the month after the last contribution, same amounts). Header actions: New company, Add interest, and Add next month (for the most recent company) when there is more than one company.
 - Passbook: filters for company and financial year; desktop table (Wage month with an "Interest FY …" tag on interest rows, Company, Employee, Employer, Pension) with sorting and a totals row; mobile cards (month · company, contribution, then the amounts). Tap or the pencil edits; delete from the dialog with confirmation.
-- Dialog: Type (Monthly / Interest), Portfolio, Company (suggests known companies; picking one while adding refills its next month), Wage month and Year selects (Interest: a financial-year select, stored as its March), Employee, Employer, and Pension for monthly rows (empty = 0).
+- Dialog: Type (Monthly / Interest; switching type never carries amounts over: Interest starts empty for the last financial year, Monthly refills the company's next month), Portfolio, Company (suggests known companies; picking one while adding refills its next month), Wage month and Year selects (Interest: a financial-year select, stored as its March), Employee, Employer, and Pension for monthly rows (empty = 0).
 
 ### Cards (monthly bill management)
 - Month selector at the top (previous / next, defaults to the current month).

@@ -64,6 +64,14 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await expect(next.getByLabel('Company')).toHaveValue('E2E Tech');
   await expect(next.getByLabel('Employee (₹)')).toHaveValue('1800');
   await expect(next.getByLabel('Pension, EPS (₹)')).toHaveValue('1250');
+  // Switching to Interest does not carry the month's amounts over (the title follows the type)
+  const typeGroup = (d: typeof next) => d.getByRole('group', { name: 'Type' });
+  await typeGroup(next).getByRole('button', { name: 'Interest' }).click();
+  const switched = page.getByRole('dialog', { name: 'Add interest' });
+  await expect(switched.getByLabel('Employee interest (₹)')).toHaveValue('');
+  await expect(switched.getByLabel('Employer interest (₹)')).toHaveValue('');
+  await typeGroup(switched).getByRole('button', { name: 'Monthly' }).click();
+  await expect(next.getByLabel('Employee (₹)')).toHaveValue('1800');
   await next.getByRole('button', { name: 'Save' }).click();
   await expect(next).toBeHidden();
   await expect(company(page)).toContainText('₹4,700');

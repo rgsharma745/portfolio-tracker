@@ -92,6 +92,30 @@ export function interestForm(portfolioId: string, company: string, today: string
   };
 }
 
+/**
+ * The form after switching between Monthly and Interest. Amounts never carry over: a month's
+ * contribution is not the year's interest. Interest starts empty for the last financial year;
+ * Monthly refills the company's next month when it has one, otherwise starts empty.
+ */
+export function switchType(
+  form: PfForm,
+  type: PfContributionType,
+  entries: readonly PfEntry[],
+  today: string,
+): PfForm {
+  if (type === form.type) return form;
+  if (type === 'interest') return interestForm(form.portfolioId, form.company, today);
+  const known = entries.some(
+    (e) =>
+      e.portfolio_id === form.portfolioId &&
+      e.company === form.company &&
+      e.contribution_type === 'monthly',
+  );
+  return known
+    ? nextMonthForm(entries, form.company, form.portfolioId, today)
+    : { ...emptyPfForm(form.portfolioId, today), company: form.company };
+}
+
 export function pfFormFrom(e: PfEntry): PfForm {
   const form = monthlyForm(e.portfolio_id, e.company, e.wage_month, {
     employee: e.employee_amount,

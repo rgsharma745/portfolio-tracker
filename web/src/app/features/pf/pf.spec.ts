@@ -5,6 +5,7 @@ import {
   interestForm,
   nextMonthForm,
   pfFormFrom,
+  switchType,
   validatePfForm,
 } from './pf-form';
 import { shortMonth } from './pf-page';
@@ -118,6 +119,35 @@ describe('PF form', () => {
       entry({ contribution_type: 'interest', wage_month: '2026-03-01', pension_amount: 0 }),
     );
     expect([form.type, form.fy, form.month, form.year]).toEqual(['interest', 2025, 3, 2026]);
+  });
+
+  it("never carries a month's amounts into interest, or back", () => {
+    const next = nextMonthForm([entry()], 'Acme', 'p1', '2026-11-06');
+    const interest = switchType(next, 'interest', [entry()], '2026-11-06');
+    expect(interest).toMatchObject({
+      type: 'interest',
+      company: 'Acme',
+      fy: 2025,
+      employee: '',
+      employer: '',
+      pension: '',
+    });
+    // Back to monthly: the company's next month, refilled from its last contribution
+    expect(switchType(interest, 'monthly', [entry()], '2026-11-06')).toEqual(next);
+    // A company with no months yet: empty, at the current month
+    const fresh = switchType(
+      { ...interest, company: 'New Co' },
+      'monthly',
+      [entry()],
+      '2026-11-06',
+    );
+    expect([fresh.company, fresh.month, fresh.year, fresh.employee]).toEqual([
+      'New Co',
+      11,
+      2026,
+      '',
+    ]);
+    expect(switchType(next, 'monthly', [entry()], '2026-11-06')).toBe(next);
   });
 
   it('labels months briefly', () => {

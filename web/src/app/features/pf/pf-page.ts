@@ -41,6 +41,7 @@ import {
   interestForm,
   nextMonthForm,
   pfFormFrom,
+  switchType,
   validatePfForm,
 } from './pf-form';
 
@@ -250,10 +251,9 @@ export class PfPage {
     );
   }
 
-  /** Switching to Monthly or Interest keeps the company and amounts. */
+  /** Switching between Monthly and Interest keeps the company; amounts start fresh. */
   protected setType(type: PfContributionType): void {
-    this.dialog.set('type', type);
-    if (type === 'interest') this.dialog.set('pension', '');
+    this.dialog.form.set(switchType(this.dialog.form(), type, this.pf.entries(), this.today));
   }
 
   /** Picking a company while adding a month refills the next month and its amounts. */
