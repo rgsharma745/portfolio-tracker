@@ -118,9 +118,10 @@ export class AllocationBar {
     return `var(--app-series-${(index < 0 ? 0 : index) + 1})`;
   }
 
-  /** Series 3 and 4 (green, yellow) are light enough to need dark text. */
+  /** Series 3 and 4 (green, yellow) are light enough to need dark text; 5 (purple) is not. */
   protected darkLabel(key: string): boolean {
-    return this.order().indexOf(key) >= 2;
+    const index = this.order().indexOf(key);
+    return index === 2 || index === 3;
   }
 
   protected percent(share: number): string {

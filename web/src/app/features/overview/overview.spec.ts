@@ -75,4 +75,25 @@ describe('historySeries', () => {
     expect(historySeries(snapshots, ['me'], '6M', '2026-11-04')).toHaveLength(2);
     expect(historySeries(snapshots, ['me'], '1Y', '2026-11-04')).toHaveLength(2);
   });
+
+  it('plots the PF balance from the first day it is above zero', () => {
+    const pf = (portfolio_id: string, snap_date: string, pf_balance: number) => ({
+      ...snap(portfolio_id, snap_date, 1),
+      pf_balance,
+    });
+    const rows = [
+      pf('me', '2026-09-01', 0),
+      pf('me', '2026-10-01', 500),
+      pf('wife', '2026-10-01', 100),
+      pf('me', '2026-11-01', 700),
+      snap('wife', '2026-11-01', 1), // a row without the column counts as 0
+    ];
+    expect(historySeries(rows, ['me', 'wife'], 'All', '2026-11-04', 'pf')).toEqual([
+      { date: '2026-10-01', value: 600 },
+      { date: '2026-11-01', value: 700 },
+    ]);
+    expect(historySeries([pf('me', '2026-11-01', 0)], ['me'], 'All', '2026-11-04', 'pf')).toEqual(
+      [],
+    );
+  });
 });

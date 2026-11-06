@@ -5,11 +5,13 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { localIsoDate } from '../../core/calc/common';
 import { cardDues } from '../../core/calc/cards';
 import { mfTotals } from '../../core/calc/mf';
+import { pfBalance } from '../../core/calc/pf';
 import { rsuTotals } from '../../core/calc/rsu';
 import { savingsTotal } from '../../core/calc/savings';
 import { stockTotals } from '../../core/calc/stocks';
 import { CardsService } from '../../core/data/cards.service';
 import { HoldingsService } from '../../core/data/holdings.service';
+import { PfService } from '../../core/data/pf.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { SnapshotsService } from '../../core/data/snapshots.service';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
@@ -23,6 +25,7 @@ import { PlColorDirective } from '../../shared/ui/pl-color.directive';
 import { StatCard } from '../../shared/ui/stat-card';
 import {
   HistoryRange,
+  HistorySeries,
   PortfolioSummaryRow,
   allocation,
   historySeries,
@@ -30,7 +33,7 @@ import {
   totalRow,
 } from './overview-calc';
 
-const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings'];
+const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf'];
 
 /** Overview: headline totals, allocation, history and a per-portfolio summary. */
 @Component({
@@ -57,15 +60,25 @@ const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings'];
 export class OverviewPage {
   protected readonly holdings = inject(HoldingsService);
   protected readonly cards = inject(CardsService);
+  protected readonly pf = inject(PfService);
   protected readonly snapshots = inject(SnapshotsService);
   protected readonly portfolios = inject(PortfolioService);
   protected readonly bp = inject(BreakpointService);
   private readonly today = localIsoDate();
 
-  protected readonly loaded = computed(() => this.holdings.loaded() && this.cards.loaded());
-  protected readonly error = computed(() => this.holdings.error() ?? this.cards.error());
+  protected readonly loaded = computed(
+    () => this.holdings.loaded() && this.cards.loaded() && this.pf.loaded(),
+  );
+  protected readonly error = computed(
+    () => this.holdings.error() ?? this.cards.error() ?? this.pf.error(),
+  );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
+  protected readonly series = signal<HistorySeries>('combined');
+  protected readonly seriesOptions = [
+    { label: 'MF + stocks', value: 'combined' },
+    { label: 'PF', value: 'pf' },
+  ];
   protected readonly allocationOrder = ALLOCATION_ORDER;
 
   private readonly ids = computed(() => this.portfolios.scopeIds());
@@ -86,6 +99,7 @@ export class OverviewPage {
   );
   protected readonly savings = computed(() => savingsTotal(this.holdings.savings(), this.ids()));
   protected readonly dues = computed(() => cardDues(this.cards.bills(), this.ids()));
+  protected readonly pfTotal = computed(() => pfBalance(this.pf.entries(), this.ids()));
   protected readonly combined = computed(() => ({
     value: this.mf().value + this.stocks().value,
     dayChange: this.mf().dayChange + this.stocks().dayChange,
@@ -98,11 +112,12 @@ export class OverviewPage {
       { key: 'stocks', label: 'Stocks', value: this.stocks().value },
       { key: 'rsu', label: 'RSU (vested)', value: this.rsu().vestedInr ?? 0 },
       { key: 'savings', label: 'Savings', value: this.savings() },
+      { key: 'pf', label: 'PF', value: this.pfTotal() },
     ]),
   );
 
   protected readonly history = computed(() =>
-    historySeries(this.snapshots.snapshots(), this.ids(), this.range(), this.today),
+    historySeries(this.snapshots.snapshots(), this.ids(), this.range(), this.today, this.series()),
   );
 
   /** One row per portfolio in scope (MF + stocks), and a family total when there are several. */
@@ -141,5 +156,6 @@ export class OverviewPage {
   protected retry(): void {
     void this.holdings.load();
     void this.cards.load();
+    void this.pf.load();
   }
 }

@@ -30,6 +30,7 @@
       />
       <app-stat-card label="RSU (vested)" [value]="rsu().vestedInr" [compact]="bp.isMobile()" />
       <app-stat-card label="Savings" [value]="savings()" [compact]="bp.isMobile()" />
+      <app-stat-card label="PF" [value]="pfTotal()" [compact]="bp.isMobile()" />
       <app-stat-card label="Card dues" [value]="dues()" [danger]="true" [compact]="bp.isMobile()" />
     </div>
     @if (unpriced()) {
@@ -52,7 +53,20 @@
 
       <section class="app-card chart-card" aria-labelledby="history-title">
         <div class="chart-head">
-          <h2 class="section-title" id="history-title">Combined value over time</h2>
+          <h2 class="section-title" id="history-title">
+            {{ series() === 'pf' ? 'PF balance' : 'Combined value' }} over time
+          </h2>
+          <span id="series-label" class="visually-hidden">Show</span>
+          <p-selectbutton
+            [options]="seriesOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="series()"
+            (ngModelChange)="series.set($event)"
+            [allowEmpty]="false"
+            ariaLabelledBy="series-label"
+            size="small"
+          />
           <span id="range-label" class="visually-hidden">Range</span>
           <p-selectbutton
             [options]="ranges"
@@ -71,7 +85,10 @@
             are two days{{ range() === 'All' ? '' : ' in this range' }}.
           </p>
         } @else {
-          <app-line-chart [points]="history()" label="Combined value" />
+          <app-line-chart
+            [points]="history()"
+            [label]="series() === 'pf' ? 'PF balance' : 'Combined value'"
+          />
         }
       </section>
     </div>
