@@ -1,13 +1,13 @@
 name: NAV
 
 # Mutual fund NAVs from AMFI, for the scheme codes held only.
-# 23:17 IST, and a retry at 07:07 IST (before the 07:47 snapshot). Times are IST (timezone key).
+# 23:37 IST, and a retry at 08:17 IST (before the 08:37 snapshot). Times are IST (timezone key).
 # Odd minutes on purpose: GitHub delays, and sometimes drops, runs at the busy start of the hour.
 on:
   schedule:
-    - cron: '17 23 * * *'
+    - cron: '37 23 * * *'
       timezone: Asia/Kolkata
-    - cron: '7 7 * * *'
+    - cron: '17 8 * * *'
       timezone: Asia/Kolkata
   workflow_dispatch:
 

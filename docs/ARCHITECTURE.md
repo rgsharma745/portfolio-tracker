@@ -65,9 +65,9 @@ renovate.json    dependency updates (Renovate app)
 ## Jobs
 | Job | Schedule | Writes | Notes |
 |---|---|---|---|
-| fetch_nav (`nav.yml`) | daily 23:17 and 07:07 IST | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
+| fetch_nav (`nav.yml`) | daily 23:37 and 08:17 IST | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
 | fetch_prices (`prices.yml`) | 19:13 IST Mon–Fri and 04:23 IST Tue–Sat (after the US close) | `stock_price_latest`, `fx_latest` via upsert functions | Only symbols in `stock_holdings` and `rsu_grants`; USD/INR only when something is in USD; skips `is_manual` rows. Sources below |
-| snapshot (`snapshot.yml`) | daily 07:47 IST | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
+| snapshot (`snapshot.yml`) | daily 08:37 IST | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
 | backup (`backup.yml`) | Sundays 08:41 IST | workflow artifact, 90 days | All owner tables as JSON, encrypted with `age` in memory before writing |
 | keepalive (`keepalive.yml`) | Wednesdays 11:19 IST | none | One tiny select so the free project never pauses |
 

@@ -79,9 +79,9 @@ Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com`
 
 | Job | When (IST) | Writes |
 |---|---|---|
-| NAV | 23:17 daily, retry 07:07 | mutual fund NAVs (AMFI) for the codes you hold |
+| NAV | 23:37 daily, retry 08:17 | mutual fund NAVs (AMFI) for the codes you hold |
 | Prices | 19:13 Mon–Fri, 04:23 Tue–Sat (after the US close) | stock prices (NSE, then Yahoo) for the symbols you hold, and USD/INR |
-| Snapshot | 07:47 daily | one history row per active portfolio (Overview chart) |
+| Snapshot | 08:37 daily | one history row per active portfolio (Overview chart) |
 | Backup | Sunday 08:41 | encrypted backup artifact |
 | Keep-alive | Wednesday 11:19 | one tiny query so the free project never pauses |
 
