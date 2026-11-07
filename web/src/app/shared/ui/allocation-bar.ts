@@ -71,7 +71,7 @@ const LABEL_MIN_SHARE = 12;
       white-space: nowrap;
     }
     .block-label.dark-label {
-      color: #0b0b0b;
+      color: #000; // 4.8:1 on light-theme blue, the closest of the four
     }
     .legend {
       display: grid;
@@ -118,10 +118,13 @@ export class AllocationBar {
     return `var(--app-series-${(index < 0 ? 0 : index) + 1})`;
   }
 
-  /** Series 3 and 4 (green, yellow) are light enough to need dark text; 5 and 6 are not. */
+  /**
+   * Dark text on series 1 to 4 (blue, orange, green, yellow): white on them is below 4.5:1
+   * in one theme or both (blue 4.4:1 light, 3.6:1 dark). Series 5 and 6 keep white.
+   */
   protected darkLabel(key: string): boolean {
     const index = this.order().indexOf(key);
-    return index === 2 || index === 3;
+    return index >= 0 && index <= 3;
   }
 
   protected percent(share: number): string {
