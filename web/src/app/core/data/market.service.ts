@@ -7,7 +7,7 @@ import { WriteError, writeErrorMessage } from './write-error';
 export type JobRun = Tables<'job_runs'>;
 
 /** The scheduled jobs, in the order Settings lists them. */
-export const JOBS = ['fetch_nav', 'fetch_prices', 'snapshot', 'backup'] as const;
+export const JOBS = ['fetch_nav', 'fetch_nps_nav', 'fetch_prices', 'snapshot', 'backup'] as const;
 export type JobName = (typeof JOBS)[number];
 
 /**

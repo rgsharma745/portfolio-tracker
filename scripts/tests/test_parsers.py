@@ -8,9 +8,18 @@ import zipfile
 from datetime import date
 from decimal import Decimal
 
+import pytest
 import requests
 
 from jobs.fetch_nav import parse_nav_file
+from jobs.fetch_nps_nav import (
+    Nav,
+    Source,
+    download_protean,
+    first_good,
+    parse_protean_file,
+    parse_trust_file,
+)
 from jobs.providers import (
     NseBhavcopy,
     YahooChart,
@@ -18,6 +27,7 @@ from jobs.providers import (
     parse_frankfurter,
     parse_yahoo_chart,
 )
+from lib.jobs import JobError
 
 AMFI = """Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
 
@@ -136,3 +146,75 @@ def test_parse_frankfurter() -> None:
     quote = parse_frankfurter({"amount": 1.0, "base": "USD", "date": "2026-11-03", "rates": {"INR": 94.75}})
     assert quote is not None and quote.price == Decimal("94.75") and quote.source == "frankfurter"
     assert parse_frankfurter({"rates": {}}) is None
+
+
+# ---- NPS NAVs ----
+
+NPS_TRUST = (
+    "﻿ID\tDATE OF NAV\tPFM NAME\tSCHEME ID\tSCHEME NAME\tNAV VALUE\n"
+    "1\t2026-11-06\tSBI Pension Funds Pvt. Ltd.\tSM001003\tSBI PENSION FUND SCHEME E - TIER I\t57.3799\n"
+    "149\t2026-11-06\tHDFC Pension Fund Management Limited\tSM008001\tHDFC SCHEME E - TIER I\t55.1949\n"
+    "150\t2026-11-06\tHDFC Pension Fund Management Limited\tSM008002\tHDFC SCHEME C - TIER I\tN.A.\n"
+    "151\t2026-11-06\tHDFC Pension Fund Management Limited\tSM008003\tHDFC SCHEME G - TIER I\t28.7705\n"
+)
+
+NPS_PROTEAN = (
+    "11/05/2026,PFM008,HDFC PENSION FUND MANAGEMENT LIMITED,SM008001,HDFC SCHEME E - TIER I,54.4046\n"
+    "11/05/2026,PFM008,HDFC PENSION FUND MANAGEMENT LIMITED,SM008003,HDFC SCHEME G, TIER I,28.8898\n"
+    "11/05/2026,PFM001,SBI PENSION FUNDS PRIVATE LIMITED,SM001003,SBI SCHEME E - TIER I,56.6836\n"
+)
+
+
+def test_parse_nps_trust_file_finds_columns_by_header() -> None:
+    navs, seen = parse_trust_file(NPS_TRUST, {"SM008001", "SM008002", "SM008003", "SM999999"})
+    assert seen == 4
+    assert navs["SM008001"] == Nav(Decimal("55.1949"), date(2026, 11, 6))
+    assert navs["SM008003"].nav == Decimal("28.7705")
+    # A non-numeric NAV is skipped; unheld and unknown codes are not stored.
+    assert set(navs) == {"SM008001", "SM008003"}
+    assert parse_trust_file("<html>maintenance</html>", {"SM008001"}) == ({}, 0)
+
+
+def test_parse_nps_protean_file_reads_month_first_dates_and_commas_in_names() -> None:
+    navs, seen = parse_protean_file(NPS_PROTEAN, {"SM008001", "SM008003"})
+    assert seen == 3
+    assert navs["SM008001"] == Nav(Decimal("54.4046"), date(2026, 11, 5))
+    assert navs["SM008003"].nav == Decimal("28.8898")
+
+
+def _nps_zip(text: str) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("NAV_File_05112026.out", text)
+        z.writestr("__MACOSX/._NAV_File_05112026.out", "junk")
+    return buf.getvalue()
+
+
+def test_protean_looks_back_to_the_newest_daily_file() -> None:
+    session = FakeSession({"NAV_File_05112026": (200, _nps_zip(NPS_PROTEAN))})
+    text = download_protean(session, date(2026, 11, 7))
+    assert "SM008001" in text
+    assert [u[-12:-4] for u in session.urls] == ["07112026", "06112026", "05112026"]
+
+
+def test_protean_gives_up_after_a_week() -> None:
+    session = FakeSession({})
+    with pytest.raises(JobError, match="No Protean NAV file"):
+        download_protean(session, date(2026, 11, 7))
+    assert len(session.urls) == 8
+
+
+def test_nps_sources_fall_back_in_order() -> None:
+    def broken() -> str:
+        raise requests.ConnectionError("down")
+
+    filler = "".join(f"{i}\t2026-11-06\tPFM\tSM9{i:05d}\tFiller\t10\n" for i in range(150))
+    sources = [
+        Source("npstrust", broken, parse_trust_file),
+        Source("empty", lambda: "", parse_trust_file),
+        Source("good", lambda: NPS_TRUST + filler, parse_trust_file),
+    ]
+    name, navs = first_good(sources, {"SM008001"})
+    assert name == "good" and navs["SM008001"].nav == Decimal("55.1949")
+    with pytest.raises(JobError, match="npstrust: ConnectionError; empty: looked empty"):
+        first_good(sources[:2], {"SM008001"})

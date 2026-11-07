@@ -1,6 +1,16 @@
 import { describeRun, validateOverrideForm } from './settings-calc';
 
 describe('describeRun', () => {
+  it('names the NPS NAV file for the NPS job', () => {
+    expect(
+      describeRun({
+        job: 'fetch_nps_nav',
+        status: 'success',
+        message: '{"updated": 3, "unmatched": ["SM000001"], "source": "npstrust"}',
+      }),
+    ).toBe('3 updated, 1 not found in the NPS NAV file');
+  });
+
   it('summarises the NAV job message', () => {
     expect(
       describeRun({

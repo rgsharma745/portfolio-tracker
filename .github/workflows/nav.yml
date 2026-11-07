@@ -1,8 +1,10 @@
 name: NAV
 
-# Mutual fund NAVs from AMFI, for the scheme codes held only.
+# Mutual fund NAVs from AMFI and NPS NAVs from NPS Trust (Protean CRA as fallback), for the
+# scheme codes held only. Two independent jobs: one failing does not stop the other.
 # 23:37 IST, and a retry at 08:17 IST (before the 08:37 snapshot). Times are IST (timezone key).
 # Odd minutes on purpose: GitHub delays, and sometimes drops, runs at the busy start of the hour.
+# Run now in Settings dispatches this workflow, so it refreshes both.
 on:
   schedule:
     - cron: '37 23 * * *'
@@ -22,4 +24,10 @@ jobs:
     uses: ./.github/workflows/_run-job.yml
     with:
       job: fetch_nav
+    secrets: inherit
+
+  fetch-nps-nav:
+    uses: ./.github/workflows/_run-job.yml
+    with:
+      job: fetch_nps_nav
     secrets: inherit

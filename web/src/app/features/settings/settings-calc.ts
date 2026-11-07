@@ -4,6 +4,7 @@ import { FormErrors, onlyErrors } from '../../shared/format/validation';
 
 export const JOB_LABEL: Record<JobName, string> = {
   fetch_nav: 'Mutual fund NAVs',
+  fetch_nps_nav: 'NPS NAVs',
   fetch_prices: 'Stock prices and USD/INR',
   snapshot: 'Daily snapshot',
   backup: 'Weekly backup',
@@ -11,7 +12,7 @@ export const JOB_LABEL: Record<JobName, string> = {
 
 /**
  * A line about a job run for Settings. Successful runs store a JSON summary, shown in words
- * ("42 updated, 2 not found in the AMFI file"); failures store plain text, shown as it is.
+ * ("42 updated, 2 not found in the AMFI file" or "the NPS NAV file"); failures store plain text, shown as it is.
  */
 export function describeRun(run: Pick<JobRun, 'job' | 'status' | 'message'>): string {
   if (run.status !== 'success' || !run.message) return run.message ?? '';
@@ -25,7 +26,10 @@ export function describeRun(run: Pick<JobRun, 'job' | 'status' | 'message'>): st
     Array.isArray(parsed[key]) ? (parsed[key] as unknown[]).length : 0;
   const parts: string[] = [];
   if (typeof parsed['updated'] === 'number') parts.push(`${parsed['updated']} updated`);
-  if (count('unmatched')) parts.push(`${count('unmatched')} not found in the AMFI file`);
+  if (count('unmatched')) {
+    const file = run.job === 'fetch_nps_nav' ? 'NPS NAV file' : 'AMFI file';
+    parts.push(`${count('unmatched')} not found in the ${file}`);
+  }
   if (count('missing')) parts.push(`no price for ${(parsed['missing'] as string[]).join(', ')}`);
   if (typeof parsed['fx'] === 'string' && parsed['fx'] !== 'not needed') {
     parts.push(`USD/INR ${parsed['fx'] === 'manual' ? 'set by hand' : 'from ' + parsed['fx']}`);

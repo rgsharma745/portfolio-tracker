@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from jobs import backup, fetch_nav, fetch_prices, keepalive, snapshot
+from jobs import backup, fetch_nav, fetch_nps_nav, fetch_prices, keepalive, snapshot
 from jobs.providers import Quote
 from lib import jobs as joblib
 from lib.supabase_rest import SupabaseRest
@@ -116,6 +116,65 @@ def test_fetch_nav_fails_on_a_broken_file(service: SupabaseRest, user_a: AuthUse
     )
     with pytest.raises(joblib.JobError, match="empty or broken"):
         fetch_nav.work(service, download=lambda: "<html>maintenance</html>")
+
+
+# ---- fetch_nps_nav ----
+
+
+@pytest.fixture
+def nps_codes(service: SupabaseRest) -> Iterator[list[str]]:
+    """Three NPS-style scheme codes that no real scheme uses."""
+    picked = [f"SMPY{random.randrange(10**6):06d}" for _ in range(3)]
+    yield picked
+    for code in picked:
+        service.delete("nps_nav_latest", scheme_code=f"eq.{code}")
+
+
+def trust_file(navs: dict[str, str], nav_date: str = "2026-11-06") -> str:
+    head = "ID\tDATE OF NAV\tPFM NAME\tSCHEME ID\tSCHEME NAME\tNAV VALUE\n"
+    filler = "".join(f"{i}\t{nav_date}\tPFM\tSMFILL{i:04d}\tFiller\t10\n" for i in range(150))
+    held = "".join(f"9\t{nav_date}\tPFM\t{code}\tPytest\t{nav}\n" for code, nav in navs.items())
+    return head + filler + held
+
+
+def test_fetch_nps_nav_stores_held_codes_skips_manual_and_reports_unmatched(
+    service: SupabaseRest, user_a: AuthUser, portfolio: dict[str, Any], nps_codes: list[str]
+) -> None:
+    held, manual, missing = nps_codes
+    for cls, code in zip("ECG", nps_codes, strict=True):
+        insert(service, "nps_holdings", {
+            "owner_id": user_a.id, "portfolio_id": portfolio["id"], "account": "Pytest PRAN",
+            "scheme_class": cls, "scheme_code": code, "scheme_name": f"Pytest {cls}", "units": 10,
+        })
+    insert(service, "nps_nav_latest", {"scheme_code": manual, "nav": 99, "nav_date": "2026-11-01",
+                                       "is_manual": True})
+    file = trust_file({held: "55.1949", manual: "12"})
+    source = fetch_nps_nav.Source("test", lambda: file, fetch_nps_nav.parse_trust_file)
+
+    summary = fetch_nps_nav.work(service, sources=[source])
+    assert summary["unmatched"] == [missing] and summary["source"] == "test"
+    stored = rows(service, "nps_nav_latest", scheme_code=f"eq.{held}")[0]
+    assert Decimal(str(stored["nav"])) == Decimal("55.1949") and stored["nav_date"] == "2026-11-06"
+    assert Decimal(str(rows(service, "nps_nav_latest", scheme_code=f"eq.{manual}")[0]["nav"])) == 99
+    assert rows(service, "nps_nav_latest", scheme_code="eq.SMFILL0000") == []
+
+    nxt = fetch_nps_nav.Source("test", lambda: trust_file({held: "56"}, "2026-11-07"),
+                               fetch_nps_nav.parse_trust_file)
+    fetch_nps_nav.work(service, sources=[nxt])
+    after = rows(service, "nps_nav_latest", scheme_code=f"eq.{held}")[0]
+    assert Decimal(str(after["prev_nav"])) == Decimal("55.1949") and after["nav_date"] == "2026-11-07"
+
+
+def test_fetch_nps_nav_fails_when_no_source_works(
+    service: SupabaseRest, user_a: AuthUser, portfolio: dict[str, Any], nps_codes: list[str]
+) -> None:
+    insert(service, "nps_holdings", {
+        "owner_id": user_a.id, "portfolio_id": portfolio["id"], "account": "Pytest PRAN",
+        "scheme_class": "E", "scheme_code": nps_codes[0], "scheme_name": "Pytest E",
+    })
+    broken = fetch_nps_nav.Source("x", lambda: "<html>maintenance</html>", fetch_nps_nav.parse_trust_file)
+    with pytest.raises(joblib.JobError, match="No NPS NAV source worked"):
+        fetch_nps_nav.work(service, sources=[broken])
 
 
 # ---- fetch_prices ----
