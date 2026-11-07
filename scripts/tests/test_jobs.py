@@ -201,6 +201,9 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
     pf = {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "company": "Pytest Co"}
     insert(service, "pf_entries", {**pf, "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-05", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1250})
     insert(service, "pf_entries", {**pf, "contribution_type": "interest", "transaction_date": "2026-08-20", "employee_amount": 100, "employer_amount": 50, "pension_amount": 0})
+    ppf = {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "account": "Pytest PPF"}
+    insert(service, "ppf_entries", {**ppf, "entry_type": "investment", "entry_date": "2026-04-05", "amount": 150000})
+    insert(service, "ppf_entries", {**ppf, "entry_type": "interest", "entry_date": "2026-03-31", "amount": 10650.75})
 
     day = date(2001, 1, 1)  # a date no real snapshot uses, so other users' history is untouched
     try:
@@ -211,6 +214,7 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
         assert Decimal(str(mine[0]["savings"])) == Decimal("1234.5")
         assert Decimal(str(mine[0]["card_dues"])) == Decimal(400)
         assert Decimal(str(mine[0]["pf_balance"])) == Decimal("2500.25")  # pension left out
+        assert Decimal(str(mine[0]["ppf_balance"])) == Decimal("160650.75")
         assert mine[0]["owner_id"] == user_a.id
     finally:
         service.delete("portfolio_snapshots", snap_date="eq.2001-01-01")

@@ -321,6 +321,7 @@ export type Database = {
           owner_id: string;
           pf_balance: number;
           portfolio_id: string;
+          ppf_balance: number;
           rsu_vested_value: number;
           savings: number;
           snap_date: string;
@@ -334,6 +335,7 @@ export type Database = {
           owner_id?: string;
           pf_balance?: number;
           portfolio_id: string;
+          ppf_balance?: number;
           rsu_vested_value?: number;
           savings?: number;
           snap_date: string;
@@ -346,6 +348,7 @@ export type Database = {
           owner_id?: string;
           pf_balance?: number;
           portfolio_id?: string;
+          ppf_balance?: number;
           rsu_vested_value?: number;
           savings?: number;
           snap_date?: string;
@@ -388,6 +391,51 @@ export type Database = {
           sort_order?: number;
         };
         Relationships: [];
+      };
+      ppf_entries: {
+        Row: {
+          account: string;
+          amount: number;
+          created_at: string;
+          entry_date: string;
+          entry_type: string;
+          id: string;
+          owner_id: string;
+          portfolio_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account: string;
+          amount: number;
+          created_at?: string;
+          entry_date: string;
+          entry_type: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          account?: string;
+          amount?: number;
+          created_at?: string;
+          entry_date?: string;
+          entry_type?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ppf_entries_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       rsu_grants: {
         Row: {

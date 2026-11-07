@@ -32,6 +32,7 @@ TABLES = (
     "rsu_grants",
     "savings_accounts",
     "pf_entries",
+    "ppf_entries",
     "credit_cards",
     "card_bills",
     "portfolio_snapshots",

@@ -7,7 +7,8 @@ Money uses Decimal; amounts are rounded to paise only when stored.
 Rules (docs/DATA_MODEL.md): a holding without a price, or a USD holding without a USDINR
 rate, is left out of value; RSU value is vested units x price x USDINR; savings are summed;
 card dues are the sum of max(amount - paid, 0) over bills with an amount; the PF balance is
-employee + employer amounts over all PF rows (monthly and interest), pension left out.
+employee + employer amounts over all PF rows (monthly and interest), pension left out; the
+PPF balance is the sum of all PPF amounts (investments and interest).
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ class SnapshotValues:
     savings: Decimal
     card_dues: Decimal
     pf_balance: Decimal
+    ppf_balance: Decimal
 
     def rounded(self) -> dict[str, str]:
         """For storage: numeric(18,2) as strings."""
@@ -111,11 +113,16 @@ def pf_balance(entries: Iterable[Row]) -> Decimal:
     return sum((dec(e["employee_amount"]) + dec(e["employer_amount"]) for e in entries), ZERO)
 
 
+def ppf_balance(entries: Iterable[Row]) -> Decimal:
+    """Investments + interest over every PPF row."""
+    return sum((dec(e["amount"]) for e in entries), ZERO)
+
+
 def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portfolio_id: str) -> SnapshotValues:
     """
     Totals for one portfolio. `data` holds the owner tables: mf_holdings, stock_holdings,
-    rsu_grants, savings_accounts, card_bills (each bill carrying its card's portfolio_id) and
-    pf_entries.
+    rsu_grants, savings_accounts, card_bills (each bill carrying its card's portfolio_id),
+    pf_entries and ppf_entries.
     """
     return SnapshotValues(
         mf_value=mf_value(_in(data["mf_holdings"], portfolio_id), market),
@@ -124,4 +131,5 @@ def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portf
         savings=sum((dec(a["balance"]) for a in _in(data["savings_accounts"], portfolio_id)), ZERO),
         card_dues=card_dues(_in(data["card_bills"], portfolio_id)),
         pf_balance=pf_balance(_in(data["pf_entries"], portfolio_id)),
+        ppf_balance=ppf_balance(_in(data["ppf_entries"], portfolio_id)),
     )

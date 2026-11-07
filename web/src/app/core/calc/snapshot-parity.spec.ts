@@ -1,6 +1,7 @@
 import { cardDues } from './cards';
 import { mfTotals, navQuotes } from './mf';
 import { pfBalance } from './pf';
+import { ppfBalance } from './ppf';
 import { rsuTotals } from './rsu';
 import { savingsTotal } from './savings';
 import { priceQuotes, stockTotals, usdInrRate } from './stocks';
@@ -33,6 +34,7 @@ describe('snapshot parity with the Python job', () => {
       expect(savingsTotal(data.savings_accounts, ids)).toBeCloseTo(expected.savings, 2);
       expect(cardDues(data.card_bills, ids)).toBeCloseTo(expected.card_dues, 2);
       expect(pfBalance(data.pf_entries, ids)).toBeCloseTo(expected.pf_balance, 2);
+      expect(ppfBalance(data.ppf_entries, ids)).toBeCloseTo(expected.ppf_balance, 2);
     });
   }
 });

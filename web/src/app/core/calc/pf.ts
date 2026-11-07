@@ -1,5 +1,7 @@
 import { daysInMonth, inPortfolios, isoDate, parseIsoDate } from './common';
 
+export { fyLabel, fyStart } from './common';
+
 /**
  * Provident fund (docs/DATA_MODEL.md, "PF"), rows as in the EPFO passbook. A monthly
  * contribution has the wage month and year it pays for and the date it was credited; an
@@ -159,17 +161,6 @@ export function pfByCompany(
     .sort(
       (a, b) => a.company.localeCompare(b.company) || a.portfolioId.localeCompare(b.portfolioId),
     );
-}
-
-/** The calendar year a financial year (April to March) starts in: 2026-03-31 → 2025. */
-export function fyStart(date: string): number {
-  const { year, month } = parseIsoDate(date);
-  return month >= 4 ? year : year - 1;
-}
-
-/** "FY 2025–26" for the financial year starting in April of `start`. */
-export function fyLabel(start: number): string {
-  return `FY ${start}–${String((start + 1) % 100).padStart(2, '0')}`;
 }
 
 /** The wage period after `p`. */

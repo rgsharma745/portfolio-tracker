@@ -117,6 +117,13 @@
     { "id": "pf4", "portfolio_id": "p-wife", "company": "Beta", "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-08", "employee_amount": 900.1, "employer_amount": 275, "pension_amount": 625 },
     { "id": "pf5", "portfolio_id": "p-old", "company": "Gone", "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-08", "employee_amount": 5000, "employer_amount": 5000, "pension_amount": 0 }
   ],
+  "ppf_entries": [
+    { "id": "ppf1", "portfolio_id": "p-me", "account": "SBI PPF", "entry_date": "2025-04-05", "entry_type": "investment", "amount": 150000 },
+    { "id": "ppf2", "portfolio_id": "p-me", "account": "SBI PPF", "entry_date": "2026-03-31", "entry_type": "interest", "amount": 10650.5 },
+    { "id": "ppf3", "portfolio_id": "p-me", "account": "Post office PPF", "entry_date": "2026-05-10", "entry_type": "investment", "amount": 500.25 },
+    { "id": "ppf4", "portfolio_id": "p-wife", "account": "HDFC PPF", "entry_date": "2026-04-01", "entry_type": "investment", "amount": 75000 },
+    { "id": "ppf5", "portfolio_id": "p-old", "account": "Gone", "entry_date": "2026-04-01", "entry_type": "investment", "amount": 99999 }
+  ],
   "expected": {
     "p-me": {
       "mf_value": 5000,
@@ -124,7 +131,8 @@
       "rsu_vested_value": 204000,
       "savings": 299500,
       "card_dues": 6000,
-      "pf_balance": 20801
+      "pf_balance": 20801,
+      "ppf_balance": 161150.75
     },
     "p-wife": {
       "mf_value": 675,
@@ -132,7 +140,8 @@
       "rsu_vested_value": 0,
       "savings": 1234.56,
       "card_dues": 1500,
-      "pf_balance": 1175.1
+      "pf_balance": 1175.1,
+      "ppf_balance": 75000
     }
   }
 }

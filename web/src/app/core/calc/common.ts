@@ -177,6 +177,17 @@ export function parseIsoDate(date: string): { year: number; month: number; day: 
   return { year, month, day };
 }
 
+/** The calendar year a financial year (April to March) starts in: 2026-03-31 → 2025. */
+export function fyStart(date: string): number {
+  const { year, month } = parseIsoDate(date);
+  return month >= 4 ? year : year - 1;
+}
+
+/** "FY 2025–26" for the financial year starting in April of `start`. */
+export function fyLabel(start: number): string {
+  return `FY ${start}–${String((start + 1) % 100).padStart(2, '0')}`;
+}
+
 function toUtc(date: string): number {
   const { year, month, day } = parseIsoDate(date);
   return Date.UTC(year, month - 1, day);
