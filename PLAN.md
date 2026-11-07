@@ -5,18 +5,19 @@ Goal: replace the Google Sheet "Portfolio" with a secure, free, responsive websi
 Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop at the end of every phase for review.
 
 ## Status (update this when work lands)
-_Last updated 5 Nov 2026._
+_Last updated 7 Nov 2026._
 - **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run on schedule in GitHub Actions; backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
-- **Checks:** lint, 212 unit tests + 13 Worker tests, 138 pytest, 82 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Checks:** lint, 235 unit tests + 13 Worker tests, 156 pytest, 85 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
 - **Phase 11 (live, 6 Nov 2026):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Migrations 0002 and 0003 applied to production; Worker token and variables set; More sheet redesigned as square tiles.
 - **Phase 12 (live, 7 Nov 2026):** PF (provident fund) page, Overview PF card, allocation and history. Migrations 0004–0006 applied to production and the owner's PF data loaded (wage month Jan…Dec + wage year, transaction date on every row). Every date field is now the PrimeNG DatePicker (`app-date-input`). Workflow schedules are written in IST (`timezone: Asia/Kolkata`); CI caches Playwright browsers.
-- **Open, owner only:** finish reconciling with the Google Sheet: Mutual funds, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check (Phases 3, 6, 10); check the PF balance and pension against the EPFO passbook (Phase 12 acceptance); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
-- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, PPF, NPS, …) is not started; PF is built (Phase 12).
+- **Phase 13 (built locally, 7 Nov 2026):** PPF page (investment and interest per financial year, ₹500 to ₹1.5 lakh limits flagged), Overview PPF card, allocation and history. Waiting on the owner: apply `0007_ppf.sql` to production, push, load PPF data.
+- **Open, owner only:** apply `0007_ppf.sql` and load PPF (Phase 13); finish reconciling with the Google Sheet: Mutual funds, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check (Phases 3, 6, 10); check the PF balance and pension against the EPFO passbook (Phase 12 acceptance); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
+- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, NPS, …) is not started; PF (Phase 12) and PPF (Phase 13) are built.
 - **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
 
 ## Scope
 **v1 (this plan):** Overview, Mutual Funds (per portfolio), Stocks (India, US), RSU, Savings, Credit Cards, Settings, auth, daily NAV/price jobs, daily snapshots (history chart), monthly credit card bills, backups, PWA.
-**Backlog (v2, do not build now):** FD, PPF, NPS, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR, Expenses, ESPP wallet.
+**Backlog (v2, do not build now):** FD, NPS, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR, Expenses, ESPP wallet.
 
 ## Assumptions (confirm with the owner if any is wrong)
 - One login (the owner). No public sign-up. Several **portfolios** (for example Me and Wife) live under that one login; there are no per-portfolio logins.
@@ -165,6 +166,17 @@ The owner asked for PF tracked like the sheet's PF tab: one row per company, wag
 - [x] Every date field uses the PrimeNG DatePicker (`shared/ui/date-input.ts`, "7 Nov 2026", stored as `YYYY-MM-DD`); E2E picks dates with `pickDate()`; axe audits the open calendar.
 
 **Acceptance:** the PF balance and pension match the passbook; adding a month is one tap on Add next month and Save; the next morning's snapshot shows a PF point in the history chart.
+
+## Phase 13: Public Provident Fund (PPF)
+The owner asked for PPF as dated rows (investment or interest) with investment and interest shown per financial year. Each row also has an account name, so one portfolio can hold several PPF accounts. A ledger by the owner's choice (AGENTS.md rule 5 exception).
+- [x] Migration `0007_ppf.sql`: `ppf_entries` (owner RLS; amount > 0; one interest row per account and financial year) and `portfolio_snapshots.ppf_balance`. Tested in `test_ppf.py`, `test_rls.py`, `test_jobs.py` (snapshot) and the backup/restore round trip; backup and app export include it.
+- [x] Calculations `core/calc/ppf.ts` (balance, per account, per financial year with closing balance, room left, over-limit and below-minimum flags; `fyStart`/`fyLabel` moved to `common.ts`) with Python parity in `lib/calc.py` and the shared fixture; the snapshot job writes `ppf_balance`.
+- [x] PPF page: stat cards (balance, invested, interest, this year's deposits with room left), By financial year table/cards filtered by account, By account with Add investment, entries filtered by year, add/edit/delete dialog. Nav item PPF. E2E at all three viewports; axe in both themes including the dialog. Local seed adds a sample PPF passbook.
+- [x] Overview: PPF card (stat grid five across from 1280px), PPF in the allocation bar (sixth series colour, slate), history switch MF + stocks / PF / PPF.
+- [ ] **Human:** apply `0007_ppf.sql` to production (SQL editor), then push.
+- [ ] **Human:** load PPF data (Add investment / Add interest in the app, or CSV/SQL per docs/DATA_ENTRY.md).
+
+**Acceptance:** per-year investment and interest match the PPF passbook; the balance matches the latest passbook balance; the next morning's snapshot shows a PPF point in the history chart.
 
 ## Later (owner to define)
 - [ ] **RSU + ESOP:** revisit the RSU after-tax formula (currently `units_granted * price * (1 - tax_rate)`, kept as is for now) and add ESOP handling. Needs a schema change (new migration) and the owner's rules before any work starts.

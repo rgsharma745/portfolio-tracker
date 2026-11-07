@@ -55,6 +55,15 @@ from (values
 ) as v(company, kind, wage_month, wage_year, credited, ee, er, eps)
 join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
 
+-- PPF: deposits (investment) and the yearly interest credit, per account
+insert into ppf_entries (owner_id, portfolio_id, account, entry_type, entry_date, amount)
+select 'OWNER_UUID', p.id, v.account, v.kind, v.on_date::date, v.amount
+from (values
+  ('SBI PPF', 'investment', '2025-04-05', 150000),
+  ('SBI PPF', 'interest', '2026-03-31', 10650.50)
+) as v(account, kind, on_date, amount)
+join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
+
 -- portfolio ids, for CSV files
 select id, name from portfolios where owner_id = 'OWNER_UUID';
 
@@ -79,6 +88,7 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 | `rsu_grants` | `owner_id,portfolio_id,symbol,grant_label,grant_date,units_granted,units_vested,units_sold_for_tax,tax_rate` |
 | `savings_accounts` | `owner_id,portfolio_id,bank,balance` |
 | `pf_entries` | `owner_id,portfolio_id,company,contribution_type,wage_month,wage_year,transaction_date,employee_amount,employer_amount,pension_amount` |
+| `ppf_entries` | `owner_id,portfolio_id,account,entry_type,entry_date,amount` |
 | `credit_cards` | `owner_id,portfolio_id,name,bank,bill_day,due_day` |
 | `card_bills` | `owner_id,card_id,statement_month,due_date,amount,paid_amount,paid_on,notes` |
 
@@ -90,6 +100,8 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 - Stock `symbol` must match what the price job uses (for example NSE symbol `RELIANCE`, US ticker `CIEN`).
 - `units_vested` cannot exceed `units_granted`, and `units_sold_for_tax` cannot exceed `units_vested`.
 - PF: `contribution_type` is `monthly` or `interest`. `transaction_date` (`YYYY-MM-DD`, when it was credited) is required. Monthly rows need `wage_month` as `Jan` … `Dec` (exactly these three-letter names) and `wage_year` (e.g. `2025`); interest rows leave both **empty** and have `pension_amount` 0. Fill every amount column, with `0` where there is none: an empty amount is stored as empty and the row is refused. One monthly row per company, wage month and year, and one interest row per company and financial year (of the transaction date, April to March), per portfolio; a second one is refused.
+
+- PPF: `entry_type` is `investment` or `interest`; `entry_date` is `YYYY-MM-DD`; `amount` is more than 0. Use the same `account` name on every row of one account (e.g. `SBI PPF`). One interest row per account and financial year (April to March) per portfolio; a second one is refused. Deposits over ₹1,50,000 in a year are accepted and flagged on the PPF page.
 
 ## After loading
 - Compare invested totals per portfolio with your sheet.
