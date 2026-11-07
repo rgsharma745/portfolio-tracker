@@ -152,7 +152,9 @@ def test_fetch_nps_nav_stores_held_codes_skips_manual_and_reports_unmatched(
     source = fetch_nps_nav.Source("test", lambda: file, fetch_nps_nav.parse_trust_file)
 
     summary = fetch_nps_nav.work(service, sources=[source])
-    assert summary["unmatched"] == [missing] and summary["source"] == "test"
+    # Other users' codes (e.g. the local seed) may be unmatched too: check membership.
+    assert missing in summary["unmatched"] and held not in summary["unmatched"]
+    assert manual not in summary["unmatched"] and summary["source"] == "test"
     stored = rows(service, "nps_nav_latest", scheme_code=f"eq.{held}")[0]
     assert Decimal(str(stored["nav"])) == Decimal("55.1949") and stored["nav_date"] == "2026-11-06"
     assert Decimal(str(rows(service, "nps_nav_latest", scheme_code=f"eq.{manual}")[0]["nav"])) == 99
