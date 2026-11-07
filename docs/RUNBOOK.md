@@ -27,7 +27,7 @@ Secrets and where each one is set:
 
 ## Backups
 
-**What is backed up:** every row of your own data (portfolios, funds, stocks, RSU grants, savings, cards, bills, history, settings), every Sunday 08:30 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
+**What is backed up:** every row of your own data (portfolios, funds, stocks, RSU grants, savings, cards, bills, PF entries, history, settings), every Sunday 08:41 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
 
 **Make the key (once):** `age-keygen -o ~/portfolio-backup-key.txt`, save the file in your password manager, and put the printed `age1…` public key in the GitHub secret `BACKUP_AGE_RECIPIENT`. Without the private key no one, including you, can read the backups.
 
@@ -107,7 +107,7 @@ Schedules are set in IST in the workflow files (`timezone: Asia/Kolkata`). GitHu
 | Message | Cause | Fix |
 |---|---|---|
 | `SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set`, or `Could not read … (HTTP 401)` | secret missing or rotated | update the GitHub secret, re-run |
-| NAV: `The AMFI file looked empty or broken` | AMFI's file was down or half-written | re-run later (the 07:00 retry usually fixes it) |
+| NAV: `The AMFI file looked empty or broken` | AMFI's file was down or half-written | re-run later (the 08:17 retry usually fixes it) |
 | NAV: codes `not found in the AMFI file` (success with a warning) | a fund's scheme code is wrong or the fund was merged | fix the code on the Mutual Funds page (amfiindia.com or mfapi.in) |
 | Prices: `No prices could be fetched` | NSE and Yahoo both unreachable | re-run later; meanwhile Settings › Manual prices |
 | Prices: `no price for SYMBOL` | the symbol is wrong or delisted | fix it on the Stocks page, or set a manual price |
