@@ -82,6 +82,28 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
       amount: 2000,
     },
   ]);
+  // NPS: 40 units at ₹50 (₹49 the day before) in Wife: ₹2,000, +₹40 today.
+  await adminUpsert('nps_nav_latest', [
+    {
+      scheme_code: 'SM990003',
+      nav: 50,
+      nav_date: daysAgo(1),
+      prev_nav: 49,
+      prev_nav_date: daysAgo(2),
+      is_manual: false,
+    },
+  ]);
+  await adminInsert('nps_holdings', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Wife'],
+      account: 'E2E PRAN',
+      scheme_class: 'E',
+      scheme_code: 'SM990003',
+      scheme_name: 'E2E Scheme E',
+      units: 40,
+    },
+  ]);
   // PF history starts on the first day above 0 (days before PF existed hold 0).
   const pfOn = (n: number) => (n === 3 ? 0 : 2400 - n * 50);
   await adminInsert(
@@ -94,6 +116,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         mf_value: 4800 + n,
         pf_balance: pfOn(n),
         ppf_balance: 0,
+        nps_value: 0,
       },
       {
         owner_id: ownerId,
@@ -102,6 +125,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         mf_value: 950,
         pf_balance: 0,
         ppf_balance: 2000 - n * 10,
+        nps_value: 2000 - n * 5,
       },
     ]),
   );
@@ -119,11 +143,13 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(statCard(page, 'Card dues').locator('.stat-value')).toHaveClass(/app-down/);
   await expect(statCard(page, 'PF')).toContainText('₹2,350');
   await expect(statCard(page, 'PPF')).toContainText('₹2,000');
+  await expect(statCard(page, 'NPS')).toContainText('₹2,000');
+  await expect(statCard(page, 'NPS')).toContainText('+₹40');
 
   const allocation = page.getByRole('region', { name: 'Allocation' });
   await expect(allocation.getByRole('img')).toHaveAttribute(
     'aria-label',
-    /Mutual funds ₹6,000 \(42%\).*PF ₹2,350 \(16%\).*PPF ₹2,000 \(14%\)/,
+    /Mutual funds ₹6,000 \(37%\).*PF ₹2,350 \(14%\).*PPF ₹2,000 \(12%\).*NPS ₹2,000 \(12%\)/,
   );
   await expect(allocation).toContainText('Savings');
   const history = page.getByRole('region', { name: 'Combined value over time' });
@@ -136,6 +162,9 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await show.getByRole('button', { name: 'PPF', exact: true }).click();
   const ppfHistory = page.getByRole('region', { name: 'PPF balance over time' });
   await expect(ppfHistory.getByRole('img', { name: /PPF balance from/ })).toBeVisible();
+  await show.getByRole('button', { name: 'NPS', exact: true }).click();
+  const npsHistory = page.getByRole('region', { name: 'NPS value over time' });
+  await expect(npsHistory.getByRole('img', { name: /NPS value from/ })).toBeVisible();
   await show.getByRole('button', { name: 'MF + stocks' }).click();
   await expect(history).toBeVisible();
 
@@ -161,5 +190,6 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(statCard(page, 'Card dues')).toContainText('₹0');
   await expect(statCard(page, 'PF')).toContainText('₹0');
   await expect(statCard(page, 'PPF')).toContainText('₹2,000');
+  await expect(statCard(page, 'NPS')).toContainText('₹2,000');
   await expect(summary).not.toContainText('Family total');
 });

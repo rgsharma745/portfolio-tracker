@@ -1,28 +1,20 @@
-// Seven cards: the combined figure leads. Mobile: 2 columns with the combined card full
-// width (then three even rows); from 1024px: 4 columns with the combined card spanning two,
-// so both rows are full (Combined, MF, Stocks / RSU, Savings, PF, Card dues).
-// Hero + seven cards in full rows: phones put the hero and card dues on rows of their own;
-// 1024px has four columns (hero one wide); from 1280px five columns (hero three wide).
+// Hero + eight cards in full rows: phones put the hero on a row of its own, then four rows
+// of two; 1024px puts the hero on its own row, then two rows of four; from 1280px five
+// columns with the hero two wide.
 .overview-stats {
-  .hero,
-  > :last-child {
+  .hero {
     grid-column: 1 / -1;
   }
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    .hero,
-    > :last-child {
-      grid-column: auto;
-    }
   }
 
   @media (min-width: 1280px) {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 
     .hero {
-      grid-column: span 3;
+      grid-column: span 2;
     }
   }
 }

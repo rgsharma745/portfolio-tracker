@@ -32,6 +32,13 @@
       <app-stat-card label="Savings" [value]="savings()" [compact]="bp.isMobile()" />
       <app-stat-card label="PF" [value]="pfTotal()" [compact]="bp.isMobile()" />
       <app-stat-card label="PPF" [value]="ppfTotal()" [compact]="bp.isMobile()" />
+      <app-stat-card
+        label="NPS"
+        [value]="npsTotal().value"
+        [delta]="npsTotal().dayChange"
+        deltaLabel="today"
+        [compact]="bp.isMobile()"
+      />
       <app-stat-card label="Card dues" [value]="dues()" [danger]="true" [compact]="bp.isMobile()" />
     </div>
     @if (unpriced()) {

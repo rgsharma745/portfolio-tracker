@@ -109,4 +109,15 @@ describe('historySeries', () => {
       { date: '2026-11-01', value: 0 },
     ]);
   });
+
+  it('plots the NPS value from the first day it is above zero', () => {
+    const rows = [
+      { ...snap('me', '2026-09-01', 1), nps_value: 0 },
+      { ...snap('me', '2026-10-01', 1), nps_value: 388900.5 },
+      { ...snap('wife', '2026-10-01', 1), nps_value: 33116.94 },
+    ];
+    expect(historySeries(rows, ['me', 'wife'], 'All', '2026-11-04', 'nps')).toEqual([
+      { date: '2026-10-01', value: 422017.44 },
+    ]);
+  });
 });

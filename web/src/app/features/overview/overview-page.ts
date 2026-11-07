@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { localIsoDate } from '../../core/calc/common';
 import { cardDues } from '../../core/calc/cards';
-import { mfTotals } from '../../core/calc/mf';
+import { mfTotals, navQuotes } from '../../core/calc/mf';
+import { npsTotals } from '../../core/calc/nps';
 import { pfBalance } from '../../core/calc/pf';
 import { ppfBalance } from '../../core/calc/ppf';
 import { rsuTotals } from '../../core/calc/rsu';
@@ -12,6 +13,7 @@ import { savingsTotal } from '../../core/calc/savings';
 import { stockTotals } from '../../core/calc/stocks';
 import { CardsService } from '../../core/data/cards.service';
 import { HoldingsService } from '../../core/data/holdings.service';
+import { NpsService } from '../../core/data/nps.service';
 import { PfService } from '../../core/data/pf.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { PpfService } from '../../core/data/ppf.service';
@@ -35,7 +37,7 @@ import {
   totalRow,
 } from './overview-calc';
 
-const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf'];
+const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps'];
 
 /** Overview: headline totals, allocation, history and a per-portfolio summary. */
 @Component({
@@ -64,16 +66,27 @@ export class OverviewPage {
   protected readonly cards = inject(CardsService);
   protected readonly pf = inject(PfService);
   protected readonly ppf = inject(PpfService);
+  protected readonly nps = inject(NpsService);
   protected readonly snapshots = inject(SnapshotsService);
   protected readonly portfolios = inject(PortfolioService);
   protected readonly bp = inject(BreakpointService);
   private readonly today = localIsoDate();
 
   protected readonly loaded = computed(
-    () => this.holdings.loaded() && this.cards.loaded() && this.pf.loaded() && this.ppf.loaded(),
+    () =>
+      this.holdings.loaded() &&
+      this.cards.loaded() &&
+      this.pf.loaded() &&
+      this.ppf.loaded() &&
+      this.nps.loaded(),
   );
   protected readonly error = computed(
-    () => this.holdings.error() ?? this.cards.error() ?? this.pf.error() ?? this.ppf.error(),
+    () =>
+      this.holdings.error() ??
+      this.cards.error() ??
+      this.pf.error() ??
+      this.ppf.error() ??
+      this.nps.error(),
   );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
@@ -82,11 +95,13 @@ export class OverviewPage {
     { label: 'MF + stocks', value: 'combined' },
     { label: 'PF', value: 'pf' },
     { label: 'PPF', value: 'ppf' },
+    { label: 'NPS', value: 'nps' },
   ];
   protected readonly historyTitles: Record<HistorySeries, string> = {
     combined: 'Combined value',
     pf: 'PF balance',
     ppf: 'PPF balance',
+    nps: 'NPS value',
   };
   protected readonly allocationOrder = ALLOCATION_ORDER;
 
@@ -110,11 +125,22 @@ export class OverviewPage {
   protected readonly dues = computed(() => cardDues(this.cards.bills(), this.ids()));
   protected readonly pfTotal = computed(() => pfBalance(this.pf.entries(), this.ids()));
   protected readonly ppfTotal = computed(() => ppfBalance(this.ppf.entries(), this.ids()));
+  protected readonly npsTotal = computed(() =>
+    npsTotals(
+      this.nps.holdings(),
+      this.nps.contributions(),
+      navQuotes(this.nps.navs()),
+      this.ids(),
+      this.today,
+    ),
+  );
   protected readonly combined = computed(() => ({
     value: this.mf().value + this.stocks().value,
     dayChange: this.mf().dayChange + this.stocks().dayChange,
   }));
-  protected readonly unpriced = computed(() => this.mf().unpriced + this.stocks().unpriced);
+  protected readonly unpriced = computed(
+    () => this.mf().unpriced + this.stocks().unpriced + this.npsTotal().unpriced,
+  );
 
   protected readonly allocation = computed(() =>
     allocation([
@@ -124,6 +150,7 @@ export class OverviewPage {
       { key: 'savings', label: 'Savings', value: this.savings() },
       { key: 'pf', label: 'PF', value: this.pfTotal() },
       { key: 'ppf', label: 'PPF', value: this.ppfTotal() },
+      { key: 'nps', label: 'NPS', value: this.npsTotal().value },
     ]),
   );
 
@@ -169,5 +196,6 @@ export class OverviewPage {
     void this.cards.load();
     void this.pf.load();
     void this.ppf.load();
+    void this.nps.load();
   }
 }

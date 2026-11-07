@@ -82,14 +82,36 @@ export interface HistoryPoint {
   value: number;
 }
 
-/** What the history chart plots: MF + stocks, the PF balance or the PPF balance. */
-export type HistorySeries = 'combined' | 'pf' | 'ppf';
+/** What the history chart plots: MF + stocks, the PF or PPF balance, or the NPS value. */
+export type HistorySeries = 'combined' | 'pf' | 'ppf' | 'nps';
+
+function seriesValue(
+  s: {
+    mf_value: number;
+    stocks_value: number;
+    pf_balance?: number;
+    ppf_balance?: number;
+    nps_value?: number;
+  },
+  series: HistorySeries,
+): number {
+  switch (series) {
+    case 'pf':
+      return s.pf_balance ?? 0;
+    case 'ppf':
+      return s.ppf_balance ?? 0;
+    case 'nps':
+      return s.nps_value ?? 0;
+    default:
+      return s.mf_value + s.stocks_value;
+  }
+}
 
 /**
  * Value per day for the given portfolios, oldest first, limited to the range: MF + stocks
- * (`combined`), the PF balance (`pf`) or the PPF balance (`ppf`). Days are summed across
- * portfolios. Days recorded before PF or PPF existed hold 0; those series start at the first
- * day above 0.
+ * (`combined`), the PF balance (`pf`), the PPF balance (`ppf`) or the NPS value (`nps`).
+ * Days are summed across portfolios. Days recorded before PF, PPF or NPS existed hold 0;
+ * those series start at the first day above 0.
  */
 export function historySeries(
   snapshots: readonly {
@@ -99,6 +121,7 @@ export function historySeries(
     stocks_value: number;
     pf_balance?: number;
     ppf_balance?: number;
+    nps_value?: number;
   }[],
   portfolioIds: readonly string[],
   range: HistoryRange,
@@ -111,12 +134,7 @@ export function historySeries(
   for (const s of snapshots) {
     if (!ids.has(s.portfolio_id)) continue;
     if (days !== null && daysBetween(s.snap_date, today) > days) continue;
-    const value =
-      series === 'pf'
-        ? (s.pf_balance ?? 0)
-        : series === 'ppf'
-          ? (s.ppf_balance ?? 0)
-          : s.mf_value + s.stocks_value;
+    const value = seriesValue(s, series);
     byDate.set(s.snap_date, (byDate.get(s.snap_date) ?? 0) + value);
   }
   const points = [...byDate.entries()]
