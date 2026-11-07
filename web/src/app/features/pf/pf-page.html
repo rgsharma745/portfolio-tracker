@@ -96,6 +96,9 @@
             [ngModel]="companyFilter()"
             (ngModelChange)="companyFilter.set($event)"
             ariaLabel="Company"
+            appendTo="body"
+            [virtualScroll]="true"
+            [virtualScrollItemSize]="40"
           />
           <p-select
             [options]="fyOptions()"
@@ -104,6 +107,9 @@
             [ngModel]="fyFilter()"
             (ngModelChange)="fyFilter.set($event)"
             ariaLabel="Financial year"
+            appendTo="body"
+            [virtualScroll]="true"
+            [virtualScrollItemSize]="40"
           />
         </div>
       </div>

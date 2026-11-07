@@ -108,7 +108,14 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await page.getByRole('option', { name: lastFy() }).click();
   if (!mobile) await expect(page.locator('tfoot')).toContainText('1 entry');
   await expect(editButton(page, mobile, monthLabel(0))).toHaveCount(0);
+  // Reopening after a choice must not scroll the page (the selected option is brought into
+  // view inside the list only)
+  const scrollY = () => page.evaluate(() => Math.round(window.scrollY));
+  const before = await scrollY();
   await page.getByRole('combobox', { name: 'Financial year' }).click();
+  await expect(page.getByRole('option', { name: 'All years' })).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(await scrollY()).toBe(before);
   await page.getByRole('option', { name: 'All years' }).click();
   if (!mobile) await expect(page.locator('tfoot')).toContainText('3 entries');
   await expectNoHorizontalScroll(page);
