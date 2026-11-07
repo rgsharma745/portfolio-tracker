@@ -140,6 +140,12 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(pfDialog.locator(':focus')).toHaveCount(1);
     await page.waitForTimeout(400); // let the open animation finish before checking contrast
     await audit(page, `${theme} /pf dialog`);
+    // The shared date picker (app-date-input), open
+    await pfDialog.getByLabel('Transaction date').click();
+    await expect(page.locator('.p-datepicker-panel')).toBeVisible();
+    await page.waitForTimeout(400);
+    await audit(page, `${theme} date picker`);
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cancel' }).click();
 
     // An edit dialog, opened and closed from the keyboard; focus returns to its button.

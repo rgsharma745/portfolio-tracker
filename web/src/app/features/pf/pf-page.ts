@@ -31,6 +31,7 @@ import {
   DataTable,
   FooterTemplate,
 } from '../../shared/ui/data-table';
+import { DateInput } from '../../shared/ui/date-input';
 import { DialogForm } from '../../shared/ui/dialog-form';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -91,6 +92,7 @@ export function rowTitle(row: Pick<PfRow, 'type' | 'wageLabel'>): string {
     CellTemplate,
     DataTable,
     FooterTemplate,
+    DateInput,
     EditDialog,
     EmptyState,
     ErrorState,

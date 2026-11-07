@@ -2,6 +2,7 @@ import { definePreset } from '@primeuix/themes';
 import AuraBase from '@primeuix/themes/aura/base';
 import button from '@primeuix/themes/aura/button';
 import datatable from '@primeuix/themes/aura/datatable';
+import datepicker from '@primeuix/themes/aura/datepicker';
 import dialog from '@primeuix/themes/aura/dialog';
 import drawer from '@primeuix/themes/aura/drawer';
 import iconfield from '@primeuix/themes/aura/iconfield';
@@ -25,6 +26,7 @@ const Aura = {
   components: {
     button,
     datatable,
+    datepicker,
     dialog,
     drawer,
     iconfield,

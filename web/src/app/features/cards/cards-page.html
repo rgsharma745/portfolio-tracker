@@ -192,12 +192,10 @@
     </div>
     <div class="field">
       <label for="bill-due">Due date</label>
-      <input
-        pInputText
-        id="bill-due"
-        type="date"
-        [ngModel]="billDialog.form().dueDate"
-        (ngModelChange)="billDialog.set('dueDate', $event)"
+      <app-date-input
+        inputId="bill-due"
+        [value]="billDialog.form().dueDate"
+        (valueChange)="billDialog.set('dueDate', $event)"
       />
       @if (billDialog.errors().dueDate; as e) {
         <p class="field-error">{{ e }}</p>
@@ -223,12 +221,10 @@
     </div>
     <div class="field">
       <label for="bill-paid-on">Paid on (optional)</label>
-      <input
-        pInputText
-        id="bill-paid-on"
-        type="date"
-        [ngModel]="billDialog.form().paidOn"
-        (ngModelChange)="billDialog.set('paidOn', $event)"
+      <app-date-input
+        inputId="bill-paid-on"
+        [value]="billDialog.form().paidOn"
+        (valueChange)="billDialog.set('paidOn', $event)"
       />
       @if (billDialog.errors().paidOn; as e) {
         <p class="field-error">{{ e }}</p>

@@ -14,6 +14,7 @@ import { Sort, sortRows } from '../../shared/format/sort';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import { CardTemplate, CellTemplate, Column, DataTable } from '../../shared/ui/data-table';
 import { DialogForm } from '../../shared/ui/dialog-form';
+import { DateInput } from '../../shared/ui/date-input';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorState } from '../../shared/ui/error-state';
@@ -27,6 +28,7 @@ import { RsuRow, buildRsuRows, singlePrice } from './rsu-rows';
 @Component({
   selector: 'app-rsu-page',
   imports: [
+    DateInput,
     FormsModule,
     RouterLink,
     ButtonModule,

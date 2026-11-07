@@ -162,6 +162,12 @@ body {
   }
 }
 
+// Date picker (shared/ui/date-input.ts): Today and Clear are PrimeNG text buttons in the grey
+// "secondary" tone (3.9:1 on white); use the body text colour so they pass 4.5:1.
+.p-datepicker-buttonbar .p-button-text.p-button-secondary {
+  color: var(--app-text-body);
+}
+
 // Dialog forms.
 .form-grid {
   display: flex;

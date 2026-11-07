@@ -14,6 +14,7 @@ import { PortfolioService } from '../../core/data/portfolio.service';
 import { formatDate, formatMonth } from '../../shared/format/number';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import { DialogForm } from '../../shared/ui/dialog-form';
+import { DateInput } from '../../shared/ui/date-input';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorState } from '../../shared/ui/error-state';
@@ -40,6 +41,7 @@ import {
 @Component({
   selector: 'app-cards-page',
   imports: [
+    DateInput,
     FormsModule,
     ButtonModule,
     InputTextModule,

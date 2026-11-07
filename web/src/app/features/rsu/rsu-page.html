@@ -210,12 +210,10 @@
     </div>
     <div class="field">
       <label for="rsu-date">Grant date (optional)</label>
-      <input
-        pInputText
-        id="rsu-date"
-        type="date"
-        [ngModel]="dialog.form().grantDate"
-        (ngModelChange)="dialog.set('grantDate', $event)"
+      <app-date-input
+        inputId="rsu-date"
+        [value]="dialog.form().grantDate"
+        (valueChange)="dialog.set('grantDate', $event)"
       />
       @if (dialog.errors().grantDate; as e) {
         <p class="field-error">{{ e }}</p>

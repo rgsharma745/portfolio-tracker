@@ -4,6 +4,7 @@ import {
   ensureUser,
   expectNoHorizontalScroll,
   isMobile,
+  pickDate,
   screenshot,
   seedPortfolios,
   signInWithMagicLink,
@@ -86,7 +87,7 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   const interest = page.getByRole('dialog', { name: 'Add interest' });
   await expect(interest.getByLabel('Pension, EPS (₹)')).toHaveCount(0);
   await expect(interest.getByLabel('Wage month')).toHaveCount(0);
-  await interest.getByLabel('Transaction date').fill(oldAugust());
+  await pickDate(page, interest.getByLabel('Transaction date'), oldAugust());
   await expect(interest.getByText(`Counts for ${fyOf(oldAugust())}`)).toBeVisible();
   await interest.getByLabel('Employee interest (₹)').fill('1000');
   await interest.getByLabel('Employer interest (₹)').fill('500');
@@ -99,7 +100,11 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   // A second interest credit in the same financial year is refused with a clear message
   await page.getByRole('button', { name: 'Add interest' }).click();
   const again = page.getByRole('dialog', { name: 'Add interest' });
-  await again.getByLabel('Transaction date').fill(`${new Date().getFullYear() - 2}-09-01`);
+  await pickDate(
+    page,
+    again.getByLabel('Transaction date'),
+    `${new Date().getFullYear() - 2}-09-01`,
+  );
   await again.getByLabel('Employee interest (₹)').fill('1');
   await again.getByLabel('Employer interest (₹)').fill('1');
   await again.getByRole('button', { name: 'Save' }).click();

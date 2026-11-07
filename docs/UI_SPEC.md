@@ -88,6 +88,7 @@ Manage portfolios (add, rename, reorder, deactivate; delete only with a strong w
 - Data also re-queries by itself: on returning to the tab or app when it is over a minute old, and every 5 minutes while the app is visible (picks up job runs and edits made elsewhere). No Realtime subscriptions.
 - Optimistic UI is not required; show a saving state then refresh the row.
 - Form validation messages inline; number inputs use `inputmode="decimal"`.
+- Every date field is the shared `app-date-input` (`shared/ui/date-input.ts`, PrimeNG DatePicker): shows "7 Nov 2026", stores `YYYY-MM-DD`, calendar over the page with Today and Clear, weeks start on Monday; on phones the text box is read-only so the calendar opens instead of the keyboard.
 - All icon-only buttons have `aria-label`.
 
 ## Visual style

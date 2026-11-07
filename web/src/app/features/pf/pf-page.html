@@ -295,13 +295,11 @@
   }
   <div class="field">
     <label for="pf-date">Transaction date</label>
-    <input
-      pInputText
-      id="pf-date"
-      type="date"
-      [attr.aria-describedby]="dialog.form().type === 'interest' ? 'pf-date-help' : null"
-      [ngModel]="dialog.form().transactionDate"
-      (ngModelChange)="dialog.set('transactionDate', $event)"
+    <app-date-input
+      inputId="pf-date"
+      [describedBy]="dialog.form().type === 'interest' ? 'pf-date-help' : null"
+      [value]="dialog.form().transactionDate"
+      (valueChange)="dialog.set('transactionDate', $event)"
     />
     @if (dialog.form().type === 'interest') {
       <p class="field-help" id="pf-date-help">{{ interestHint() }}</p>

@@ -11,6 +11,7 @@ import { Currency, formatMoney } from '../../shared/format/money';
 import { formatDate } from '../../shared/format/number';
 import { FormErrors } from '../../shared/format/validation';
 import { OverrideForm, OverrideKind, validateOverrideForm } from './settings-calc';
+import { DateInput } from '../../shared/ui/date-input';
 
 interface OverrideRow {
   kind: OverrideKind;
@@ -26,7 +27,14 @@ interface OverrideRow {
  */
 @Component({
   selector: 'app-prices-section',
-  imports: [FormsModule, ButtonModule, InputTextModule, MessageModule, SelectButtonModule],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    SelectButtonModule,
+    DateInput,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="app-card flex flex-col gap-4" aria-labelledby="prices-title">
@@ -120,14 +128,11 @@ interface OverrideRow {
           </div>
           <div class="field">
             <label for="override-date">As of</label>
-            <input
-              pInputText
-              id="override-date"
-              name="date"
-              type="date"
-              [max]="today"
-              [ngModel]="form().date"
-              (ngModelChange)="set('date', $event)"
+            <app-date-input
+              inputId="override-date"
+              [maxDate]="today"
+              [value]="form().date"
+              (valueChange)="set('date', $event)"
             />
             @if (errors().date; as e) {
               <p class="field-error">{{ e }}</p>

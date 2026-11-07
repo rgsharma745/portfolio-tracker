@@ -1,5 +1,6 @@
 import {
   type APIRequestContext,
+  type Locator,
   type Page,
   expect,
   request,
@@ -155,6 +156,38 @@ export async function screenshot(page: Page, name: string, project: string): Pro
   // Let PrimeNG transitions (selected states, dialogs) settle first.
   await page.waitForTimeout(500);
   await page.screenshot({ path: `test-results/screens/${name}-${project}.png`, fullPage: true });
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Picks `iso` (YYYY-MM-DD) in a date field (`app-date-input`, PrimeNG DatePicker) the way a
+ * phone user must: open the calendar, then year, month and day. Works on every project.
+ */
+export async function pickDate(page: Page, input: Locator, iso: string): Promise<void> {
+  const [year, month, day] = iso.split('-').map(Number);
+  await input.click();
+  const panel = page.locator('.p-datepicker-panel');
+  await expect(panel).toBeVisible();
+  await panel.locator('.p-datepicker-select-year').click();
+  // The year view shows a decade at a time: step to the one holding `year`
+  const years = panel.locator('.p-datepicker-year-view .p-datepicker-year');
+  await expect(years.first()).toBeVisible();
+  const exact = (text: string | number) => new RegExp(`^\\s*${text}\\s*$`);
+  for (let i = 0; i < 10 && !(await years.filter({ hasText: exact(year) }).count()); i++) {
+    const first = Number((await years.first().textContent())?.trim());
+    const before = await years.first().textContent();
+    await panel.getByRole('button', { name: year < first ? /previous/i : /next/i }).click();
+    await expect(years.first()).not.toHaveText(before ?? '');
+  }
+  await years.filter({ hasText: exact(year) }).click();
+  const months = panel.locator('.p-datepicker-month-view .p-datepicker-month');
+  await months.filter({ hasText: exact(MONTHS[month - 1]) }).click();
+  await panel
+    .locator('td:not(.p-datepicker-other-month) .p-datepicker-day')
+    .filter({ hasText: exact(day) })
+    .click();
+  await expect(panel).toBeHidden();
 }
 
 /** Fails if the page scrolls horizontally. */
