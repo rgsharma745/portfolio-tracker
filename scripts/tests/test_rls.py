@@ -58,8 +58,8 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
     })["id"]
     ids["settings"] = insert_ok(anon, t, "settings", {"key": "pytest", "value": {"a": 1}})["id"]
     ids["pf_entries"] = insert_ok(anon, t, "pf_entries", {
-        "portfolio_id": p, "company": "pytest-co", "wage_month": "2026-10-01",
-        "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550,
+        "portfolio_id": p, "company": "pytest-co", "wage_month": "Oct", "wage_year": 2026,
+        "transaction_date": "2026-11-05", "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550,
         "pension_amount": 1250,
     })["id"]
     return ids

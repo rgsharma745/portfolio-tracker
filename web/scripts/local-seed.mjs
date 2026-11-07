@@ -250,19 +250,26 @@ export async function seedPf(api, ownerId) {
   ).json();
   const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
   if (!id.Me || !id.Wife) return false;
+  const WAGE = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Wages for month M are credited around the 8th of M + 1 (the last one: last month's wages).
   const months = (portfolioId, company, count, employee, employer, pension) =>
-    Array.from({ length: count }, (_, i) => ({
-      owner_id: ownerId,
-      portfolio_id: portfolioId,
-      company,
-      wage_month: monthStart(-count + i),
-      contribution_type: 'monthly',
-      employee_amount: employee,
-      employer_amount: employer,
-      pension_amount: pension,
-    }));
+    Array.from({ length: count }, (_, i) => {
+      const wage = new Date(monthStart(-count - 1 + i + 1));
+      return {
+        owner_id: ownerId,
+        portfolio_id: portfolioId,
+        company,
+        contribution_type: 'monthly',
+        wage_month: WAGE[wage.getUTCMonth()],
+        wage_year: wage.getUTCFullYear(),
+        transaction_date: dayOfMonth(-count + i + 1, 8),
+        employee_amount: employee,
+        employer_amount: employer,
+        pension_amount: pension,
+      };
+    });
   const now = new Date();
-  const lastMarch = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const lastAugust = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
   await insert(api, 'pf_entries', [
     ...months(id.Me, 'Sample Tech Pvt Ltd', 18, 7200, 5950, 1250),
     ...months(id.Wife, 'Sample Bank Ltd', 6, 3600, 2350, 1250),
@@ -270,8 +277,10 @@ export async function seedPf(api, ownerId) {
       owner_id: ownerId,
       portfolio_id: id.Me,
       company: 'Sample Tech Pvt Ltd',
-      wage_month: `${lastMarch}-03-01`,
       contribution_type: 'interest',
+      wage_month: null,
+      wage_year: null,
+      transaction_date: `${lastAugust}-08-20`,
       employee_amount: 18240.5,
       employer_amount: 14110,
       pension_amount: 0,

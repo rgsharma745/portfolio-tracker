@@ -8,15 +8,20 @@ import { TagModule } from 'primeng/tag';
 import { localIsoDate } from '../../core/calc/common';
 import {
   PfContributionType,
+  WAGE_MONTHS,
+  WagePeriod,
   fyLabel,
   fyStart,
-  interestMonth,
   latestCompany,
   pfByCompany,
   pfTotals,
+  wageKey,
+  wageLabel,
+  wagePeriod,
 } from '../../core/calc/pf';
 import { PfEntry, PfService } from '../../core/data/pf.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
+import { formatDate } from '../../shared/format/number';
 import { Sort, sortRows } from '../../shared/format/sort';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import {
@@ -48,28 +53,31 @@ import {
 export interface PfRow {
   id: string;
   entry: PfEntry;
-  /** `YYYY-MM-01`, also the sort key. */
-  month: string;
-  monthLabel: string;
+  /** `YYYY-MM-DD`, also the default sort key. */
+  date: string;
+  dateLabel: string;
+  /** Sortable wage period (interest rows sort by date as a stand-in). */
+  wageSort: number;
+  /** "Mar 2025", or null for interest. */
+  wageLabel: string | null;
   company: string;
   portfolio: string;
   type: PfContributionType;
+  /** Financial year of the transaction date (the passbook's year). */
   fy: number;
   employee: number;
   employer: number;
   pension: number;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ALL = '';
 
-/** "Oct 2026" for `2026-10-01`. */
-export function shortMonth(wageMonth: string): string {
-  const [year, month] = wageMonth.split('-').map(Number);
-  return `${MONTHS[month - 1]} ${year}`;
+/** "Mar 2025" for a monthly row, "Interest" for an interest row (for labels). */
+export function rowTitle(row: Pick<PfRow, 'type' | 'wageLabel'>): string {
+  return row.type === 'interest' ? 'Interest' : (row.wageLabel ?? '');
 }
 
-/** Provident fund: balance, pension apart, by company, every month and interest credit. */
+/** Provident fund: balance, pension apart, by company, and the passbook. */
 @Component({
   selector: 'app-pf-page',
   imports: [
@@ -104,7 +112,7 @@ export class PfPage {
   protected readonly dialog = new DialogForm<PfForm>();
   protected readonly companyFilter = signal(ALL);
   protected readonly fyFilter = signal<number | null>(null);
-  protected readonly sort = signal<Sort>({ key: 'month', order: -1 });
+  protected readonly sort = signal<Sort>({ key: 'date', order: -1 });
 
   protected readonly showPortfolio = computed(() => this.portfolios.scopeIds().length > 1);
   private readonly names = computed(
@@ -126,19 +134,26 @@ export class PfPage {
   );
 
   protected readonly rows = computed<PfRow[]>(() =>
-    this.scoped().map((entry) => ({
-      id: entry.id,
-      entry,
-      month: entry.wage_month,
-      monthLabel: shortMonth(entry.wage_month),
-      company: entry.company,
-      portfolio: this.names().get(entry.portfolio_id) ?? '',
-      type: entry.contribution_type as PfContributionType,
-      fy: fyStart(entry.wage_month),
-      employee: entry.employee_amount,
-      employer: entry.employer_amount,
-      pension: entry.pension_amount,
-    })),
+    this.scoped().map((entry) => {
+      const wage = wagePeriod(entry);
+      const type: PfContributionType =
+        entry.contribution_type === 'interest' ? 'interest' : 'monthly';
+      return {
+        id: entry.id,
+        entry,
+        date: entry.transaction_date,
+        dateLabel: formatDate(entry.transaction_date),
+        wageSort: wage ? wageKey(wage) : 0,
+        wageLabel: wage ? wageLabel(wage) : null,
+        company: entry.company,
+        portfolio: this.names().get(entry.portfolio_id) ?? '',
+        type,
+        fy: fyStart(entry.transaction_date),
+        employee: entry.employee_amount,
+        employer: entry.employer_amount,
+        pension: entry.pension_amount,
+      };
+    }),
   );
   protected readonly visible = computed(() =>
     sortRows(
@@ -179,7 +194,8 @@ export class PfPage {
   );
 
   protected readonly columns: Column<PfRow>[] = [
-    { key: 'month', header: 'Wage month', type: 'custom', sortable: true },
+    { key: 'date', header: 'Credited', type: 'custom', sortable: true },
+    { key: 'wageSort', header: 'Wage month', type: 'custom', sortable: true },
     { key: 'company', header: 'Company', type: 'custom', sortable: true },
     { key: 'employee', header: 'Employee', type: 'money' },
     { key: 'employer', header: 'Employer', type: 'money' },
@@ -191,9 +207,8 @@ export class PfPage {
     { label: 'Monthly', value: 'monthly' },
     { label: 'Interest', value: 'interest' },
   ];
-  protected readonly monthOptions = MONTHS.map((label, i) => ({ label, value: i + 1 }));
+  protected readonly monthOptions = WAGE_MONTHS.map((label, i) => ({ label, value: i + 1 }));
   protected readonly yearOptions = this.years().map((y) => ({ label: String(y), value: y }));
-  protected readonly dialogFyOptions = this.years().map((y) => ({ label: fyLabel(y), value: y }));
   protected readonly portfolioOptions = computed(() =>
     this.portfolios.active().map((p) => ({ label: p.name, value: p.id })),
   );
@@ -202,10 +217,12 @@ export class PfPage {
     if (this.dialog.isEdit()) return 'Edit PF entry';
     return this.dialog.form().type === 'interest' ? 'Add interest' : 'Add PF month';
   });
-  /** "Recorded as March 2026" under the financial year picker. */
+  /** "Counts for FY 2025–26" under the transaction date of an interest row. */
   protected readonly interestHint = computed(() => {
-    const fy = this.dialog.form().fy;
-    return fy ? `Recorded as ${shortMonth(interestMonth(fy))}, when EPFO credits it.` : '';
+    const date = this.dialog.form().transactionDate;
+    return /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? `Counts for ${fyLabel(fyStart(date))}, the year of this date.`
+      : '';
   });
 
   private years(): number[] {
@@ -221,11 +238,15 @@ export class PfPage {
     return fyLabel(fy);
   }
 
-  protected monthText(wageMonth: string | null): string {
-    return wageMonth ? shortMonth(wageMonth) : '—';
+  protected wageText(wage: WagePeriod | null): string {
+    return wage ? wageLabel(wage) : '—';
   }
 
-  /** The next month for the company paid most recently (a new company if there is none). */
+  protected title(row: PfRow): string {
+    return rowTitle(row);
+  }
+
+  /** The next wage month for the company paid most recently (a new company if there is none). */
   protected addNextMonth(): void {
     const latest = latestCompany(this.pf.entries(), this.portfolios.scopeIds());
     if (latest) this.addNextFor(latest.company, latest.portfolioId);
@@ -237,7 +258,7 @@ export class PfPage {
   }
 
   protected addCompany(): void {
-    this.dialog.show(emptyPfForm(this.defaultPortfolio(), this.today));
+    this.dialog.show(emptyPfForm(this.defaultPortfolio(), '', this.today));
   }
 
   protected addInterest(): void {
@@ -256,13 +277,18 @@ export class PfPage {
     this.dialog.form.set(switchType(this.dialog.form(), type, this.pf.entries(), this.today));
   }
 
-  /** Picking a company while adding a month refills the next month and its amounts. */
+  /** Picking a known company while adding a month refills its next wage month and amounts. */
   protected setCompany(company: string): void {
     this.dialog.set('company', company);
     const form = this.dialog.form();
     const known = this.pf
       .entries()
-      .some((e) => e.company === company && e.portfolio_id === form.portfolioId);
+      .some(
+        (e) =>
+          e.company === company &&
+          e.portfolio_id === form.portfolioId &&
+          e.contribution_type === 'monthly',
+      );
     if (!this.dialog.isEdit() && form.type === 'monthly' && known) {
       this.dialog.form.set(nextMonthForm(this.pf.entries(), company, form.portfolioId, this.today));
     }

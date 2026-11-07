@@ -267,8 +267,10 @@ export type Database = {
           owner_id: string;
           pension_amount: number;
           portfolio_id: string;
+          transaction_date: string;
           updated_at: string;
-          wage_month: string;
+          wage_month: string | null;
+          wage_year: number | null;
         };
         ComputedFields: never;
         Insert: {
@@ -281,8 +283,10 @@ export type Database = {
           owner_id?: string;
           pension_amount?: number;
           portfolio_id: string;
+          transaction_date: string;
           updated_at?: string;
-          wage_month: string;
+          wage_month?: string | null;
+          wage_year?: number | null;
         };
         Update: {
           company?: string;
@@ -294,8 +298,10 @@ export type Database = {
           owner_id?: string;
           pension_amount?: number;
           portfolio_id?: string;
+          transaction_date?: string;
           updated_at?: string;
-          wage_month?: string;
+          wage_month?: string | null;
+          wage_year?: number | null;
         };
         Relationships: [
           {

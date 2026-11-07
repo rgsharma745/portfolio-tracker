@@ -93,13 +93,6 @@
   margin-left: auto;
 }
 
-.month-cell {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
 // Mobile: one card per entry; the whole card opens it for editing.
 .entry-card {
   display: flex;

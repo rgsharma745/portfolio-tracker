@@ -159,6 +159,8 @@ The owner asked for PF tracked like the sheet's PF tab: one row per company, wag
 - [ ] **Human:** apply `0004_pf.sql` to production (SQL editor), then push.
 - [x] `0005_pf_month_uniqueness.sql`: wage month may be any day; one monthly row and one interest row per portfolio, company and calendar month.
 - [ ] **Human:** apply `0005_pf_month_uniqueness.sql` to production (SQL editor), then push.
+- [x] `0006_pf_wage_month_and_transaction_date.sql`: wage month as Jan…Dec plus wage year, a transaction date on every row, interest without a wage month and unique per financial year of its date. **Deletes existing PF rows** (the owner reloads them in the new CSV format).
+- [ ] **Human:** apply `0006` to production (after `0005`), push, then reload PF data (docs/DATA_ENTRY.md, new CSV headers).
 - [ ] **Human:** load past PF months (Add next month in the app, or CSV/SQL per docs/DATA_ENTRY.md) and check the PF balance against the passbook or the sheet's PF tab.
 
 **Acceptance:** the PF balance and pension match the passbook; adding a month is one tap on Add next month and Save; the next morning's snapshot shows a PF point in the history chart.

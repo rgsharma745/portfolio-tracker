@@ -48,7 +48,8 @@ def seed(db: SupabaseRest, owner_id: str) -> None:
     add(db, "rsu_grants", {**o, "portfolio_id": p, "symbol": "AAPL", "grant_label": "G1",
                            "units_granted": 100, "units_vested": 40, "tax_rate": "0.3"})
     add(db, "savings_accounts", {**o, "portfolio_id": p, "bank": "HDFC", "balance": "-1500.50"})
-    add(db, "pf_entries", {**o, "portfolio_id": p, "company": "Acme", "wage_month": "2026-10-01",
+    add(db, "pf_entries", {**o, "portfolio_id": p, "company": "Acme", "wage_month": "Oct",
+                           "wage_year": 2026, "transaction_date": "2026-11-05",
                            "contribution_type": "monthly", "employee_amount": "1800.00",
                            "employer_amount": "550.00", "pension_amount": "1250"})
     card = add(db, "credit_cards", {**o, "portfolio_id": p, "name": "Card", "bill_day": 14,

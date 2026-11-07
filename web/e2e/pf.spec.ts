@@ -13,24 +13,26 @@ import {
 test.use({ storageState: { cookies: [], origins: [] } });
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const monthLabel = (offset: number) => {
+/** A wage month relative to this one, e.g. "Oct 2026" for -1 in November 2026. */
+const wageLabel = (offset: number) => {
   const now = new Date();
   const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
-/** The financial year that ended most recently, e.g. "FY 2025–26" in November 2026. */
-const lastFy = () => {
-  const now = new Date();
-  const start = (now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1) - 1;
+/** 20 August two years ago: always in an earlier financial year than any date this year. */
+const oldAugust = () => `${new Date().getFullYear() - 2}-08-20`;
+const fyOf = (date: string) => {
+  const [year, month] = date.split('-').map(Number);
+  const start = month >= 4 ? year : year - 1;
   return `FY ${start}–${String((start + 1) % 100).padStart(2, '0')}`;
 };
 
 const company = (page: Page) => page.getByTestId('pf-company-E2E Tech');
-/** The row's edit button: the pencil on desktop, the whole card on mobile. */
-const editButton = (page: Page, mobile: boolean, month: string) =>
+/** A monthly row's edit button: the pencil on desktop, the whole card on mobile. */
+const editButton = (page: Page, mobile: boolean, wage: string) =>
   mobile
-    ? page.getByRole('button', { name: new RegExp(`^${month} · E2E Tech`) })
-    : page.getByRole('button', { name: `Edit E2E Tech ${month}` });
+    ? page.getByRole('button', { name: new RegExp(`^${wage} · E2E Tech`) })
+    : page.getByRole('button', { name: new RegExp(`^Edit E2E Tech ${wage}`) });
 
 test('PF: first month, next month prefilled, interest, filters, edit and delete', async ({
   page,
@@ -56,7 +58,8 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await first.getByRole('button', { name: 'Save' }).click();
   await expect(first).toBeHidden();
   await expect(company(page)).toContainText('₹2,350');
-  await expect(company(page)).toContainText(`Last month ${monthLabel(0)}`);
+  // A new company starts at last month's wages
+  await expect(company(page)).toContainText(`Last wage month ${wageLabel(-1)}`);
 
   // Add next month: the following month with the same amounts, ready to save
   await page.getByRole('button', { name: 'Add next month for E2E Tech' }).click();
@@ -75,39 +78,42 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await next.getByRole('button', { name: 'Save' }).click();
   await expect(next).toBeHidden();
   await expect(company(page)).toContainText('₹4,700');
-  await expect(company(page)).toContainText(`Last month ${monthLabel(1)}`);
+  await expect(company(page)).toContainText(`Last wage month ${wageLabel(0)}`);
   await expect(company(page)).toContainText('Pension ₹2,500');
 
-  // Interest for the last financial year; pension is not asked for
+  // Interest: no wage month or pension; it counts for the financial year of its date
   await page.getByRole('button', { name: 'Add interest' }).click();
   const interest = page.getByRole('dialog', { name: 'Add interest' });
   await expect(interest.getByLabel('Pension, EPS (₹)')).toHaveCount(0);
-  await expect(interest.getByText(/Recorded as Mar \d{4}/)).toBeVisible();
+  await expect(interest.getByLabel('Wage month')).toHaveCount(0);
+  await interest.getByLabel('Transaction date').fill(oldAugust());
+  await expect(interest.getByText(`Counts for ${fyOf(oldAugust())}`)).toBeVisible();
   await interest.getByLabel('Employee interest (₹)').fill('1000');
   await interest.getByLabel('Employer interest (₹)').fill('500');
   await interest.getByRole('button', { name: 'Save' }).click();
   await expect(interest).toBeHidden();
   await expect(company(page)).toContainText('₹6,200');
   await expect(statCard(page, 'Pension (EPS)')).toContainText('Not in the PF balance');
-  await expect(page.getByText(`Interest ${lastFy()}`).first()).toBeVisible();
+  await expect(page.getByText(`Interest ${fyOf(oldAugust())}`).first()).toBeVisible();
 
-  // The same interest twice is refused with a clear message
+  // A second interest credit in the same financial year is refused with a clear message
   await page.getByRole('button', { name: 'Add interest' }).click();
   const again = page.getByRole('dialog', { name: 'Add interest' });
+  await again.getByLabel('Transaction date').fill(`${new Date().getFullYear() - 2}-09-01`);
   await again.getByLabel('Employee interest (₹)').fill('1');
   await again.getByLabel('Employer interest (₹)').fill('1');
   await again.getByRole('button', { name: 'Save' }).click();
   await expect(
-    again.getByText('Interest for this company and year is already entered.'),
+    again.getByText('Interest for this company and financial year is already entered.'),
   ).toBeVisible();
   await again.getByRole('button', { name: 'Cancel' }).click();
   await expect(again).toBeHidden();
 
-  // Filter by financial year: only the interest row is in last year
+  // Filter by financial year (of the transaction date): only the interest row is that far back
   await page.getByRole('combobox', { name: 'Financial year' }).click();
-  await page.getByRole('option', { name: lastFy() }).click();
+  await page.getByRole('option', { name: fyOf(oldAugust()) }).click();
   if (!mobile) await expect(page.locator('tfoot')).toContainText('1 entry');
-  await expect(editButton(page, mobile, monthLabel(0))).toHaveCount(0);
+  await expect(editButton(page, mobile, wageLabel(-1))).toHaveCount(0);
   // Reopening after a choice must not scroll the page (the selected option is brought into
   // view inside the list only)
   const scrollY = () => page.evaluate(() => Math.round(window.scrollY));
@@ -122,14 +128,14 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await screenshot(page, 'pf', testInfo.project.name);
 
   // Edit a month, then delete it
-  await editButton(page, mobile, monthLabel(1)).click();
+  await editButton(page, mobile, wageLabel(0)).click();
   const edit = page.getByRole('dialog', { name: 'Edit PF entry' });
   await edit.getByLabel('Employee (₹)').fill('2000');
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(edit).toBeHidden();
   await expect(company(page)).toContainText('₹6,400');
 
-  await editButton(page, mobile, monthLabel(1)).click();
+  await editButton(page, mobile, wageLabel(0)).click();
   await edit.getByRole('button', { name: 'Delete' }).click();
   await edit
     .getByRole('group', { name: 'Confirm delete' })
@@ -137,5 +143,5 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
     .click();
   await expect(edit).toBeHidden();
   await expect(company(page)).toContainText('₹3,850');
-  await expect(company(page)).toContainText(`Last month ${monthLabel(0)}`);
+  await expect(company(page)).toContainText(`Last wage month ${wageLabel(-1)}`);
 });

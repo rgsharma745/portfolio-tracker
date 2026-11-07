@@ -111,11 +111,11 @@
     }
   ],
   "pf_entries": [
-    { "id": "pf1", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-09-01", "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
-    { "id": "pf2", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
-    { "id": "pf3", "portfolio_id": "p-me", "company": "Acme", "wage_month": "2026-03-01", "contribution_type": "interest", "employee_amount": 12000.5, "employer_amount": 4100, "pension_amount": 0 },
-    { "id": "pf4", "portfolio_id": "p-wife", "company": "Beta", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 900.1, "employer_amount": 275, "pension_amount": 625 },
-    { "id": "pf5", "portfolio_id": "p-old", "company": "Gone", "wage_month": "2026-10-01", "contribution_type": "monthly", "employee_amount": 5000, "employer_amount": 5000, "pension_amount": 0 }
+    { "id": "pf1", "portfolio_id": "p-me", "company": "Acme", "contribution_type": "monthly", "wage_month": "Sep", "wage_year": 2026, "transaction_date": "2026-10-08", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
+    { "id": "pf2", "portfolio_id": "p-me", "company": "Acme", "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-08", "employee_amount": 1800, "employer_amount": 550.25, "pension_amount": 1249.75 },
+    { "id": "pf3", "portfolio_id": "p-me", "company": "Acme", "contribution_type": "interest", "wage_month": null, "wage_year": null, "transaction_date": "2026-08-20", "employee_amount": 12000.5, "employer_amount": 4100, "pension_amount": 0 },
+    { "id": "pf4", "portfolio_id": "p-wife", "company": "Beta", "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-08", "employee_amount": 900.1, "employer_amount": 275, "pension_amount": 625 },
+    { "id": "pf5", "portfolio_id": "p-old", "company": "Gone", "contribution_type": "monthly", "wage_month": "Oct", "wage_year": 2026, "transaction_date": "2026-11-08", "employee_amount": 5000, "employer_amount": 5000, "pension_amount": 0 }
   ],
   "expected": {
     "p-me": {

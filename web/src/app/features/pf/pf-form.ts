@@ -1,10 +1,4 @@
-import {
-  PfContributionType,
-  fyStart,
-  interestMonth,
-  monthOf,
-  nextMonthDraft,
-} from '../../core/calc/pf';
+import { PfContributionType, WAGE_MONTHS, nextMonthDraft, wagePeriod } from '../../core/calc/pf';
 import type { PfEntry, PfEntryInput } from '../../core/data/pf.service';
 import { numberInputText, parseDecimal } from '../../shared/format/number';
 import {
@@ -15,59 +9,48 @@ import {
 } from '../../shared/format/validation';
 
 export const COMPANY_NAME_MAX = 100;
-/** EPF started long before this; earlier years are not offered. */
+/** EPF started long before this; earlier wage years are not offered. */
 export const FIRST_YEAR = 1995;
 
 export interface PfForm {
   portfolioId: string;
   company: string;
   type: PfContributionType;
-  /** Monthly rows: 1 to 12. */
+  /** Monthly rows only: wage month 1 to 12 and its year. */
   month: number | null;
   year: number | null;
-  /** Interest rows: the year the financial year starts in (April). */
-  fy: number | null;
+  /** When the amount was credited, `YYYY-MM-DD`. */
+  transactionDate: string;
   employee: string;
   employer: string;
   pension: string;
 }
 
-function split(wageMonth: string): { month: number; year: number } {
-  const [year, month] = wageMonth.split('-').map(Number);
-  return { month, year };
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function amounts(employee: number | null, employer: number | null, pension: number | null) {
+  return {
+    employee: numberInputText(employee),
+    employer: numberInputText(employer),
+    pension: numberInputText(pension),
+  };
 }
 
-/** A monthly form for `wageMonth`, with optional amounts already filled in. */
-function monthlyForm(
-  portfolioId: string,
-  company: string,
-  wageMonth: string,
-  amounts: { employee: number | null; employer: number | null; pension: number | null },
-): PfForm {
-  const { month, year } = split(wageMonth);
+/** A new company: last month's wages credited today, nothing filled in. */
+export function emptyPfForm(portfolioId: string, company: string, today: string): PfForm {
+  const draft = nextMonthDraft([], company, portfolioId, today);
   return {
     portfolioId,
     company,
     type: 'monthly',
-    month,
-    year,
-    fy: fyStart(wageMonth),
-    employee: numberInputText(amounts.employee),
-    employer: numberInputText(amounts.employer),
-    pension: numberInputText(amounts.pension),
+    month: draft.wage.month,
+    year: draft.wage.year,
+    transactionDate: draft.transactionDate,
+    ...amounts(null, null, null),
   };
 }
 
-/** A new company: the current month, nothing filled in. */
-export function emptyPfForm(portfolioId: string, today: string): PfForm {
-  return monthlyForm(portfolioId, '', monthOf(today), {
-    employee: null,
-    employer: null,
-    pension: null,
-  });
-}
-
-/** The month after the company's last contribution, with the same amounts. */
+/** The wage month after the company's last contribution, with the same amounts. */
 export function nextMonthForm(
   entries: readonly PfEntry[],
   company: string,
@@ -75,27 +58,34 @@ export function nextMonthForm(
   today: string,
 ): PfForm {
   const draft = nextMonthDraft(entries, company, portfolioId, today);
-  return monthlyForm(portfolioId, company, draft.wageMonth, draft);
+  return {
+    portfolioId,
+    company,
+    type: 'monthly',
+    month: draft.wage.month,
+    year: draft.wage.year,
+    transactionDate: draft.transactionDate,
+    ...amounts(draft.employee, draft.employer, draft.pension),
+  };
 }
 
-/** Interest for the financial year that ended most recently (the last March). */
+/** Interest credited today, amounts empty (it has no wage month). */
 export function interestForm(portfolioId: string, company: string, today: string): PfForm {
-  const fy = fyStart(monthOf(today)) - 1;
   return {
-    ...monthlyForm(portfolioId, company, interestMonth(fy), {
-      employee: null,
-      employer: null,
-      pension: null,
-    }),
+    portfolioId,
+    company,
     type: 'interest',
-    fy,
+    month: null,
+    year: null,
+    transactionDate: today,
+    ...amounts(null, null, null),
   };
 }
 
 /**
  * The form after switching between Monthly and Interest. Amounts never carry over: a month's
- * contribution is not the year's interest. Interest starts empty for the last financial year;
- * Monthly refills the company's next month when it has one, otherwise starts empty.
+ * contribution is not the year's interest. Interest starts empty and credited today; Monthly
+ * refills the company's next wage month when it has one, otherwise starts empty.
  */
 export function switchType(
   form: PfForm,
@@ -105,24 +95,24 @@ export function switchType(
 ): PfForm {
   if (type === form.type) return form;
   if (type === 'interest') return interestForm(form.portfolioId, form.company, today);
-  const known = entries.some(
-    (e) =>
-      e.portfolio_id === form.portfolioId &&
-      e.company === form.company &&
-      e.contribution_type === 'monthly',
-  );
-  return known
-    ? nextMonthForm(entries, form.company, form.portfolioId, today)
-    : { ...emptyPfForm(form.portfolioId, today), company: form.company };
+  return nextMonthForm(entries, form.company, form.portfolioId, today);
 }
 
 export function pfFormFrom(e: PfEntry): PfForm {
-  const form = monthlyForm(e.portfolio_id, e.company, e.wage_month, {
-    employee: e.employee_amount,
-    employer: e.employer_amount,
-    pension: e.pension_amount,
-  });
-  return e.contribution_type === 'interest' ? { ...form, type: 'interest' } : form;
+  const wage = wagePeriod(e);
+  return {
+    portfolioId: e.portfolio_id,
+    company: e.company,
+    type: e.contribution_type === 'interest' ? 'interest' : 'monthly',
+    month: wage?.month ?? null,
+    year: wage?.year ?? null,
+    transactionDate: e.transaction_date,
+    ...amounts(
+      e.employee_amount,
+      e.employer_amount,
+      e.contribution_type === 'interest' ? null : e.pension_amount,
+    ),
+  };
 }
 
 export function validatePfForm(form: PfForm): {
@@ -130,10 +120,10 @@ export function validatePfForm(form: PfForm): {
   value: PfEntryInput | null;
 } {
   const company = form.company.trim();
+  const interest = form.type === 'interest';
   const employee = parseDecimal(form.employee);
   const employer = parseDecimal(form.employer);
-  const pension = form.type === 'interest' ? 0 : parseDecimal(form.pension);
-  const interest = form.type === 'interest';
+  const pension = interest ? 0 : parseDecimal(form.pension);
   const errors = onlyErrors<PfForm>({
     portfolioId: form.portfolioId ? undefined : 'Choose a portfolio.',
     company: !company
@@ -142,23 +132,24 @@ export function validatePfForm(form: PfForm): {
         ? `Use at most ${COMPANY_NAME_MAX} characters.`
         : undefined,
     month: !interest && !form.month ? 'Choose the wage month.' : undefined,
-    year: !interest && !form.year ? 'Choose the year.' : undefined,
-    fy: interest && !form.fy ? 'Choose the financial year.' : undefined,
+    year: !interest && !form.year ? 'Choose the wage year.' : undefined,
+    transactionDate: ISO_DATE.test(form.transactionDate)
+      ? undefined
+      : 'Pick the date it was credited.',
     employee: nonNegative(employee, 'the employee amount'),
     employer: nonNegative(employer, 'the employer amount'),
     pension: interest ? undefined : optionalNonNegative(pension),
   });
   if (Object.keys(errors).length) return { errors, value: null };
-  const wageMonth = interest
-    ? interestMonth(form.fy as number)
-    : `${form.year}-${String(form.month).padStart(2, '0')}-01`;
   return {
     errors: {},
     value: {
       portfolio_id: form.portfolioId,
       company,
-      wage_month: wageMonth,
       contribution_type: form.type,
+      wage_month: interest ? null : WAGE_MONTHS[(form.month as number) - 1],
+      wage_year: interest ? null : form.year,
+      transaction_date: form.transactionDate,
       employee_amount: employee as number,
       employer_amount: employer as number,
       pension_amount: pension ?? 0,

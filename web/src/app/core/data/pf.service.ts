@@ -37,7 +37,7 @@ export class PfService {
     const { data, error } = await this.supabase
       .from('pf_entries')
       .select('*')
-      .order('wage_month', { ascending: false })
+      .order('transaction_date', { ascending: false })
       .order('company');
     this.loading.set(false);
     if (error || !data) {
@@ -55,8 +55,8 @@ export class PfService {
     return this.afterWrite(
       error,
       row.contribution_type === 'interest'
-        ? 'Interest for this company and year is already entered.'
-        : 'This company already has a contribution for that month.',
+        ? 'Interest for this company and financial year is already entered.'
+        : 'This company already has a contribution for that wage month.',
     );
   }
 

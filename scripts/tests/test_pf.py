@@ -21,11 +21,19 @@ def portfolio(anon: SupabaseRest, user_a: AuthUser) -> Iterator[str]:
     anon.delete("portfolios", token=user_a.token, id=f"eq.{pid}")  # cascades to pf_entries
 
 
-def entry(portfolio: str, **overrides: Any) -> dict[str, Any]:
+def monthly(portfolio: str, **overrides: Any) -> dict[str, Any]:
     return {
-        "portfolio_id": portfolio, "company": "Acme", "wage_month": "2026-10-01",
-        "contribution_type": "monthly", "employee_amount": 1800, "employer_amount": 550,
-        "pension_amount": 1250, **overrides,
+        "portfolio_id": portfolio, "company": "Acme", "contribution_type": "monthly",
+        "wage_month": "Mar", "wage_year": 2025, "transaction_date": "2025-04-08",
+        "employee_amount": 1800, "employer_amount": 550, "pension_amount": 1250, **overrides,
+    }
+
+
+def interest(portfolio: str, **overrides: Any) -> dict[str, Any]:
+    return {
+        "portfolio_id": portfolio, "company": "Acme", "contribution_type": "interest",
+        "wage_month": None, "wage_year": None, "transaction_date": "2025-08-20",
+        "employee_amount": 12000.5, "employer_amount": 4100, "pension_amount": 0, **overrides,
     }
 
 
@@ -36,47 +44,51 @@ def insert(anon: SupabaseRest, user: AuthUser, row: dict[str, Any]) -> int:
 def test_monthly_and_interest_rows_are_accepted(
     anon: SupabaseRest, user_a: AuthUser, portfolio: str
 ) -> None:
-    assert insert(anon, user_a, entry(portfolio)) == 201
-    interest = entry(portfolio, contribution_type="interest", wage_month="2026-03-01",
-                     employee_amount=12000.5, employer_amount=4100, pension_amount=0)
-    assert insert(anon, user_a, interest) == 201
-    # Interest and the monthly contribution can share a March.
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-01")) == 201
+    assert insert(anon, user_a, monthly(portfolio)) == 201
+    assert insert(anon, user_a, interest(portfolio)) == 201
+    # The next wage month, and the same wage month of another year
+    assert insert(anon, user_a, monthly(portfolio, wage_month="Apr", transaction_date="2025-05-08")) == 201
+    assert insert(anon, user_a, monthly(portfolio, wage_year=2026, transaction_date="2026-04-08")) == 201
 
 
-def test_same_company_month_and_type_only_once(
+def test_one_contribution_per_company_and_wage_month(
     anon: SupabaseRest, user_a: AuthUser, portfolio: str
 ) -> None:
-    assert insert(anon, user_a, entry(portfolio)) == 201
-    assert insert(anon, user_a, entry(portfolio, employee_amount=1)) == 409
-    # Another company in the same month is fine.
-    assert insert(anon, user_a, entry(portfolio, company="Other Ltd")) == 201
+    assert insert(anon, user_a, monthly(portfolio)) == 201
+    # Same wage month and year, credited on another date: refused
+    assert insert(anon, user_a, monthly(portfolio, transaction_date="2025-04-30")) == 409
+    # Another company, or the same company in another portfolio, is fine
+    assert insert(anon, user_a, monthly(portfolio, company="Other Ltd")) == 201
 
 
-def test_wage_month_may_be_any_day_but_counts_by_calendar_month(
+def test_one_interest_per_company_and_financial_year(
     anon: SupabaseRest, user_a: AuthUser, portfolio: str
 ) -> None:
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-10-31")) == 201
-    # Same company and month on another day: still the same month's contribution.
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-10-01")) == 409
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-11-15")) == 201
-    # Interest is counted by month too, and does not clash with that month's contribution.
-    interest = {"contribution_type": "interest", "pension_amount": 0}
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-31", **interest)) == 201
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-01", **interest)) == 409
-    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-10")) == 201
+    assert insert(anon, user_a, interest(portfolio, transaction_date="2025-04-01")) == 201
+    # 31 March 2026 is still FY 2025-26
+    assert insert(anon, user_a, interest(portfolio, transaction_date="2026-03-31")) == 409
+    # 1 April 2026 starts FY 2026-27
+    assert insert(anon, user_a, interest(portfolio, transaction_date="2026-04-01")) == 201
 
 
-@pytest.mark.parametrize("overrides", [
-    pytest.param({"contribution_type": "interest", "wage_month": "2026-04-01",
-                  "pension_amount": 0}, id="interest-not-in-march"),
-    pytest.param({"contribution_type": "interest", "wage_month": "2026-03-01"},
-                 id="interest-with-pension"),
-    pytest.param({"contribution_type": "bonus"}, id="unknown-type"),
-    pytest.param({"employer_amount": -1}, id="negative-amount"),
-    pytest.param({"company": "   "}, id="blank-company"),
+@pytest.mark.parametrize("row", [
+    pytest.param(lambda p: monthly(p, wage_month=None), id="monthly-without-wage-month"),
+    pytest.param(lambda p: monthly(p, wage_year=None), id="monthly-without-wage-year"),
+    pytest.param(lambda p: monthly(p, wage_month="March"), id="wage-month-not-short-name"),
+    pytest.param(lambda p: monthly(p, wage_year=1890), id="wage-year-out-of-range"),
+    pytest.param(lambda p: interest(p, wage_month="Mar", wage_year=2025), id="interest-with-wage-month"),
+    pytest.param(lambda p: interest(p, pension_amount=10), id="interest-with-pension"),
+    pytest.param(lambda p: monthly(p, contribution_type="bonus"), id="unknown-type"),
+    pytest.param(lambda p: monthly(p, employer_amount=-1), id="negative-amount"),
+    pytest.param(lambda p: monthly(p, company="   "), id="blank-company"),
 ])
 def test_rows_the_passbook_cannot_have_are_refused(
-    anon: SupabaseRest, user_a: AuthUser, portfolio: str, overrides: dict[str, Any]
+    anon: SupabaseRest, user_a: AuthUser, portfolio: str, row: Any
 ) -> None:
-    assert insert(anon, user_a, entry(portfolio, **overrides)) == 400
+    assert insert(anon, user_a, row(portfolio)) == 400
+
+
+def test_transaction_date_is_required(anon: SupabaseRest, user_a: AuthUser, portfolio: str) -> None:
+    row = monthly(portfolio)
+    del row["transaction_date"]
+    assert insert(anon, user_a, row) == 400

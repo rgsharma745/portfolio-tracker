@@ -8,7 +8,7 @@
   <app-empty-state
     icon="pi-building-columns"
     title="No PF entries yet"
-    message="Add each month's contribution from your PF passbook: employee, employer and pension. After the first month, Add next month fills in the same amounts for you."
+    message="Add each month's contribution from your PF passbook: wage month, the date it was credited, and the employee, employer and pension amounts. After the first month, Add next month fills in the next one for you."
     actionLabel="Add first month"
     (action)="addCompany()"
   />
@@ -68,7 +68,7 @@
               <span
                 >Pension <span class="app-num">{{ c.pension | money }}</span></span
               >
-              <span>Last month {{ monthText(c.lastWageMonth) }}</span>
+              <span>Last wage month {{ wageText(c.lastWage) }}</span>
               <button
                 pButton
                 type="button"
@@ -124,13 +124,13 @@
         emptyMessage="No entries match."
         minWidth="44rem"
       >
-        <ng-template appCell="month" let-row>
-          <span class="month-cell">
-            {{ row.monthLabel }}
-            @if (row.type === 'interest') {
-              <p-tag [value]="'Interest ' + fyText(row.fy)" severity="info" />
-            }
-          </span>
+        <ng-template appCell="date" let-row>{{ row.dateLabel }}</ng-template>
+        <ng-template appCell="wageSort" let-row>
+          @if (row.type === 'interest') {
+            <p-tag [value]="'Interest ' + fyText(row.fy)" severity="info" />
+          } @else {
+            {{ row.wageLabel }}
+          }
         </ng-template>
         <ng-template appCell="company" let-row>
           <span class="name-cell">
@@ -140,12 +140,13 @@
             }
           </span>
         </ng-template>
-        <ng-template appFooter="month" let-t>
+        <ng-template appFooter="date" let-t>
           <span class="name-title">Total</span>
           <span class="cell-sub"
             >{{ visible().length }} {{ visible().length === 1 ? 'entry' : 'entries' }}</span
           >
         </ng-template>
+        <ng-template appFooter="wageSort" let-t></ng-template>
         <ng-template appFooter="company" let-t></ng-template>
         <ng-template appCell="actions" let-row>
           <div class="row-actions">
@@ -156,7 +157,7 @@
               rounded
               text
               severity="secondary"
-              [attr.aria-label]="'Edit ' + row.company + ' ' + row.monthLabel"
+              [attr.aria-label]="'Edit ' + row.company + ' ' + title(row) + ' ' + row.dateLabel"
               (click)="edit(row)"
             >
               <i class="pi pi-pencil" aria-hidden="true"></i>
@@ -166,10 +167,11 @@
         <ng-template appCard let-row>
           <button type="button" class="app-card entry-card" (click)="edit(row)">
             <span class="entry-top">
-              <span class="entry-title">{{ row.monthLabel }} · {{ row.company }}</span>
+              <span class="entry-title">{{ title(row) }} · {{ row.company }}</span>
               <span class="app-num">{{ row.employee + row.employer | money }}</span>
             </span>
             <span class="entry-meta">
+              <span>Credited {{ row.dateLabel }}</span>
               @if (row.type === 'interest') {
                 <p-tag [value]="'Interest ' + fyText(row.fy)" severity="info" />
               }
@@ -275,7 +277,7 @@
         }
       </div>
       <div class="field">
-        <label for="pf-year">Year</label>
+        <label for="pf-year">Wage year</label>
         <p-select
           inputId="pf-year"
           [options]="yearOptions"
@@ -290,25 +292,24 @@
         }
       </div>
     </div>
-  } @else {
-    <div class="field">
-      <label for="pf-fy">Financial year</label>
-      <p-select
-        inputId="pf-fy"
-        [options]="dialogFyOptions"
-        optionLabel="label"
-        optionValue="value"
-        [ngModel]="dialog.form().fy"
-        (ngModelChange)="dialog.set('fy', $event)"
-        appendTo="body"
-        ariaDescribedBy="pf-fy-help"
-      />
-      <p class="field-help" id="pf-fy-help">{{ interestHint() }}</p>
-      @if (dialog.errors().fy; as e) {
-        <p class="field-error">{{ e }}</p>
-      }
-    </div>
   }
+  <div class="field">
+    <label for="pf-date">Transaction date</label>
+    <input
+      pInputText
+      id="pf-date"
+      type="date"
+      [attr.aria-describedby]="dialog.form().type === 'interest' ? 'pf-date-help' : null"
+      [ngModel]="dialog.form().transactionDate"
+      (ngModelChange)="dialog.set('transactionDate', $event)"
+    />
+    @if (dialog.form().type === 'interest') {
+      <p class="field-help" id="pf-date-help">{{ interestHint() }}</p>
+    }
+    @if (dialog.errors().transactionDate; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
   <div class="form-row">
     <div class="field">
       <label for="pf-employee">{{

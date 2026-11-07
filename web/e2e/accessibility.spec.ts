@@ -89,16 +89,20 @@ for (const theme of ['light', 'dark'] as const) {
     await adminInsert('pf_entries', [
       {
         ...pf,
-        wage_month: monthStart,
         contribution_type: 'monthly',
+        wage_month: 'Oct',
+        wage_year: 2026,
+        transaction_date: today,
         employee_amount: 1800,
         employer_amount: 550,
         pension_amount: 1250,
       },
       {
         ...pf,
-        wage_month: '2026-03-01',
         contribution_type: 'interest',
+        wage_month: null,
+        wage_year: null,
+        transaction_date: '2026-08-20',
         employee_amount: 1000,
         employer_amount: 500,
         pension_amount: 0,
