@@ -104,6 +104,7 @@ See `docs/UI_SPEC.md`.
 - **Date fields are PrimeNG DatePicker** (`shared/ui/date-input.ts`), not `<input type="date">`: E2E picks dates with `pickDate()` from `e2e/support/fixtures.ts` (phones cannot type into it). The wrapper also patches two axe findings in PrimeNG's calendar (an `aria-selected` on the day span, faint Today/Clear text in `styles.scss`); `accessibility.spec.ts` audits the open calendar.
 - **CSP:** `script-src 'self'` means no inline scripts (critical-CSS inlining is off for that reason). `npm run build` writes `_headers`; check new external origins there.
 - **Jobs and price sources:** fetch only codes and symbols present in the database, identify honestly as `portfolio-tracker-jobs/1.0`, never pose as a browser or get around bot checks (Stooq is out for that reason).
+- **A new file missing from `git status`:** check `git check-ignore -v <file>`. `.gitignore` rules without a leading `/` match at any depth (an unanchored `data/` once hid new files in `core/data/` and broke the deployed build).
 - **The owner's data never goes in git, logs or chat:** tools print counts, not rows; decrypted backups stay out of the repo.
 
 ## Definition of done (every task)
