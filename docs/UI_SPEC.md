@@ -12,7 +12,7 @@
 | < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: RSU, Savings, PF, Cards, Settings as icon tiles in three columns, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
 | 768-1023px (tablet) | Collapsible left rail (icons) | Table with sticky first column | Centered dialog |
 | >= 1024px (desktop) | Left sidebar with labels | Full PrimeNG table: sort, filter, totals footer | Centered dialog |
-- Max content width 1200px, centered. Page padding 16px mobile, 24px desktop.
+- Content fills the full width beside the navigation (no max width). Page padding 16px mobile, 32px desktop.
 - Respect safe-area insets (`env(safe-area-inset-*)`) for the bottom bar and top bar.
 - No horizontal page scroll anywhere. Wide tables scroll inside their own container.
 - Touch targets at least 44x44px on mobile.
