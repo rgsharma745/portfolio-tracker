@@ -1,0 +1,135 @@
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.head-actions,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filters p-select {
+  min-width: 10rem;
+}
+
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.account-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.account-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.account-balance {
+  flex-shrink: 0;
+  font-size: 17px;
+}
+
+.account-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+
+  button {
+    min-height: 44px;
+  }
+}
+
+// Mobile: one card per year, scheme or contribution; scheme and contribution cards open
+// them for editing.
+.year-card,
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.entry-card {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.entry-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.entry-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+}

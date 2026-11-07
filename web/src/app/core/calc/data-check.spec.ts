@@ -8,6 +8,9 @@ const empty: DataCheckInput = {
   mfHoldings: [],
   navCodes: [],
   unmatchedCodes: [],
+  npsHoldings: [],
+  npsNavCodes: [],
+  npsUnmatchedCodes: [],
   stockHoldings: [],
   pricedSymbols: [],
   rsuGrants: [],
@@ -105,6 +108,40 @@ describe('findDataProblems', () => {
         stockHoldings: [{ id: 's', symbol: 'X', market: 'IN', portfolio_id: 'old' }],
       }),
     ).toEqual([]);
+  });
+});
+
+describe('findDataProblems for NPS', () => {
+  const scheme = (id: string, code: string | null, units = 10, portfolio = 'me') => ({
+    id,
+    account: 'My PRAN',
+    scheme_name: `Scheme ${id}`,
+    scheme_code: code,
+    units,
+    portfolio_id: portfolio,
+  });
+
+  it('classifies schemes: no code, not found, no NAV yet; skips empty and inactive', () => {
+    const problems = findDataProblems({
+      ...empty,
+      npsHoldings: [
+        scheme('a', null),
+        scheme('b', 'SM000002'),
+        scheme('c', ' SM000003 '),
+        scheme('d', 'SM000004'),
+        scheme('e', null, 0),
+        scheme('f', null, 10, 'old'),
+      ],
+      npsNavCodes: ['SM000004', 'SM000002'],
+      npsUnmatchedCodes: ['SM000002'],
+    });
+    expect(problems.map((p) => [p.kind, p.id])).toEqual([
+      ['nps_no_code', 'a'],
+      ['nps_code_not_found', 'b'],
+      ['nps_no_nav', 'c'],
+    ]);
+    expect(problems[0].label).toBe('My PRAN · Scheme a');
+    expect(problems[2].detail).toBe('Code SM000003');
   });
 });
 

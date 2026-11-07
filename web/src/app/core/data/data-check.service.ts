@@ -15,7 +15,15 @@ export class DataCheckService {
     this.loading.set(true);
     this.error.set(null);
     const db = this.supabase;
-    const [portfolios, funds, navs, stocks, prices, grants, cards, navJob] = await Promise.all([
+    const lastRun = (job: string) =>
+      db
+        .from('job_runs')
+        .select('message')
+        .eq('job', job)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    const results = await Promise.all([
       db.from('portfolios').select('id, name, is_active'),
       db.from('mf_holdings').select('id, scheme_name, scheme_code, portfolio_id'),
       db.from('mf_nav_latest').select('scheme_code'),
@@ -23,20 +31,16 @@ export class DataCheckService {
       db.from('stock_price_latest').select('symbol'),
       db.from('rsu_grants').select('id, symbol, grant_label, portfolio_id'),
       db.from('credit_cards').select('id, name, bill_day, due_day, portfolio_id, is_active'),
-      db
-        .from('job_runs')
-        .select('message')
-        .eq('job', 'fetch_nav')
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+      lastRun('fetch_nav'),
+      db.from('nps_holdings').select('id, account, scheme_name, scheme_code, units, portfolio_id'),
+      db.from('nps_nav_latest').select('scheme_code'),
+      lastRun('fetch_nps_nav'),
+    ] as const);
     this.loading.set(false);
 
-    const failed = [portfolios, funds, navs, stocks, prices, grants, cards, navJob].some(
-      (r) => r.error,
-    );
-    if (failed) {
+    const [portfolios, funds, navs, stocks, prices, grants, cards, navJob, nps, npsNavs, npsJob] =
+      results;
+    if (results.some((r) => r.error)) {
       this.error.set('Could not run the data check.');
       return;
     }
@@ -46,6 +50,9 @@ export class DataCheckService {
         mfHoldings: funds.data ?? [],
         navCodes: (navs.data ?? []).map((n) => n.scheme_code),
         unmatchedCodes: parseUnmatchedCodes(navJob.data?.message),
+        npsHoldings: nps.data ?? [],
+        npsNavCodes: (npsNavs.data ?? []).map((n) => n.scheme_code),
+        npsUnmatchedCodes: parseUnmatchedCodes(npsJob.data?.message),
         stockHoldings: stocks.data ?? [],
         pricedSymbols: (prices.data ?? []).map((p) => p.symbol),
         rsuGrants: grants.data ?? [],

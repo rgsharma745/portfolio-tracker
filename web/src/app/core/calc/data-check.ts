@@ -7,6 +7,9 @@ export type DataProblemKind =
   | 'mf_no_code'
   | 'mf_code_not_found'
   | 'mf_no_nav'
+  | 'nps_no_code'
+  | 'nps_code_not_found'
+  | 'nps_no_nav'
   | 'stock_no_price'
   | 'rsu_no_price'
   | 'card_missing_days';
@@ -31,6 +34,18 @@ export interface DataCheckInput {
   navCodes: readonly string[];
   /** Scheme codes the last NAV job could not find in the AMFI file. */
   unmatchedCodes: readonly string[];
+  npsHoldings: readonly {
+    id: string;
+    account: string;
+    scheme_name: string;
+    scheme_code: string | null;
+    units: number;
+    portfolio_id: string;
+  }[];
+  /** Scheme codes that have a row in nps_nav_latest. */
+  npsNavCodes: readonly string[];
+  /** Scheme codes the last NPS NAV job could not find. */
+  npsUnmatchedCodes: readonly string[];
   stockHoldings: readonly { id: string; symbol: string; market: string; portfolio_id: string }[];
   /** Symbols that have a row in stock_price_latest. */
   pricedSymbols: readonly string[];
@@ -58,16 +73,41 @@ export function findDataProblems(input: DataCheckInput): DataProblem[] {
   const priced = new Set(input.pricedSymbols);
   const problems: DataProblem[] = [];
 
+  /** No code, a code the job could not find, or a code with no NAV yet (in that order). */
+  const checkCode = (
+    kinds: readonly [DataProblemKind, DataProblemKind, DataProblemKind],
+    base: Omit<DataProblem, 'kind' | 'detail'>,
+    rawCode: string | null,
+    notFound: ReadonlySet<string>,
+    withNav: ReadonlySet<string>,
+  ) => {
+    const code = rawCode?.trim() ?? '';
+    if (!code) problems.push({ ...base, kind: kinds[0], detail: 'No scheme code' });
+    else if (notFound.has(code)) problems.push({ ...base, kind: kinds[1], detail: `Code ${code}` });
+    else if (!withNav.has(code)) problems.push({ ...base, kind: kinds[2], detail: `Code ${code}` });
+  };
+
   for (const fund of inActive(input.mfHoldings)) {
-    const code = fund.scheme_code?.trim() ?? '';
-    const base = { id: fund.id, label: fund.scheme_name, portfolio: nameOf(fund.portfolio_id) };
-    if (!code) {
-      problems.push({ ...base, kind: 'mf_no_code', detail: 'No scheme code' });
-    } else if (unmatched.has(code)) {
-      problems.push({ ...base, kind: 'mf_code_not_found', detail: `Code ${code}` });
-    } else if (!navCodes.has(code)) {
-      problems.push({ ...base, kind: 'mf_no_nav', detail: `Code ${code}` });
-    }
+    checkCode(
+      ['mf_no_code', 'mf_code_not_found', 'mf_no_nav'],
+      { id: fund.id, label: fund.scheme_name, portfolio: nameOf(fund.portfolio_id) },
+      fund.scheme_code,
+      unmatched,
+      navCodes,
+    );
+  }
+
+  const npsNavCodes = new Set(input.npsNavCodes);
+  const npsUnmatched = new Set(input.npsUnmatchedCodes);
+  // A scheme with no units left needs no NAV.
+  for (const h of inActive(input.npsHoldings).filter((x) => x.units > 0)) {
+    checkCode(
+      ['nps_no_code', 'nps_code_not_found', 'nps_no_nav'],
+      { id: h.id, label: `${h.account} · ${h.scheme_name}`, portfolio: nameOf(h.portfolio_id) },
+      h.scheme_code,
+      npsUnmatched,
+      npsNavCodes,
+    );
   }
 
   for (const stock of inActive(input.stockHoldings)) {

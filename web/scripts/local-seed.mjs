@@ -331,6 +331,62 @@ export async function seedPpf(api, ownerId) {
   return true;
 }
 
+/**
+ * Sample NPS: an account in "Me" with E/C/G units and three years of monthly self and
+ * employer contributions, and one in "Wife" whose units are older than her last
+ * contribution (shows the warning). Scheme codes are made up (SM9xxxxx) and their NAVs are
+ * seeded with the market data. Added only if the user has no NPS rows yet.
+ */
+export async function seedNps(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/nps_holdings?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  const today = daysAgo(0);
+  const scheme = (portfolioId, account, cls, code, units, asOf) => ({
+    owner_id: ownerId,
+    portfolio_id: portfolioId,
+    account,
+    scheme_class: cls,
+    scheme_code: code,
+    scheme_name: `Sample Pension Fund Scheme ${cls} - Tier I`,
+    units,
+    units_as_of: asOf,
+  });
+  await insert(api, 'nps_holdings', [
+    scheme(id.Me, 'My PRAN', 'E', 'SM900001', 5300.1234, today),
+    scheme(id.Me, 'My PRAN', 'C', 'SM900002', 1900.5, today),
+    scheme(id.Me, 'My PRAN', 'G', 'SM900003', 1350.25, today),
+    scheme(id.Wife, 'Wife PRAN', 'E', 'SM900001', 600, daysAgo(200)),
+  ]);
+  const contribution = (portfolioId, account, contributor, date, amount) => ({
+    owner_id: ownerId,
+    portfolio_id: portfolioId,
+    account,
+    contributor,
+    contribution_date: date,
+    amount,
+  });
+  const rows = [];
+  const now = new Date();
+  for (let m = 36; m >= 1; m--) {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth() - m, 5));
+    const date = d.toISOString().slice(0, 10);
+    rows.push(contribution(id.Me, 'My PRAN', 'self', date, 5000));
+    rows.push(contribution(id.Me, 'My PRAN', 'employer', date, 4000));
+  }
+  for (const back of [700, 340, 30]) {
+    rows.push(contribution(id.Wife, 'Wife PRAN', 'self', daysAgo(back), 10000));
+  }
+  await insert(api, 'nps_contributions', rows);
+  return true;
+}
+
 /** Adds sample daily history for the history chart, unless the user already has some. */
 export async function seedHistory(api, ownerId) {
   const existing = await (
@@ -368,6 +424,7 @@ function sampleHistory(me, wife) {
         card_dues: 0,
         pf_balance: Math.round(base * 0.45 * (1 + drift * 0.08)),
         ppf_balance: Math.round(base * 0.6 * (1 + drift * 0.05)),
+        nps_value: Math.round(base * 0.5 * factor),
       });
     }
   }
@@ -378,6 +435,35 @@ async function upsertMarketData(api) {
   const merge = { Prefer: 'resolution=merge-duplicates' };
   const today = daysAgo(0);
   const yesterday = daysAgo(1);
+  await insert(
+    api,
+    'nps_nav_latest',
+    [
+      {
+        scheme_code: 'SM900001',
+        nav: 55.1949,
+        nav_date: yesterday,
+        prev_nav: 54.8812,
+        prev_nav_date: daysAgo(2),
+      },
+      {
+        scheme_code: 'SM900002',
+        nav: 30.8032,
+        nav_date: yesterday,
+        prev_nav: 30.8283,
+        prev_nav_date: daysAgo(2),
+      },
+      {
+        scheme_code: 'SM900003',
+        nav: 28.7705,
+        nav_date: yesterday,
+        prev_nav: 28.7701,
+        prev_nav_date: daysAgo(2),
+      },
+    ],
+    merge,
+    'scheme_code',
+  );
   await insert(
     api,
     'mf_nav_latest',

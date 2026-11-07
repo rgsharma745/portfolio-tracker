@@ -27,6 +27,18 @@ const GROUPS: Record<DataProblemKind, { title: string; hint: string }> = {
     title: 'Funds with no NAV yet',
     hint: 'The NAV job has not priced these codes yet. If this remains after the next daily run, check the code.',
   },
+  nps_no_code: {
+    title: 'NPS schemes without a scheme code',
+    hint: "Add the scheme code (such as SM008001, on NPS Trust's NAV page or your statement) so the daily NAV job can value these schemes.",
+  },
+  nps_code_not_found: {
+    title: 'NPS scheme codes not found',
+    hint: 'The last NPS NAV job could not find these codes. Check them for typos, or whether the scheme was renamed.',
+  },
+  nps_no_nav: {
+    title: 'NPS schemes with no NAV yet',
+    hint: 'The NAV job has not priced these codes yet. If this remains after the next daily run, check the code.',
+  },
   stock_no_price: {
     title: 'Stocks without a price',
     hint: 'Check the symbol (NSE symbol such as RELIANCE, or a US ticker such as CIEN), or set a manual price in Settings.',

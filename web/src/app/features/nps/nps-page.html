@@ -1,0 +1,650 @@
+@if (!nps.loaded()) {
+  @if (nps.error()) {
+    <app-error-state title="Could not load your NPS" (retry)="nps.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (isEmpty()) {
+  <app-empty-state
+    icon="pi-sun"
+    title="No NPS account yet"
+    message="Add each scheme of your NPS Tier I account (E, C, G) with its units from your statement, then your own and your employer's contributions. The page then shows the value, your XIRR and contributions per financial year."
+    actionLabel="Add first scheme"
+    (action)="addScheme(null)"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="stat-grid stat-grid-5">
+      <app-stat-card
+        label="NPS value"
+        [value]="totals().value"
+        [note]="navNote()"
+        [delta]="totals().dayChange"
+        deltaLabel="today"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Invested"
+        [value]="totals().invested"
+        [note]="investedNote()"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="P&L"
+        [value]="totals().pl"
+        [percent]="totals().plPercent"
+        [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="XIRR"
+        [text]="xirrLabel()"
+        [tone]="totals().xirr === null ? null : totals().xirr! >= 0 ? 'up' : 'down'"
+        [note]="xirrNote()"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        [label]="'Contributed in ' + thisYearLabel"
+        [value]="thisYear().total"
+        [note]="
+          'Self ' + (thisYear().self | money) + ' · Employer ' + (thisYear().employer | money)
+        "
+        [compact]="bp.isMobile()"
+      />
+    </div>
+
+    <section class="app-card accounts" aria-labelledby="accounts-title">
+      <div class="section-head">
+        <h2 class="section-title" id="accounts-title">By account</h2>
+        <div class="head-actions">
+          <button pButton type="button" text (click)="addScheme()">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+            Add scheme
+          </button>
+          <button pButton type="button" (click)="addContribution()">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+            Add contribution
+          </button>
+        </div>
+      </div>
+      <ul class="account-list" aria-label="NPS by account">
+        @for (a of accounts(); track a.key) {
+          <li class="account" [attr.data-testid]="'nps-account-' + a.account">
+            <div class="account-main">
+              <span class="account-name">
+                {{ a.account }}
+                @if (showPortfolio()) {
+                  <p-tag [value]="a.portfolio" severity="secondary" />
+                }
+              </span>
+              <span class="account-balance app-num">{{ a.value | money }}</span>
+            </div>
+            <div class="account-sub">
+              <span
+                >Invested <span class="app-num">{{ a.invested | money }}</span></span
+              >
+              <span
+                >P&amp;L
+                <span class="app-num" [appPl]="a.pl">{{
+                  a.pl | money: 'INR' : { sign: true }
+                }}</span></span
+              >
+              <span
+                >XIRR
+                <span
+                  class="app-num"
+                  [appPl]="a.xirr"
+                  [attr.data-testid]="'nps-xirr-' + a.account"
+                  >{{ xirr(a.xirr) }}</span
+                ></span
+              >
+              @if (a.unitsAsOf) {
+                <span>Units as of {{ date(a.unitsAsOf) }}</span>
+              }
+              @if (a.unitsBehind) {
+                <p-tag
+                  value="Units older than last contribution"
+                  severity="warn"
+                  title="Update the units from your latest statement; until then value and XIRR read low."
+                />
+              }
+            </div>
+            @if (a.slices.length) {
+              <app-allocation-bar [parts]="a.slices" [order]="classOrder" />
+            }
+            <div class="account-actions">
+              <button
+                pButton
+                type="button"
+                size="small"
+                text
+                [attr.aria-label]="'Add scheme to ' + a.account"
+                (click)="addScheme(a)"
+              >
+                Add scheme
+              </button>
+              @if (holdingsOf(a).length) {
+                <button
+                  pButton
+                  type="button"
+                  size="small"
+                  severity="secondary"
+                  [attr.aria-label]="'Update units of ' + a.account"
+                  (click)="updateUnits(a)"
+                >
+                  Update units
+                </button>
+              }
+              <button
+                pButton
+                type="button"
+                size="small"
+                [attr.aria-label]="'Add contribution to ' + a.account"
+                (click)="addContributionFor(a)"
+              >
+                Add contribution
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (schemes().length) {
+      <section class="page-stack" aria-labelledby="schemes-title">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title" id="schemes-title">Schemes</h2>
+            <p class="section-hint">Value is units × the latest NAV.</p>
+          </div>
+        </div>
+        @if (mix().length > 1 && accounts().length > 1) {
+          <div class="app-card">
+            <app-allocation-bar [parts]="mix()" [order]="classOrder" />
+          </div>
+        }
+        <app-data-table
+          label="NPS schemes"
+          [rows]="sortedSchemes()"
+          [columns]="schemeColumns"
+          [footer]="schemeFooter()"
+          [sort]="schemeSort()"
+          (sortChange)="schemeSort.set($event)"
+          emptyMessage="No schemes yet."
+          minWidth="44rem"
+        >
+          <ng-template appCell="name" let-row>
+            <span class="name-cell">
+              <span>{{ row.name }}</span>
+              <span class="name-tags">
+                <p-tag [value]="classLabel(row.schemeClass)" severity="info" />
+                @if (accounts().length > 1) {
+                  <p-tag [value]="row.account" severity="secondary" />
+                }
+                @if (row.value === null && row.units > 0) {
+                  <p-tag value="No NAV" severity="warn" />
+                } @else if (row.stale) {
+                  <p-tag value="Stale" severity="warn" [title]="staleTitle(row)" />
+                }
+              </span>
+            </span>
+          </ng-template>
+          <ng-template appCell="nav" let-row>
+            <span class="app-num">{{ units(row.nav) }}</span>
+            @if (row.navDate) {
+              <span class="cell-sub">{{ date(row.navDate) }}</span>
+            }
+          </ng-template>
+          <ng-template appFooter="name" let-t>
+            <span class="name-title">Total</span>
+          </ng-template>
+          <ng-template appFooter="units" let-t></ng-template>
+          <ng-template appFooter="nav" let-t></ng-template>
+          <ng-template appCell="actions" let-row>
+            <div class="row-actions">
+              <button
+                pButton
+                type="button"
+                iconOnly
+                rounded
+                text
+                severity="secondary"
+                [attr.aria-label]="'Edit ' + row.name"
+                (click)="editScheme(row)"
+              >
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+              </button>
+            </div>
+          </ng-template>
+          <ng-template appCard let-row>
+            <button type="button" class="app-card entry-card" (click)="editScheme(row)">
+              <span class="entry-top">
+                <span class="entry-title">{{ row.name }}</span>
+                <span class="app-num">{{ row.value | money }}</span>
+              </span>
+              <span class="entry-meta">
+                <p-tag [value]="classLabel(row.schemeClass)" severity="info" />
+                <span class="app-num">{{ units(row.units) }} units</span>
+                @if (row.nav !== null) {
+                  <span class="app-num">NAV {{ units(row.nav) }} · {{ date(row.navDate) }}</span>
+                }
+                @if (row.dayChange !== null && row.dayChange !== 0) {
+                  <span class="app-num" [appPl]="row.dayChange"
+                    >{{ row.dayChange | money: 'INR' : { sign: true } }} today</span
+                  >
+                }
+                @if (row.value === null && row.units > 0) {
+                  <p-tag value="No NAV" severity="warn" />
+                } @else if (row.stale) {
+                  <p-tag value="Stale" severity="warn" />
+                }
+              </span>
+            </button>
+          </ng-template>
+        </app-data-table>
+      </section>
+    }
+
+    <section class="page-stack" aria-labelledby="years-title">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title" id="years-title">By financial year</h2>
+          <p class="section-hint">Contributions, April to March.</p>
+        </div>
+        <div class="filters">
+          <p-select
+            [options]="accountOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="accountFilter()"
+            (ngModelChange)="accountFilter.set($event)"
+            ariaLabel="Account"
+            appendTo="body"
+          />
+        </div>
+      </div>
+
+      <app-data-table
+        label="NPS by financial year"
+        dataKey="fyStart"
+        [rows]="years()"
+        [columns]="yearColumns"
+        [footer]="yearTotals()"
+        emptyMessage="No contributions for this account."
+        minWidth="40rem"
+      >
+        <ng-template appCell="label" let-row>{{ row.label }}</ng-template>
+        <ng-template appFooter="label" let-t>
+          <span class="name-title">Total</span>
+        </ng-template>
+        <ng-template appFooter="cumulative" let-t></ng-template>
+        <ng-template appCard let-row>
+          <div class="app-card year-card" [attr.data-testid]="'nps-year-' + row.fyStart">
+            <span class="entry-top">
+              <span class="entry-title">{{ row.label }}</span>
+              <span class="app-num">{{ row.total | money }}</span>
+            </span>
+            <span class="entry-meta">
+              <span
+                >Self <span class="app-num">{{ row.self | money }}</span></span
+              >
+              <span
+                >Employer <span class="app-num">{{ row.employer | money }}</span></span
+              >
+              <span
+                >To date <span class="app-num">{{ row.cumulative | money }}</span></span
+              >
+            </span>
+          </div>
+        </ng-template>
+      </app-data-table>
+    </section>
+
+    <section class="page-stack" aria-labelledby="contributions-title">
+      <div class="section-head">
+        <h2 class="section-title" id="contributions-title">Contributions</h2>
+        <div class="filters">
+          <p-select
+            [options]="contributorOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="contributorFilter()"
+            (ngModelChange)="contributorFilter.set($event)"
+            ariaLabel="Contributor"
+            appendTo="body"
+          />
+          <p-select
+            [options]="fyOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="fyFilter()"
+            (ngModelChange)="fyFilter.set($event)"
+            ariaLabel="Financial year"
+            appendTo="body"
+          />
+        </div>
+      </div>
+
+      <app-data-table
+        label="NPS contributions"
+        [rows]="visible()"
+        [columns]="columns"
+        [footer]="footer()"
+        [sort]="sort()"
+        (sortChange)="sort.set($event)"
+        emptyMessage="No contributions match."
+        minWidth="36rem"
+      >
+        <ng-template appCell="date" let-row>{{ row.dateLabel }}</ng-template>
+        <ng-template appCell="account" let-row>
+          <span class="name-cell">
+            <span>{{ row.account }}</span>
+            @if (showPortfolio()) {
+              <span class="name-tags"><p-tag [value]="row.portfolio" severity="secondary" /></span>
+            }
+          </span>
+        </ng-template>
+        <ng-template appCell="contributor" let-row>
+          <p-tag
+            [value]="contributorName(row.contributor)"
+            [severity]="row.contributor === 'employer' ? 'info' : 'secondary'"
+          />
+        </ng-template>
+        <ng-template appFooter="date" let-t>
+          <span class="name-title">Total</span>
+          <span class="cell-sub"
+            >{{ visible().length }}
+            {{ visible().length === 1 ? 'contribution' : 'contributions' }}</span
+          >
+        </ng-template>
+        <ng-template appFooter="account" let-t></ng-template>
+        <ng-template appFooter="contributor" let-t></ng-template>
+        <ng-template appCell="actions" let-row>
+          <div class="row-actions">
+            <button
+              pButton
+              type="button"
+              iconOnly
+              rounded
+              text
+              severity="secondary"
+              [attr.aria-label]="
+                'Edit ' + row.account + ' ' + contributorName(row.contributor) + ' ' + row.dateLabel
+              "
+              (click)="editContribution(row)"
+            >
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+            </button>
+          </div>
+        </ng-template>
+        <ng-template appCard let-row>
+          <button type="button" class="app-card entry-card" (click)="editContribution(row)">
+            <span class="entry-top">
+              <span class="entry-title">{{ row.account }}</span>
+              <span class="app-num">{{ row.amount | money }}</span>
+            </span>
+            <span class="entry-meta">
+              <span>{{ row.dateLabel }}</span>
+              <p-tag
+                [value]="contributorName(row.contributor)"
+                [severity]="row.contributor === 'employer' ? 'info' : 'secondary'"
+              />
+              @if (showPortfolio()) {
+                <p-tag [value]="row.portfolio" severity="secondary" />
+              }
+            </span>
+          </button>
+        </ng-template>
+      </app-data-table>
+      @if (visible().length === 0) {
+        <button pButton type="button" text (click)="clearFilters()">Clear filters</button>
+      }
+    </section>
+  </div>
+}
+
+<datalist id="nps-accounts">
+  @for (a of knownAccounts(); track a) {
+    <option [value]="a"></option>
+  }
+</datalist>
+
+<app-edit-dialog
+  [visible]="contributionDialog.open()"
+  [header]="contributionTitle()"
+  [busy]="contributionDialog.busy()"
+  [error]="contributionDialog.error()"
+  [canDelete]="contributionDialog.isEdit()"
+  deleteQuestion="Delete this contribution?"
+  (save)="saveContribution()"
+  (remove)="removeContribution()"
+  (closed)="contributionDialog.close()"
+>
+  <div class="field">
+    <span id="nps-contributor-label" class="field-label">By</span>
+    <p-selectbutton
+      [options]="contributorChoices"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      [ngModel]="contributionDialog.form().contributor"
+      (ngModelChange)="contributionDialog.set('contributor', $event)"
+      ariaLabelledBy="nps-contributor-label"
+    />
+  </div>
+  <div class="field">
+    <label for="nps-c-portfolio">Portfolio</label>
+    <p-select
+      inputId="nps-c-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="contributionDialog.form().portfolioId"
+      (ngModelChange)="contributionDialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (contributionDialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="nps-c-account">Account</label>
+    <input
+      pInputText
+      id="nps-c-account"
+      autocomplete="off"
+      list="nps-accounts"
+      placeholder="e.g. Rahul PRAN"
+      [maxlength]="accountMax"
+      [ngModel]="contributionDialog.form().account"
+      (ngModelChange)="contributionDialog.set('account', $event)"
+    />
+    @if (contributionDialog.errors().account; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="nps-c-date">Date</label>
+      <app-date-input
+        inputId="nps-c-date"
+        describedBy="nps-c-date-help"
+        [value]="contributionDialog.form().date"
+        (valueChange)="contributionDialog.set('date', $event)"
+      />
+      <p class="field-help" id="nps-c-date-help">{{ dateHint() }}</p>
+      @if (contributionDialog.errors().date; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="nps-c-amount">Amount (₹)</label>
+      <input
+        pInputText
+        id="nps-c-amount"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="contributionDialog.form().amount"
+        (ngModelChange)="contributionDialog.set('amount', $event)"
+      />
+      @if (contributionDialog.errors().amount; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+</app-edit-dialog>
+
+<app-edit-dialog
+  [visible]="schemeDialog.open()"
+  [header]="schemeDialog.isEdit() ? 'Edit scheme' : 'Add scheme'"
+  [busy]="schemeDialog.busy()"
+  [error]="schemeDialog.error()"
+  [canDelete]="schemeDialog.isEdit()"
+  deleteQuestion="Delete this scheme?"
+  (save)="saveScheme()"
+  (remove)="removeScheme()"
+  (closed)="schemeDialog.close()"
+>
+  <div class="field">
+    <label for="nps-s-portfolio">Portfolio</label>
+    <p-select
+      inputId="nps-s-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="schemeDialog.form().portfolioId"
+      (ngModelChange)="schemeDialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (schemeDialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="nps-s-account">Account</label>
+    <input
+      pInputText
+      id="nps-s-account"
+      autocomplete="off"
+      list="nps-accounts"
+      placeholder="e.g. Rahul PRAN"
+      [maxlength]="accountMax"
+      [ngModel]="schemeDialog.form().account"
+      (ngModelChange)="schemeDialog.set('account', $event)"
+    />
+    @if (schemeDialog.errors().account; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="nps-s-class">Scheme class</label>
+    <p-select
+      inputId="nps-s-class"
+      [options]="classOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="schemeDialog.form().schemeClass"
+      (ngModelChange)="schemeDialog.set('schemeClass', $event)"
+      appendTo="body"
+    />
+  </div>
+  <div class="field">
+    <label for="nps-s-name">Scheme name</label>
+    <input
+      pInputText
+      id="nps-s-name"
+      autocomplete="off"
+      placeholder="e.g. HDFC Scheme E Tier I"
+      [maxlength]="schemeNameMax"
+      [ngModel]="schemeDialog.form().schemeName"
+      (ngModelChange)="schemeDialog.set('schemeName', $event)"
+    />
+    @if (schemeDialog.errors().schemeName; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="nps-s-code">Scheme code</label>
+      <input
+        pInputText
+        id="nps-s-code"
+        autocomplete="off"
+        autocapitalize="characters"
+        placeholder="SM008001"
+        aria-describedby="nps-s-code-help"
+        [ngModel]="schemeDialog.form().schemeCode"
+        (ngModelChange)="schemeDialog.set('schemeCode', $event)"
+      />
+      <p class="field-help" id="nps-s-code-help">For the daily NAV. On NPS Trust's NAV page.</p>
+      @if (schemeDialog.errors().schemeCode; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="nps-s-units">Units</label>
+      <input
+        pInputText
+        id="nps-s-units"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="schemeDialog.form().units"
+        (ngModelChange)="schemeDialog.set('units', $event)"
+      />
+      @if (schemeDialog.errors().units; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="field">
+    <label for="nps-s-asof">Units as of</label>
+    <app-date-input
+      inputId="nps-s-asof"
+      [value]="schemeDialog.form().asOf"
+      (valueChange)="schemeDialog.set('asOf', $event)"
+    />
+    @if (schemeDialog.errors().asOf; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+</app-edit-dialog>
+
+<app-edit-dialog
+  [visible]="unitsDialog.open()"
+  [header]="'Update units · ' + unitsDialog.form().account"
+  [busy]="unitsDialog.busy()"
+  [error]="unitsDialog.error()"
+  [canDelete]="false"
+  (save)="saveUnits()"
+  (closed)="unitsDialog.close()"
+>
+  @for (line of unitsDialog.form().lines; track line.id) {
+    <div class="field">
+      <label [for]="'nps-u-' + line.id"
+        >{{ classLabel(line.schemeClass) }} · {{ line.schemeName }}</label
+      >
+      <input
+        pInputText
+        [id]="'nps-u-' + line.id"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="line.units"
+        (ngModelChange)="setLineUnits(line.id, $event)"
+      />
+      @if (unitsErrors().lineErrors?.[line.id]; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  }
+  <div class="field">
+    <label for="nps-u-asof">Statement date</label>
+    <app-date-input
+      inputId="nps-u-asof"
+      [value]="unitsDialog.form().asOf"
+      (valueChange)="unitsDialog.set('asOf', $event)"
+    />
+    @if (unitsErrors().asOf; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+</app-edit-dialog>

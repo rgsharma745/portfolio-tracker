@@ -28,6 +28,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     primary: false,
   },
   { path: '/ppf', label: 'PPF', shortLabel: 'PPF', icon: 'pi-shield', primary: false },
+  { path: '/nps', label: 'NPS', shortLabel: 'NPS', icon: 'pi-sun', primary: false },
   {
     path: '/cards',
     label: 'Credit cards',
