@@ -256,6 +256,133 @@ export type Database = {
         };
         Relationships: [];
       };
+      nps_contributions: {
+        Row: {
+          account: string;
+          amount: number;
+          contribution_date: string;
+          contributor: string;
+          created_at: string;
+          id: string;
+          owner_id: string;
+          portfolio_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account: string;
+          amount: number;
+          contribution_date: string;
+          contributor: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          account?: string;
+          amount?: number;
+          contribution_date?: string;
+          contributor?: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nps_contributions_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nps_holdings: {
+        Row: {
+          account: string;
+          created_at: string;
+          id: string;
+          owner_id: string;
+          portfolio_id: string;
+          scheme_class: string;
+          scheme_code: string | null;
+          scheme_name: string;
+          units: number;
+          units_as_of: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id: string;
+          scheme_class: string;
+          scheme_code?: string | null;
+          scheme_name: string;
+          units?: number;
+          units_as_of?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          account?: string;
+          created_at?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          scheme_class?: string;
+          scheme_code?: string | null;
+          scheme_name?: string;
+          units?: number;
+          units_as_of?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nps_holdings_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nps_nav_latest: {
+        Row: {
+          is_manual: boolean;
+          nav: number;
+          nav_date: string;
+          prev_nav: number | null;
+          prev_nav_date: string | null;
+          scheme_code: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          is_manual?: boolean;
+          nav: number;
+          nav_date: string;
+          prev_nav?: number | null;
+          prev_nav_date?: string | null;
+          scheme_code: string;
+          updated_at?: string;
+        };
+        Update: {
+          is_manual?: boolean;
+          nav?: number;
+          nav_date?: string;
+          prev_nav?: number | null;
+          prev_nav_date?: string | null;
+          scheme_code?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       pf_entries: {
         Row: {
           company: string;
@@ -318,6 +445,7 @@ export type Database = {
           card_dues: number;
           id: string;
           mf_value: number;
+          nps_value: number;
           owner_id: string;
           pf_balance: number;
           portfolio_id: string;
@@ -332,6 +460,7 @@ export type Database = {
           card_dues?: number;
           id?: string;
           mf_value?: number;
+          nps_value?: number;
           owner_id?: string;
           pf_balance?: number;
           portfolio_id: string;
@@ -345,6 +474,7 @@ export type Database = {
           card_dues?: number;
           id?: string;
           mf_value?: number;
+          nps_value?: number;
           owner_id?: string;
           pf_balance?: number;
           portfolio_id?: string;
@@ -753,6 +883,10 @@ export type Database = {
         Returns: undefined;
       };
       upsert_mf_nav: {
+        Args: { p_code: string; p_date: string; p_nav: number };
+        Returns: undefined;
+      };
+      upsert_nps_nav: {
         Args: { p_code: string; p_date: string; p_nav: number };
         Returns: undefined;
       };

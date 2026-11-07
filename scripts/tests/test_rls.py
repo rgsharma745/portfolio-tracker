@@ -17,9 +17,11 @@ from .conftest import AuthUser
 OWNER_TABLES = [
     "portfolios", "mf_holdings", "stock_holdings", "rsu_grants", "savings_accounts",
     "credit_cards", "card_bills", "portfolio_snapshots", "settings", "pf_entries",
-    "ppf_entries",
+    "ppf_entries", "nps_holdings", "nps_contributions",
 ]
-MARKET_TABLES = ["mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers"]
+MARKET_TABLES = [
+    "mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers", "nps_nav_latest",
+]
 VIEWS = ["v_mf_holdings", "v_stock_holdings", "v_card_bills"]
 
 
@@ -66,6 +68,14 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
     ids["ppf_entries"] = insert_ok(anon, t, "ppf_entries", {
         "portfolio_id": p, "account": "pytest-ppf", "entry_date": "2026-04-05",
         "entry_type": "investment", "amount": 50000,
+    })["id"]
+    ids["nps_holdings"] = insert_ok(anon, t, "nps_holdings", {
+        "portfolio_id": p, "account": "pytest-nps", "scheme_class": "E",
+        "scheme_code": "SMPYTEST", "scheme_name": "Pytest Scheme E", "units": 10,
+    })["id"]
+    ids["nps_contributions"] = insert_ok(anon, t, "nps_contributions", {
+        "portfolio_id": p, "account": "pytest-nps", "contribution_date": "2026-04-05",
+        "contributor": "self", "amount": 5000,
     })["id"]
     return ids
 
@@ -149,3 +159,12 @@ def test_authenticated_can_override_market_data(
                                      "is_manual": True})
     assert len(anon.select("fx_latest", token=t, pair=f"eq.{test_key}").json()) == 1
     assert len(anon.delete("fx_latest", token=t, pair=f"eq.{test_key}").json()) == 1
+
+
+def test_authenticated_can_set_a_manual_nps_nav(
+    anon: SupabaseRest, user_a: AuthUser, test_key: str
+) -> None:
+    t = user_a.token
+    insert_ok(anon, t, "nps_nav_latest", {"scheme_code": test_key, "nav": 45.1234,
+                                          "nav_date": "2026-10-31", "is_manual": True})
+    assert len(anon.delete("nps_nav_latest", token=t, scheme_code=f"eq.{test_key}").json()) == 1

@@ -1,4 +1,4 @@
-"""Latest-only market data: upsert_mf_nav, upsert_stock_price, upsert_fx_rate."""
+"""Latest-only market data: upsert_mf_nav, upsert_stock_price, upsert_fx_rate, upsert_nps_nav."""
 
 from __future__ import annotations
 
@@ -38,14 +38,17 @@ STOCK = Upsert("upsert_stock_price", "stock_price_latest", "symbol", "close", "p
                "prev_close", "prev_price_date", ("p_symbol", "p_close", "p_date"), True)
 FX = Upsert("upsert_fx_rate", "fx_latest", "pair", "rate", "rate_date",
             "prev_rate", "prev_rate_date", ("p_pair", "p_rate", "p_date"), True)
-ALL = [pytest.param(MF, id="mf"), pytest.param(STOCK, id="stock"), pytest.param(FX, id="fx")]
-MANUAL = [pytest.param(STOCK, id="stock"), pytest.param(FX, id="fx")]
+NPS = Upsert("upsert_nps_nav", "nps_nav_latest", "scheme_code", "nav", "nav_date",
+             "prev_nav", "prev_nav_date", ("p_code", "p_nav", "p_date"), True)
+ALL = [pytest.param(MF, id="mf"), pytest.param(STOCK, id="stock"), pytest.param(FX, id="fx"),
+       pytest.param(NPS, id="nps")]
+MANUAL = [pytest.param(STOCK, id="stock"), pytest.param(FX, id="fx"), pytest.param(NPS, id="nps")]
 
 
 @pytest.fixture
 def key(service: SupabaseRest, test_key: str) -> Iterator[str]:
     yield test_key
-    for u in (MF, STOCK, FX):
+    for u in (MF, STOCK, FX, NPS):
         service.delete(u.table, **{u.key_col: f"eq.{test_key}"})
 
 
