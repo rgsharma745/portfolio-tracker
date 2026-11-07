@@ -289,6 +289,48 @@ export async function seedPf(api, ownerId) {
   return true;
 }
 
+/**
+ * Sample PPF: one account in "Me" with deposits over four financial years (the last finished
+ * one over the ₹1.5 lakh limit, to show the flag) and yearly interest, and a younger account
+ * in "Wife". Added only if the user has no PPF rows yet.
+ */
+export async function seedPpf(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/ppf_entries?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  const now = new Date();
+  const fy = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const row = (portfolioId, account, type, date, amount) => ({
+    owner_id: ownerId,
+    portfolio_id: portfolioId,
+    account,
+    entry_type: type,
+    entry_date: date,
+    amount,
+  });
+  const me = (type, date, amount) => row(id.Me, 'SBI PPF', type, date, amount);
+  await insert(api, 'ppf_entries', [
+    me('investment', `${fy - 3}-04-05`, 150000),
+    me('interest', `${fy - 2}-03-31`, 11360),
+    me('investment', `${fy - 2}-04-05`, 120000),
+    me('interest', `${fy - 1}-03-31`, 21850.4),
+    me('investment', `${fy - 1}-04-05`, 100000),
+    me('investment', `${fy - 1}-12-20`, 60000),
+    me('interest', `${fy}-03-31`, 32400.75),
+    me('investment', `${fy}-04-05`, 75000),
+    row(id.Wife, 'Post office PPF', 'investment', `${fy - 1}-05-10`, 50000),
+    row(id.Wife, 'Post office PPF', 'interest', `${fy}-03-31`, 2900),
+    row(id.Wife, 'Post office PPF', 'investment', `${fy}-05-10`, 50000),
+  ]);
+  return true;
+}
+
 /** Adds sample daily history for the history chart, unless the user already has some. */
 export async function seedHistory(api, ownerId) {
   const existing = await (
@@ -325,6 +367,7 @@ function sampleHistory(me, wife) {
         savings: 0,
         card_dues: 0,
         pf_balance: Math.round(base * 0.45 * (1 + drift * 0.08)),
+        ppf_balance: Math.round(base * 0.6 * (1 + drift * 0.05)),
       });
     }
   }

@@ -18,6 +18,7 @@ const PAGES = [
   '/rsu',
   '/savings',
   '/pf',
+  '/ppf',
   '/cards',
   '/settings',
 ];
@@ -108,6 +109,13 @@ for (const theme of ['light', 'dark'] as const) {
         pension_amount: 0,
       },
     ]);
+    // PPF, with one year over the ₹1.5 lakh limit so the warning tag is audited too.
+    const ppf = { owner_id: ownerId, portfolio_id: ids['Me'], account: 'E2E PPF' };
+    await adminInsert('ppf_entries', [
+      { ...ppf, entry_type: 'investment', entry_date: today, amount: 100000 },
+      { ...ppf, entry_type: 'investment', entry_date: today, amount: 60000 },
+      { ...ppf, entry_type: 'interest', entry_date: '2026-03-31', amount: 7100 },
+    ]);
     const [card] = await adminInsert('credit_cards', [
       { owner_id: ownerId, portfolio_id: ids['Me'], name: 'E2E Card', bill_day: 1, due_day: 20 },
     ]);
@@ -147,6 +155,16 @@ for (const theme of ['light', 'dark'] as const) {
     await audit(page, `${theme} date picker`);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cancel' }).click();
+
+    // The PPF dialog, with its type switch.
+    await page.goto('/ppf');
+    await page.getByRole('button', { name: 'Add investment to E2E PPF' }).click();
+    const ppfDialog = page.getByRole('dialog', { name: 'Add PPF investment' });
+    await expect(ppfDialog).toBeVisible();
+    await page.waitForTimeout(400);
+    await audit(page, `${theme} /ppf dialog`);
+    await ppfDialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(ppfDialog).toBeHidden();
 
     // An edit dialog, opened and closed from the keyboard; focus returns to its button.
     await page.goto('/mutual-funds');

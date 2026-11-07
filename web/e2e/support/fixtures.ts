@@ -173,7 +173,8 @@ export async function pickDate(page: Page, input: Locator, iso: string): Promise
   // The year view shows a decade at a time: step to the one holding `year`
   const years = panel.locator('.p-datepicker-year-view .p-datepicker-year');
   await expect(years.first()).toBeVisible();
-  const exact = (text: string | number) => new RegExp(`^\\s*${text}\\s*$`);
+  // The selected cell repeats its text in a hidden span ("2026 2026"), so allow repeats.
+  const exact = (text: string | number) => new RegExp(`^\\s*${text}(?:\\s+${text})?\\s*$`);
   for (let i = 0; i < 10 && !(await years.filter({ hasText: exact(year) }).count()); i++) {
     const first = Number((await years.first().textContent())?.trim());
     const before = await years.first().textContent();
