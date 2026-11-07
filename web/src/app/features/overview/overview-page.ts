@@ -6,6 +6,7 @@ import { localIsoDate } from '../../core/calc/common';
 import { cardDues } from '../../core/calc/cards';
 import { mfTotals } from '../../core/calc/mf';
 import { pfBalance } from '../../core/calc/pf';
+import { ppfBalance } from '../../core/calc/ppf';
 import { rsuTotals } from '../../core/calc/rsu';
 import { savingsTotal } from '../../core/calc/savings';
 import { stockTotals } from '../../core/calc/stocks';
@@ -13,6 +14,7 @@ import { CardsService } from '../../core/data/cards.service';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { PfService } from '../../core/data/pf.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
+import { PpfService } from '../../core/data/ppf.service';
 import { SnapshotsService } from '../../core/data/snapshots.service';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import { AllocationBar } from '../../shared/ui/allocation-bar';
@@ -33,7 +35,7 @@ import {
   totalRow,
 } from './overview-calc';
 
-const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf'];
+const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf'];
 
 /** Overview: headline totals, allocation, history and a per-portfolio summary. */
 @Component({
@@ -61,16 +63,17 @@ export class OverviewPage {
   protected readonly holdings = inject(HoldingsService);
   protected readonly cards = inject(CardsService);
   protected readonly pf = inject(PfService);
+  protected readonly ppf = inject(PpfService);
   protected readonly snapshots = inject(SnapshotsService);
   protected readonly portfolios = inject(PortfolioService);
   protected readonly bp = inject(BreakpointService);
   private readonly today = localIsoDate();
 
   protected readonly loaded = computed(
-    () => this.holdings.loaded() && this.cards.loaded() && this.pf.loaded(),
+    () => this.holdings.loaded() && this.cards.loaded() && this.pf.loaded() && this.ppf.loaded(),
   );
   protected readonly error = computed(
-    () => this.holdings.error() ?? this.cards.error() ?? this.pf.error(),
+    () => this.holdings.error() ?? this.cards.error() ?? this.pf.error() ?? this.ppf.error(),
   );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
@@ -78,7 +81,13 @@ export class OverviewPage {
   protected readonly seriesOptions = [
     { label: 'MF + stocks', value: 'combined' },
     { label: 'PF', value: 'pf' },
+    { label: 'PPF', value: 'ppf' },
   ];
+  protected readonly historyTitles: Record<HistorySeries, string> = {
+    combined: 'Combined value',
+    pf: 'PF balance',
+    ppf: 'PPF balance',
+  };
   protected readonly allocationOrder = ALLOCATION_ORDER;
 
   private readonly ids = computed(() => this.portfolios.scopeIds());
@@ -100,6 +109,7 @@ export class OverviewPage {
   protected readonly savings = computed(() => savingsTotal(this.holdings.savings(), this.ids()));
   protected readonly dues = computed(() => cardDues(this.cards.bills(), this.ids()));
   protected readonly pfTotal = computed(() => pfBalance(this.pf.entries(), this.ids()));
+  protected readonly ppfTotal = computed(() => ppfBalance(this.ppf.entries(), this.ids()));
   protected readonly combined = computed(() => ({
     value: this.mf().value + this.stocks().value,
     dayChange: this.mf().dayChange + this.stocks().dayChange,
@@ -113,6 +123,7 @@ export class OverviewPage {
       { key: 'rsu', label: 'RSU (vested)', value: this.rsu().vestedInr ?? 0 },
       { key: 'savings', label: 'Savings', value: this.savings() },
       { key: 'pf', label: 'PF', value: this.pfTotal() },
+      { key: 'ppf', label: 'PPF', value: this.ppfTotal() },
     ]),
   );
 
@@ -157,5 +168,6 @@ export class OverviewPage {
     void this.holdings.load();
     void this.cards.load();
     void this.pf.load();
+    void this.ppf.load();
   }
 }

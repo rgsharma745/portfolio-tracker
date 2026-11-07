@@ -82,13 +82,14 @@ export interface HistoryPoint {
   value: number;
 }
 
-/** What the history chart plots: MF + stocks, or the PF balance. */
-export type HistorySeries = 'combined' | 'pf';
+/** What the history chart plots: MF + stocks, the PF balance or the PPF balance. */
+export type HistorySeries = 'combined' | 'pf' | 'ppf';
 
 /**
  * Value per day for the given portfolios, oldest first, limited to the range: MF + stocks
- * (`combined`) or the PF balance (`pf`). Days are summed across portfolios. Days recorded
- * before any PF existed hold a PF balance of 0; the `pf` series starts at the first day above 0.
+ * (`combined`), the PF balance (`pf`) or the PPF balance (`ppf`). Days are summed across
+ * portfolios. Days recorded before PF or PPF existed hold 0; those series start at the first
+ * day above 0.
  */
 export function historySeries(
   snapshots: readonly {
@@ -97,6 +98,7 @@ export function historySeries(
     mf_value: number;
     stocks_value: number;
     pf_balance?: number;
+    ppf_balance?: number;
   }[],
   portfolioIds: readonly string[],
   range: HistoryRange,
@@ -109,7 +111,12 @@ export function historySeries(
   for (const s of snapshots) {
     if (!ids.has(s.portfolio_id)) continue;
     if (days !== null && daysBetween(s.snap_date, today) > days) continue;
-    const value = series === 'pf' ? (s.pf_balance ?? 0) : s.mf_value + s.stocks_value;
+    const value =
+      series === 'pf'
+        ? (s.pf_balance ?? 0)
+        : series === 'ppf'
+          ? (s.ppf_balance ?? 0)
+          : s.mf_value + s.stocks_value;
     byDate.set(s.snap_date, (byDate.get(s.snap_date) ?? 0) + value);
   }
   const points = [...byDate.entries()]

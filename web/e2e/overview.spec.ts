@@ -72,6 +72,16 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
       pension_amount: 1250,
     },
   ]);
+  await adminInsert('ppf_entries', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Wife'],
+      account: 'E2E PPF',
+      entry_type: 'investment',
+      entry_date: daysAgo(0),
+      amount: 2000,
+    },
+  ]);
   // PF history starts on the first day above 0 (days before PF existed hold 0).
   const pfOn = (n: number) => (n === 3 ? 0 : 2400 - n * 50);
   await adminInsert(
@@ -83,6 +93,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         snap_date: daysAgo(n),
         mf_value: 4800 + n,
         pf_balance: pfOn(n),
+        ppf_balance: 0,
       },
       {
         owner_id: ownerId,
@@ -90,6 +101,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         snap_date: daysAgo(n),
         mf_value: 950,
         pf_balance: 0,
+        ppf_balance: 2000 - n * 10,
       },
     ]),
   );
@@ -106,11 +118,12 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(statCard(page, 'Card dues')).toContainText('₹2,500');
   await expect(statCard(page, 'Card dues').locator('.stat-value')).toHaveClass(/app-down/);
   await expect(statCard(page, 'PF')).toContainText('₹2,350');
+  await expect(statCard(page, 'PPF')).toContainText('₹2,000');
 
   const allocation = page.getByRole('region', { name: 'Allocation' });
   await expect(allocation.getByRole('img')).toHaveAttribute(
     'aria-label',
-    /Mutual funds ₹6,000 \(49%\).*PF ₹2,350 \(19%\)/,
+    /Mutual funds ₹6,000 \(42%\).*PF ₹2,350 \(16%\).*PPF ₹2,000 \(14%\)/,
   );
   await expect(allocation).toContainText('Savings');
   const history = page.getByRole('region', { name: 'Combined value over time' });
@@ -120,6 +133,9 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await show.getByRole('button', { name: 'PF', exact: true }).click();
   const pfHistory = page.getByRole('region', { name: 'PF balance over time' });
   await expect(pfHistory.getByRole('img', { name: /PF balance from/ })).toBeVisible();
+  await show.getByRole('button', { name: 'PPF', exact: true }).click();
+  const ppfHistory = page.getByRole('region', { name: 'PPF balance over time' });
+  await expect(ppfHistory.getByRole('img', { name: /PPF balance from/ })).toBeVisible();
   await show.getByRole('button', { name: 'MF + stocks' }).click();
   await expect(history).toBeVisible();
 
@@ -144,5 +160,6 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(combined).toContainText('₹1,000');
   await expect(statCard(page, 'Card dues')).toContainText('₹0');
   await expect(statCard(page, 'PF')).toContainText('₹0');
+  await expect(statCard(page, 'PPF')).toContainText('₹2,000');
   await expect(summary).not.toContainText('Family total');
 });

@@ -96,4 +96,17 @@ describe('historySeries', () => {
       [],
     );
   });
+
+  it('plots the PPF balance from the first day it is above zero', () => {
+    const rows = [
+      { ...snap('me', '2026-09-01', 1), ppf_balance: 0 },
+      { ...snap('me', '2026-10-01', 1), ppf_balance: 150000 },
+      { ...snap('wife', '2026-10-01', 1), ppf_balance: 500 },
+      snap('me', '2026-11-01', 1), // a row without the column counts as 0
+    ];
+    expect(historySeries(rows, ['me', 'wife'], 'All', '2026-11-04', 'ppf')).toEqual([
+      { date: '2026-10-01', value: 150500 },
+      { date: '2026-11-01', value: 0 },
+    ]);
+  });
 });
