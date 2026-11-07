@@ -22,6 +22,7 @@ The sheets `MF`, `MF2`, `MF3` (and `Stocks`, `Stocks2`, `Stocks3`) are different
 - **Saving:** cell A1 holds the text "Kotak" in the header row. Treat row 1 as a header and ask the owner whether it is a real account.
 - **PF:** one row per company, wage month and type → `pf_entries` (Company → `company`, Wage Month → `wage_month` as `Jan`…`Dec` plus `wage_year`, the credit date → `transaction_date`, Contribution Type → `monthly` or `interest`, Employee / Employer / Pension Contribution Amount → `employee_amount` / `employer_amount` / `pension_amount`). Interest rows have no wage month and pension 0; their transaction date decides the financial year. The owner loads these (docs/DATA_ENTRY.md); never read the sheet from code.
 - **PPF:** dated deposits and yearly interest per account → `ppf_entries` (`account`, `entry_date`, `entry_type` `investment` or `interest`, `amount`). The owner loads these (docs/DATA_ENTRY.md); never read the sheet from code.
+- **NPS:** units per scheme → `nps_holdings` (one row per account and scheme class E/C/G, with the NPS scheme code), and each contribution → `nps_contributions` (`contribution_date`, `contributor` `self` or `employer`, `amount`). The sheet's NPS_NAV and NPS-History tabs are not needed: the NPS NAV job fetches NAVs and the app keeps no NAV history. The owner loads these (docs/DATA_ENTRY.md); never read the sheet from code.
 - **CreditCard:** columns Bank, Pending Bills, Bill Date, Due Date. Bill Date and Due Date are strings like `14th`, `4th`: parse to integers for `bill_day` and `due_day`. The totals row (blank name, only a total) is skipped.
 
 ## Credit card loading rule
@@ -33,7 +34,7 @@ For each card row:
 Sheet values may be strings like `₹1,78,818.00`, `₹178,818.00` or `$1,234.50`. Strip currency symbols, spaces and commas, handle `(123)` as negative, and keep decimals. Fail loudly if a value cannot be parsed.
 
 ## Out of scope for v1 (backlog)
-Details, Details Pivot, FD, NPS, US Stock Transactions, ESPP Wallet, RSU Allocation, LIC, TATA AIA Term, Dividend, Realized Profit, Loan, Tradebook-*, MF-SIP-Monthly, MF Redeem/Switch Details, Expenses, SIP, MutualFund_NAV, Stocks-History, Stocks-Stats, NPS_NAV, Stock-NAV, MF-History, Total-Value-History, NPS-History, Hisab, NAV Data.
+Details, Details Pivot, FD, US Stock Transactions, ESPP Wallet, RSU Allocation, LIC, TATA AIA Term, Dividend, Realized Profit, Loan, Tradebook-*, MF-SIP-Monthly, MF Redeem/Switch Details, Expenses, SIP, MutualFund_NAV, Stocks-History, Stocks-Stats, NPS_NAV, Stock-NAV, MF-History, Total-Value-History, NPS-History, Hisab, NAV Data.
 The app deliberately keeps no NAV or price history and no transaction ledger; do not import those sheets.
 
 ## Reconciliation checklist (after loading, and in Phase 10)

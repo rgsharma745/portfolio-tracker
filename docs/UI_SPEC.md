@@ -34,9 +34,9 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), Card dues (red if > 0). Mobile: 2 columns with Combined full width; from 1024px: 4 columns with Combined spanning two, so the seven cards make two full rows.
-- Allocation (MF, Stocks, RSU vested, Savings, PF) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
-- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks and the PF balance (the PF line starts at its first day above zero).
+- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined full width; 1024px 4 columns with Combined on its own row; from 1280px 5 columns with Combined two wide.
+- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance and the NPS value (PF, PPF and NPS lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, Today). On mobile, becomes stacked rows.
 
 ### Mutual Funds
@@ -70,6 +70,13 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Passbook: filters for company and financial year (of the transaction date); desktop table (Credited date, Wage month or an "Interest FY …" tag, Company, Employee, Employer, Pension) sorted by credited date, newest first, with header sorting and a totals row; mobile cards (wage month or Interest · company, the credited date, then the amounts). Tap or the pencil edits; delete from the dialog with confirmation.
 - Dialog: Type (Monthly / Interest; switching type never carries amounts over: Interest starts empty and credited today, Monthly refills the company's next wage month), Portfolio, Company (suggests known companies; picking one while adding refills its next month), Wage month (Jan…Dec) and Wage year selects for monthly rows only, Transaction date (for interest, a hint names the financial year it counts for), Employee, Employer, and Pension for monthly rows (empty = 0).
 
+### NPS
+- Stat cards: NPS value (latest NAV date and today's change), Invested (self · employer), P&L with %, XIRR (a yearly %, or "—" with the reason), Contributed this financial year (self · employer). Five across from 1280px.
+- By account: value, invested, P&L, XIRR, units as of, a warning tag when a contribution is newer than the units, the scheme mix (E, C, G, A) as an allocation bar, and Add scheme, Update units (every scheme of the account plus the statement date, in one dialog) and Add contribution.
+- Schemes: desktop table (scheme with class tag, units, NAV with date and a Stale or No NAV tag, value, today) with a totals row; mobile cards. Tap or the pencil edits the scheme (class, name, code `SM` + six digits, units, units as of); delete from the dialog.
+- By financial year: self, employer, total and contributed to date per FY (April to March), filtered by account; cards on mobile.
+- Contributions: filters for contributor and financial year; date, account, By (Self / Employer tag), amount, with add, edit and delete.
+
 ### Cards (monthly bill management)
 - Month selector at the top (previous / next, defaults to the current month).
 - Summary cards: Total pending (red if > 0), Awaiting statement (count), Next due (card name and "in N days" / "today" / "tomorrow" / "overdue"; red if within 3 days or overdue; "All clear" in green if nothing is pending).
@@ -101,7 +108,7 @@ A calm, institutional finance look. Layout and density follow this spec; the loo
 - **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
 - **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
-- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..6` in a fixed order (blue, orange, aqua, yellow, purple, slate; light and dark steps; purple is PF and carries white labels at 5.8:1, slate is PPF at 5.4:1), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
+- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..7` in a fixed order (blue, orange, aqua, yellow, purple, slate, magenta; light and dark steps; purple is PF and carries white labels at 5.8:1, slate is PPF at 5.4:1, magenta is NPS at 4.8:1; allocation-bar labels are black on series 1 to 4), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
 
 ## Responsive test matrix (Playwright)
 Run every page at 360x740, 390x844, 768x1024, 1024x768, 1440x900. Assert: no horizontal page scroll, bottom nav visible only below 768px, sidebar visible only at 1024px and above, primary stat cards visible without scrolling on the Overview page at 390x844.

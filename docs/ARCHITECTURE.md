@@ -31,7 +31,7 @@ web/
   public/        manifest, icons, robots.txt
   ngsw-config.json, wrangler.jsonc (Cloudflare Workers static assets)
 scripts/
-  jobs/          fetch_nav.py fetch_prices.py providers.py snapshot.py backup.py keepalive.py
+  jobs/          fetch_nav.py fetch_nps_nav.py fetch_prices.py providers.py snapshot.py backup.py keepalive.py
   tools/         restore.py (restore a backup; run by hand, never scheduled)
   lib/           supabase_rest.py (REST client), jobs.py (run_job, job_runs), http.py, calc.py
   tests/         pytest (RLS, upserts, jobs, parsers, formula parity, restore)
@@ -66,6 +66,7 @@ renovate.json    dependency updates (Renovate app)
 | Job | Schedule | Writes | Notes |
 |---|---|---|---|
 | fetch_nav (`nav.yml`) | daily 23:37 and 08:17 IST | `mf_nav_latest` via `upsert_mf_nav` | AMFI `NAVAll.txt` (https://portal.amfiindia.com/spages/NAVAll.txt; the old amfiindia.com URL redirects there). Only scheme codes in `mf_holdings`; no history; unmatched codes go in the JSON message |
+| fetch_nps_nav (`nav.yml`, second job) | with fetch_nav | `nps_nav_latest` via `upsert_nps_nav` | NPS Trust's latest-NAV export (https://npstrust.org.in/nav-report-excel, tab-separated, every scheme), falling back to Protean CRA's daily file (`https://www.npscra.proteantech.in/download/NAV_File_DDMMYYYY.zip`, looking back a week). Only scheme codes in `nps_holdings`; skips `is_manual` rows; runs independently of fetch_nav, so one failing does not stop the other |
 | fetch_prices (`prices.yml`) | 19:13 IST Mon–Fri and 04:23 IST Tue–Sat (after the US close) | `stock_price_latest`, `fx_latest` via upsert functions | Only symbols in `stock_holdings` and `rsu_grants`; USD/INR only when something is in USD; skips `is_manual` rows. Sources below |
 | snapshot (`snapshot.yml`) | daily 08:37 IST | `portfolio_snapshots` | One row per active portfolio per day (IST date), upsert; formulas in `scripts/lib/calc.py` |
 | backup (`backup.yml`) | Sundays 08:41 IST | workflow artifact, 90 days | All owner tables as JSON, encrypted with `age` in memory before writing |
@@ -75,7 +76,7 @@ Schedules are written in IST (`timezone: Asia/Kolkata` on each cron) at odd minu
 
 Every job records one `job_runs` row (status, JSON summary or the error, start and finish time) and exits non-zero on failure, so GitHub emails the owner; Settings › Job runs shows the last run of each. All jobs are idempotent: re-running a day changes nothing or replaces that day's values. The scheduled workflows share `.github/workflows/_run-job.yml` and need the GitHub secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (and `BACKUP_AGE_RECIPIENT` for backups). Each can also be run by hand (`workflow_dispatch`).
 
-**Run now (from the website):** Settings › Job runs has a Run now button for NAVs (`fetch_nav`) and prices (`fetch_prices`). It posts to the Worker at `/api/jobs/:job` (same origin, so the CSP is unchanged) with the owner's Supabase access token. The Worker (`web/worker/jobs.ts`):
+**Run now (from the website):** Settings › Job runs has a Run now button for NAVs (`fetch_nav`; it dispatches `nav.yml`, which also runs `fetch_nps_nav`) and prices (`fetch_prices`). It posts to the Worker at `/api/jobs/:job` (same origin, so the CSP is unchanged) with the owner's Supabase access token. The Worker (`web/worker/jobs.ts`):
 1. Allows only `fetch_nav` → `nav.yml` and `fetch_prices` → `prices.yml`.
 2. Calls `claim_job_trigger` through PostgREST with the anon key and the owner's token. A bad or expired token fails there (401), so this also checks the sign-in. The function takes the job's slot in `job_triggers` in one statement, or says when it frees up: a job can be triggered once every **30 minutes**. While locked the Worker answers 429 with `Retry-After`.
 3. Dispatches the workflow on `main` with `GITHUB_TOKEN`. It answers 202 with the time the lock ends (and the run's link). If GitHub refuses, it calls `release_job_trigger` so the owner can retry at once, and answers 502.

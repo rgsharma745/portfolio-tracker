@@ -64,6 +64,24 @@ from (values
 ) as v(account, kind, on_date, amount)
 join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
 
+-- NPS: units per scheme (from your statement), then contributions
+insert into nps_holdings (owner_id, portfolio_id, account, scheme_class, scheme_code, scheme_name, units, units_as_of)
+select 'OWNER_UUID', p.id, v.account, v.cls, v.code, v.name, v.units, v.as_of::date
+from (values
+  ('Rahul PRAN', 'E', 'SM008001', 'HDFC Scheme E Tier I', 1234.5678, '2026-10-31'),
+  ('Rahul PRAN', 'C', 'SM008002', 'HDFC Scheme C Tier I', 456.7890, '2026-10-31'),
+  ('Rahul PRAN', 'G', 'SM008003', 'HDFC Scheme G Tier I', 321.0000, '2026-10-31')
+) as v(account, cls, code, name, units, as_of)
+join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
+
+insert into nps_contributions (owner_id, portfolio_id, account, contribution_date, contributor, amount)
+select 'OWNER_UUID', p.id, v.account, v.on_date::date, v.who, v.amount
+from (values
+  ('Rahul PRAN', '2026-04-05', 'self', 5000),
+  ('Rahul PRAN', '2026-04-05', 'employer', 8123.45)
+) as v(account, on_date, who, amount)
+join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
+
 -- portfolio ids, for CSV files
 select id, name from portfolios where owner_id = 'OWNER_UUID';
 
@@ -89,6 +107,8 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 | `savings_accounts` | `owner_id,portfolio_id,bank,balance` |
 | `pf_entries` | `owner_id,portfolio_id,company,contribution_type,wage_month,wage_year,transaction_date,employee_amount,employer_amount,pension_amount` |
 | `ppf_entries` | `owner_id,portfolio_id,account,entry_type,entry_date,amount` |
+| `nps_holdings` | `owner_id,portfolio_id,account,scheme_class,scheme_code,scheme_name,units,units_as_of` |
+| `nps_contributions` | `owner_id,portfolio_id,account,contribution_date,contributor,amount` |
 | `credit_cards` | `owner_id,portfolio_id,name,bank,bill_day,due_day` |
 | `card_bills` | `owner_id,card_id,statement_month,due_date,amount,paid_amount,paid_on,notes` |
 
@@ -102,6 +122,8 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 - PF: `contribution_type` is `monthly` or `interest`. `transaction_date` (`YYYY-MM-DD`, when it was credited) is required. Monthly rows need `wage_month` as `Jan` … `Dec` (exactly these three-letter names) and `wage_year` (e.g. `2025`); interest rows leave both **empty** and have `pension_amount` 0. Fill every amount column, with `0` where there is none: an empty amount is stored as empty and the row is refused. One monthly row per company, wage month and year, and one interest row per company and financial year (of the transaction date, April to March), per portfolio; a second one is refused.
 
 - PPF: `entry_type` is `investment` or `interest`; `entry_date` is `YYYY-MM-DD`; `amount` is more than 0. Use the same `account` name on every row of one account (e.g. `SBI PPF`). One interest row per account and financial year (April to March) per portfolio; a second one is refused. Deposits over ₹1,50,000 in a year are accepted and flagged on the PPF page.
+
+- NPS: one `nps_holdings` row per account and scheme class (`E`, `C`, `G`, or `A`), with the units from your latest statement and its date in `units_as_of`. `scheme_code` is the NPS scheme ID (`SM` + six digits, e.g. `SM008001` for HDFC Scheme E Tier I; listed on NPS Trust's NAV page, npstrust.org.in › NAV, and on your statement); without it the scheme has no NAV and no value. `nps_contributions`: `contributor` is `self` or `employer`, `amount` more than 0, dated `YYYY-MM-DD`; use the same `account` name as the holdings. After each statement, update the units (NPS page › Update units) so value and XIRR stay right.
 
 ## After loading
 - Compare invested totals per portfolio with your sheet.
