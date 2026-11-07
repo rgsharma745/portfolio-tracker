@@ -62,11 +62,29 @@ jobs:
           npm ci
           npm run gen:types
           git diff --exit-code src/app/core/db.types.ts
+      # Browsers are cached per exact Playwright version (from package-lock), so a Renovate
+      # bump fetches new ones. The system libraries come from apt and are installed each run.
+      - name: Playwright version
+        id: playwright
+        working-directory: web
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-webkit
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: web
+        run: npx playwright install --with-deps chromium webkit
+      - name: Install Playwright system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: web
+        run: npx playwright install-deps chromium webkit
       - name: Playwright
         working-directory: web
-        run: |
-          npx playwright install --with-deps chromium webkit
-          npm run e2e
+        run: npm run e2e
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
