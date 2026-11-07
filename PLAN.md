@@ -157,6 +157,8 @@ The owner asked for PF tracked like the sheet's PF tab: one row per company, wag
 - [x] PF page: stat cards, by company with Add next month, passbook table/cards filtered by company and financial year, add/edit/delete dialog (monthly or interest). Nav item PF; More sheet in three columns. E2E at all three viewports; axe in both themes including the dialog.
 - [x] Overview: PF card (cards 4 across on desktop), PF in the allocation bar (fifth series colour), history switch MF + stocks / PF.
 - [ ] **Human:** apply `0004_pf.sql` to production (SQL editor), then push.
+- [x] `0005_pf_month_uniqueness.sql`: wage month may be any day; one monthly row and one interest row per portfolio, company and calendar month.
+- [ ] **Human:** apply `0005_pf_month_uniqueness.sql` to production (SQL editor), then push.
 - [ ] **Human:** load past PF months (Add next month in the app, or CSV/SQL per docs/DATA_ENTRY.md) and check the PF balance against the passbook or the sheet's PF tab.
 
 **Acceptance:** the PF balance and pension match the passbook; adding a month is one tap on Add next month and Save; the next morning's snapshot shows a PF point in the history chart.

@@ -87,7 +87,7 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 - `scheme_code` is the AMFI scheme code (a number). If unsure, leave it empty and fix it later; the app's Data check lists funds without a valid code.
 - Stock `symbol` must match what the price job uses (for example NSE symbol `RELIANCE`, US ticker `CIEN`).
 - `units_vested` cannot exceed `units_granted`, and `units_sold_for_tax` cannot exceed `units_vested`.
-- PF: `wage_month` is the first day of the month; `contribution_type` is `monthly` or `interest`. Interest rows must use March of the financial year (FY 2025–26 → `2026-03-01`) and `pension_amount` 0. Fill every amount column, with `0` where there is none: an empty cell is stored as empty and the row is refused. The same company, month and type can be loaded only once.
+- PF: `wage_month` is a date in the wage month; any day works (`2026-10-01` or `2026-10-31`), and rows count by calendar month. `contribution_type` is `monthly` or `interest`. Interest rows must be in March of the financial year (FY 2025–26 → `2026-03-…`) with `pension_amount` 0. Fill every amount column, with `0` where there is none: an empty cell is stored as empty and the row is refused. Each company can have one monthly row and one interest row per calendar month and portfolio; a second one in the same month (even on another day) is refused.
 
 ## After loading
 - Compare invested totals per portfolio with your sheet.

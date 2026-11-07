@@ -53,8 +53,21 @@ def test_same_company_month_and_type_only_once(
     assert insert(anon, user_a, entry(portfolio, company="Other Ltd")) == 201
 
 
+def test_wage_month_may_be_any_day_but_counts_by_calendar_month(
+    anon: SupabaseRest, user_a: AuthUser, portfolio: str
+) -> None:
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-10-31")) == 201
+    # Same company and month on another day: still the same month's contribution.
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-10-01")) == 409
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-11-15")) == 201
+    # Interest is counted by month too, and does not clash with that month's contribution.
+    interest = {"contribution_type": "interest", "pension_amount": 0}
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-31", **interest)) == 201
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-01", **interest)) == 409
+    assert insert(anon, user_a, entry(portfolio, wage_month="2026-03-10")) == 201
+
+
 @pytest.mark.parametrize("overrides", [
-    pytest.param({"wage_month": "2026-10-15"}, id="not-first-of-month"),
     pytest.param({"contribution_type": "interest", "wage_month": "2026-04-01",
                   "pension_amount": 0}, id="interest-not-in-march"),
     pytest.param({"contribution_type": "interest", "wage_month": "2026-03-01"},

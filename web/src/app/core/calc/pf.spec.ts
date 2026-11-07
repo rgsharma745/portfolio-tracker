@@ -95,6 +95,14 @@ describe('financial years and months', () => {
     expect(nextMonth('2026-12-01')).toBe('2027-01-01');
     expect(monthOf('2026-11-06')).toBe('2026-11-01');
   });
+
+  it('reads any day of the month as that month', () => {
+    expect(fyStart('2026-03-31')).toBe(2025);
+    expect(nextMonth('2026-12-31')).toBe('2027-01-01');
+    expect(
+      nextMonthDraft([row({ wage_month: '2026-10-31' })], 'Acme', 'p1', '2026-11-06'),
+    ).toMatchObject({ wageMonth: '2026-11-01' });
+  });
 });
 
 describe('next month', () => {
