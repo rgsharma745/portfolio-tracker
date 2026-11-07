@@ -10,6 +10,8 @@ export const EXPORT_TABLES = [
   'savings_accounts',
   'pf_entries',
   'ppf_entries',
+  'nps_holdings',
+  'nps_contributions',
   'credit_cards',
   'card_bills',
   'portfolio_snapshots',

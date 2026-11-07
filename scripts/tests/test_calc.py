@@ -19,7 +19,7 @@ CASE = json.loads(FIXTURE.read_text())
 @pytest.mark.parametrize("portfolio_id", sorted(CASE["expected"]))
 def test_snapshot_matches_the_app(portfolio_id: str) -> None:
     market = MarketData.from_rows(
-        CASE["mf_nav_latest"], CASE["stock_price_latest"], CASE["fx_latest"]
+        CASE["mf_nav_latest"], CASE["stock_price_latest"], CASE["fx_latest"], CASE["nps_nav_latest"]
     )
     values = snapshot_values(CASE, market, portfolio_id).rounded()
     expected = {k: f"{Decimal(str(v)):.2f}" for k, v in CASE["expected"][portfolio_id].items()}

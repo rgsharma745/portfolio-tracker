@@ -124,6 +124,18 @@
     { "id": "ppf4", "portfolio_id": "p-wife", "account": "HDFC PPF", "entry_date": "2026-04-01", "entry_type": "investment", "amount": 75000 },
     { "id": "ppf5", "portfolio_id": "p-old", "account": "Gone", "entry_date": "2026-04-01", "entry_type": "investment", "amount": 99999 }
   ],
+  "nps_nav_latest": [
+    { "scheme_code": "SM008001", "nav": 55.1949, "nav_date": "2026-11-03", "prev_nav": 55 },
+    { "scheme_code": "SM008002", "nav": 30.8032, "nav_date": "2026-11-03", "prev_nav": null }
+  ],
+  "nps_holdings": [
+    { "portfolio_id": "p-me", "account": "Rahul PRAN", "scheme_class": "E", "scheme_code": "SM008001", "units": 1000.1234, "units_as_of": "2026-10-31" },
+    { "portfolio_id": "p-me", "account": "Rahul PRAN", "scheme_class": "C", "scheme_code": " SM008002 ", "units": 250.5, "units_as_of": "2026-10-31" },
+    { "portfolio_id": "p-me", "account": "Rahul PRAN", "scheme_class": "G", "scheme_code": "SM999999", "units": 10, "units_as_of": "2026-10-31" },
+    { "portfolio_id": "p-me", "account": "Rahul PRAN", "scheme_class": "A", "scheme_code": null, "units": 3, "units_as_of": null },
+    { "portfolio_id": "p-wife", "account": "Wife PRAN", "scheme_class": "E", "scheme_code": "SM008001", "units": 10, "units_as_of": "2026-10-31" },
+    { "portfolio_id": "p-old", "account": "Gone", "scheme_class": "E", "scheme_code": "SM008001", "units": 9999, "units_as_of": null }
+  ],
   "expected": {
     "p-me": {
       "mf_value": 5000,
@@ -132,7 +144,8 @@
       "savings": 299500,
       "card_dues": 6000,
       "pf_balance": 20801,
-      "ppf_balance": 161150.75
+      "ppf_balance": 161150.75,
+      "nps_value": 62917.91
     },
     "p-wife": {
       "mf_value": 675,
@@ -141,7 +154,8 @@
       "savings": 1234.56,
       "card_dues": 1500,
       "pf_balance": 1175.1,
-      "ppf_balance": 75000
+      "ppf_balance": 75000,
+      "nps_value": 551.95
     }
   }
 }
