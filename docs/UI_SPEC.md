@@ -18,13 +18,15 @@
 - Touch targets at least 44x44px on mobile.
 
 ## Shared components
-- `StatCard` (label, value, optional delta with color and sign)
+- `StatCard` (label, value, optional delta with color and sign). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
+- `AllocationBar` (one whole split into parts: segmented bar with shares inside, plus a legend with amounts). Colours follow the `--app-series-*` order; labels inside the bar are black on series 1 to 4 and white on 5 to 7, so every label meets 4.5:1 in both themes.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, today, tap to open details/edit)
 - `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used.
 - `PortfolioSwitcher` (All, then one entry per active portfolio; segmented control or dropdown on desktop, a chip row or bottom sheet on mobile; persisted in settings; default All)
 - `PageHeader` (title, last-updated time, refresh button)
 - States: skeleton loading, empty state with a call to action, error state with retry
+- Links inside running text (for example the "no price yet" note on Overview) are underlined, never shown by colour alone (WCAG 1.4.1)
 - Privacy toggle in the top bar: masks all money with •••• (eye button; remembered on this device). Percentages, units and names stay visible; the chart hides its money axis; CSV export keeps real values. Amounts typed into an edit form are not masked
 
 ## Pages
@@ -69,6 +71,12 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - By company: one line per company (and portfolio in All mode) with its balance, pension and last wage month, and an **Add next month** button (the wage month after the last contribution, credited a month later, same amounts). Header actions: New company, Add interest, and Add next month (for the most recent company) when there is more than one company.
 - Passbook: filters for company and financial year (of the transaction date); desktop table (Credited date, Wage month or an "Interest FY …" tag, Company, Employee, Employer, Pension) sorted by credited date, newest first, with header sorting and a totals row; mobile cards (wage month or Interest · company, the credited date, then the amounts). Tap or the pencil edits; delete from the dialog with confirmation.
 - Dialog: Type (Monthly / Interest; switching type never carries amounts over: Interest starts empty and credited today, Monthly refills the company's next wage month), Portfolio, Company (suggests known companies; picking one while adding refills its next month), Wage month (Jan…Dec) and Wage year selects for monthly rows only, Transaction date (for interest, a hint names the financial year it counts for), Employee, Employer, and Pension for monthly rows (empty = 0).
+
+### PPF
+- Stat cards: PPF balance (investment + interest), Invested, Interest, and Invested in the current FY with the room left of ₹1,50,000 (one account in scope) or the number of accounts.
+- By financial year: financial year (with Over ₹1.5 lakh / Below ₹500 tags), Investment, Interest, Closing balance, filtered by account; no room-left column (room left is only on the top card). Mobile cards: year and closing balance on top, then Investment and Interest each on its own line with the amount right-aligned, then any limit tags.
+- By account: balance, invested and interest per account, with Add investment; header actions Add interest and Add investment.
+- Entries: filter by financial year; date, account (Interest tag), Investment, Interest, with add, edit and delete. Dialog: Type (Investment / Interest), Portfolio, Account (suggests known names), Date (hint names the FY it counts for), Amount.
 
 ### NPS
 - Stat cards: NPS value (latest NAV date and today's change), Invested (self · employer), P&L with %, XIRR (a yearly %, or "—" with the reason), Contributed this financial year (self · employer). Five across from 1280px.
