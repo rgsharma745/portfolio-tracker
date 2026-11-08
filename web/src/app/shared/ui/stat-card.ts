@@ -51,11 +51,17 @@ import { PlColorDirective } from './pl-color.directive';
     </section>
   `,
   styles: `
+    :host {
+      display: block;
+      min-width: 0;
+    }
     .stat-card {
       display: flex;
       flex-direction: column;
       gap: 4px;
       min-width: 0;
+      /* Fill the grid cell, so every card in a row is as tall as the tallest one. */
+      height: 100%;
     }
     .stat-label {
       margin: 0;
