@@ -1,20 +1,21 @@
-// Hero + eight cards in full rows: phones put the hero on a row of its own, then four rows
-// of two; 1024px puts the hero on its own row, then two rows of four; from 1280px five
-// columns with the hero two wide.
+// Hero + nine cards in full rows: phones put the hero on a row of its own, then four rows
+// of two and card dues full width; from 1024px four columns with the hero three wide, so
+// three full rows.
 .overview-stats {
-  .hero {
+  .hero,
+  .dues {
     grid-column: 1 / -1;
   }
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  @media (min-width: 1280px) {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
 
     .hero {
-      grid-column: span 2;
+      grid-column: span 3;
+    }
+
+    .dues {
+      grid-column: auto;
     }
   }
 }

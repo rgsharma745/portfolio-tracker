@@ -120,7 +120,7 @@ export class AllocationBar {
 
   /**
    * Dark text on series 1 to 4 (blue, orange, green, yellow): white on them is below 4.5:1
-   * in one theme or both (blue 4.4:1 light, 3.6:1 dark). Series 5 to 7 keep white.
+   * in one theme or both (blue 4.4:1 light, 3.6:1 dark). Series 5 to 8 keep white.
    */
   protected darkLabel(key: string): boolean {
     const index = this.order().indexOf(key);

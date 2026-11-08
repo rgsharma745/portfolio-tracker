@@ -39,7 +39,14 @@
         deltaLabel="today"
         [compact]="bp.isMobile()"
       />
-      <app-stat-card label="Card dues" [value]="dues()" [danger]="true" [compact]="bp.isMobile()" />
+      <app-stat-card label="FD" [value]="fdTotal()" [compact]="bp.isMobile()" />
+      <app-stat-card
+        class="dues"
+        label="Card dues"
+        [value]="dues()"
+        [danger]="true"
+        [compact]="bp.isMobile()"
+      />
     </div>
     @if (unpriced()) {
       <p class="note">

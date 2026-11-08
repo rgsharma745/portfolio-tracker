@@ -82,8 +82,8 @@ export interface HistoryPoint {
   value: number;
 }
 
-/** What the history chart plots: MF + stocks, the PF or PPF balance, or the NPS value. */
-export type HistorySeries = 'combined' | 'pf' | 'ppf' | 'nps';
+/** What the history chart plots: MF + stocks, the PF or PPF balance, or the NPS or FD value. */
+export type HistorySeries = 'combined' | 'pf' | 'ppf' | 'nps' | 'fd';
 
 function seriesValue(
   s: {
@@ -92,6 +92,7 @@ function seriesValue(
     pf_balance?: number;
     ppf_balance?: number;
     nps_value?: number;
+    fd_value?: number;
   },
   series: HistorySeries,
 ): number {
@@ -102,6 +103,8 @@ function seriesValue(
       return s.ppf_balance ?? 0;
     case 'nps':
       return s.nps_value ?? 0;
+    case 'fd':
+      return s.fd_value ?? 0;
     default:
       return s.mf_value + s.stocks_value;
   }
@@ -109,8 +112,9 @@ function seriesValue(
 
 /**
  * Value per day for the given portfolios, oldest first, limited to the range: MF + stocks
- * (`combined`), the PF balance (`pf`), the PPF balance (`ppf`) or the NPS value (`nps`).
- * Days are summed across portfolios. Days recorded before PF, PPF or NPS existed hold 0;
+ * (`combined`), the PF balance (`pf`), the PPF balance (`ppf`), the NPS value (`nps`) or the
+ * FD value (`fd`). Days are summed across portfolios. Days recorded before PF, PPF, NPS or FD
+ * existed hold 0;
  * those series start at the first day above 0.
  */
 export function historySeries(
@@ -122,6 +126,7 @@ export function historySeries(
     pf_balance?: number;
     ppf_balance?: number;
     nps_value?: number;
+    fd_value?: number;
   }[],
   portfolioIds: readonly string[],
   range: HistoryRange,

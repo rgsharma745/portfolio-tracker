@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { localIsoDate } from '../../core/calc/common';
 import { cardDues } from '../../core/calc/cards';
+import { fdValue } from '../../core/calc/fd';
 import { mfTotals, navQuotes } from '../../core/calc/mf';
 import { npsTotals } from '../../core/calc/nps';
 import { pfBalance } from '../../core/calc/pf';
@@ -12,6 +13,7 @@ import { rsuTotals } from '../../core/calc/rsu';
 import { savingsTotal } from '../../core/calc/savings';
 import { stockTotals } from '../../core/calc/stocks';
 import { CardsService } from '../../core/data/cards.service';
+import { FdService } from '../../core/data/fd.service';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { NpsService } from '../../core/data/nps.service';
 import { PfService } from '../../core/data/pf.service';
@@ -37,7 +39,7 @@ import {
   totalRow,
 } from './overview-calc';
 
-const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps'];
+const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps', 'fd'];
 
 /** Overview: headline totals, allocation, history and a per-portfolio summary. */
 @Component({
@@ -67,6 +69,7 @@ export class OverviewPage {
   protected readonly pf = inject(PfService);
   protected readonly ppf = inject(PpfService);
   protected readonly nps = inject(NpsService);
+  protected readonly fd = inject(FdService);
   protected readonly snapshots = inject(SnapshotsService);
   protected readonly portfolios = inject(PortfolioService);
   protected readonly bp = inject(BreakpointService);
@@ -78,7 +81,8 @@ export class OverviewPage {
       this.cards.loaded() &&
       this.pf.loaded() &&
       this.ppf.loaded() &&
-      this.nps.loaded(),
+      this.nps.loaded() &&
+      this.fd.loaded(),
   );
   protected readonly error = computed(
     () =>
@@ -86,7 +90,8 @@ export class OverviewPage {
       this.cards.error() ??
       this.pf.error() ??
       this.ppf.error() ??
-      this.nps.error(),
+      this.nps.error() ??
+      this.fd.error(),
   );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
@@ -96,12 +101,14 @@ export class OverviewPage {
     { label: 'PF', value: 'pf' },
     { label: 'PPF', value: 'ppf' },
     { label: 'NPS', value: 'nps' },
+    { label: 'FD', value: 'fd' },
   ];
   protected readonly historyTitles: Record<HistorySeries, string> = {
     combined: 'Combined value',
     pf: 'PF balance',
     ppf: 'PPF balance',
     nps: 'NPS value',
+    fd: 'FD value',
   };
   protected readonly allocationOrder = ALLOCATION_ORDER;
 
@@ -134,6 +141,7 @@ export class OverviewPage {
       this.today,
     ),
   );
+  protected readonly fdTotal = computed(() => fdValue(this.fd.deposits(), this.ids(), this.today));
   protected readonly combined = computed(() => ({
     value: this.mf().value + this.stocks().value,
     dayChange: this.mf().dayChange + this.stocks().dayChange,
@@ -151,6 +159,7 @@ export class OverviewPage {
       { key: 'pf', label: 'PF', value: this.pfTotal() },
       { key: 'ppf', label: 'PPF', value: this.ppfTotal() },
       { key: 'nps', label: 'NPS', value: this.npsTotal().value },
+      { key: 'fd', label: 'Fixed deposits', value: this.fdTotal() },
     ]),
   );
 
@@ -197,5 +206,6 @@ export class OverviewPage {
     void this.pf.load();
     void this.ppf.load();
     void this.nps.load();
+    void this.fd.load();
   }
 }
