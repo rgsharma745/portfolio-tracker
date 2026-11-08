@@ -64,6 +64,15 @@ from (values
 ) as v(account, kind, on_date, amount)
 join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
 
+-- Fixed deposits: one row per FD (compounding defaults to quarterly)
+insert into fixed_deposits (owner_id, portfolio_id, bank, start_date, maturity_date, principal, rate, compounding)
+select 'OWNER_UUID', p.id, v.bank, v.start_on::date, v.matures_on::date, v.principal, v.rate, v.compounding
+from (values
+  ('SBI', '2026-01-15', '2027-01-15', 200000, 6.80, 'quarterly'),
+  ('Post Office TD', '2026-04-01', '2031-04-01', 100000, 7.50, 'payout')
+) as v(bank, start_on, matures_on, principal, rate, compounding)
+join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
+
 -- NPS: units per scheme (from your statement), then contributions
 insert into nps_holdings (owner_id, portfolio_id, account, scheme_class, scheme_code, scheme_name, units, units_as_of)
 select 'OWNER_UUID', p.id, v.account, v.cls, v.code, v.name, v.units, v.as_of::date
@@ -109,6 +118,7 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 | `ppf_entries` | `owner_id,portfolio_id,account,entry_type,entry_date,amount` |
 | `nps_holdings` | `owner_id,portfolio_id,account,scheme_class,scheme_code,scheme_name,units,units_as_of` |
 | `nps_contributions` | `owner_id,portfolio_id,account,contribution_date,contributor,amount` |
+| `fixed_deposits` | `owner_id,portfolio_id,bank,start_date,maturity_date,principal,rate,compounding` |
 | `credit_cards` | `owner_id,portfolio_id,name,bank,bill_day,due_day` |
 | `card_bills` | `owner_id,card_id,statement_month,due_date,amount,paid_amount,paid_on,notes` |
 
@@ -124,6 +134,8 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 - PPF: `entry_type` is `investment` or `interest`; `entry_date` is `YYYY-MM-DD`; `amount` is more than 0. Use the same `account` name on every row of one account (e.g. `SBI PPF`). One interest row per account and financial year (April to March) per portfolio; a second one is refused. Deposits over ₹1,50,000 in a year are accepted and flagged on the PPF page.
 
 - NPS: one `nps_holdings` row per account and scheme class (`E`, `C`, `G`, or `A`), with the units from your latest statement and its date in `units_as_of`. `scheme_code` is the NPS scheme ID (`SM` + six digits, e.g. `SM008001` for HDFC Scheme E Tier I; listed on NPS Trust's NAV page, npstrust.org.in › NAV, and on your statement); without it the scheme has no NAV and no value. `nps_contributions`: `contributor` is `self` or `employer`, `amount` more than 0, dated `YYYY-MM-DD`; use the same `account` name as the holdings. After each statement, update the units (NPS page › Update units) so value and XIRR stay right.
+
+- Fixed deposits: `start_date` (date of investment) and `maturity_date` as `YYYY-MM-DD`, maturity after the start; `principal` more than 0; `rate` the yearly rate in percent (`7.25`, not `0.0725`); `compounding` one of `monthly`, `quarterly`, `half_yearly`, `yearly`, `payout` (interest paid out; leave it empty for quarterly, which most bank FDs use). Check the FD receipt for the compounding.
 
 ## After loading
 - Compare invested totals per portfolio with your sheet.

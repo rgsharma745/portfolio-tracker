@@ -19,7 +19,7 @@
 
 ## Shared components
 - `StatCard` (label, value, optional delta with color and sign). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
-- `AllocationBar` (one whole split into parts: segmented bar with shares inside, plus a legend with amounts). Colours follow the `--app-series-*` order; labels inside the bar are black on series 1 to 4 and white on 5 to 7, so every label meets 4.5:1 in both themes.
+- `AllocationBar` (one whole split into parts: segmented bar with shares inside, plus a legend with amounts). Colours follow the `--app-series-*` order; labels inside the bar are black on series 1 to 4 and white on 5 to 8, so every label meets 4.5:1 in both themes.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, today, tap to open details/edit)
 - `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used.
@@ -36,9 +36,9 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined full width; 1024px 4 columns with Combined on its own row; from 1280px 5 columns with Combined two wide.
-- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
-- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance and the NPS value (PF, PPF and NPS lines start at their first day above zero).
+- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + today), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
+- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, Today). On mobile, becomes stacked rows.
 
 ### Mutual Funds
@@ -85,6 +85,12 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - By financial year: self, employer, total and contributed to date per FY (April to March), filtered by account; cards on mobile.
 - Contributions: filters for contributor and financial year; date, account, By (Self / Employer tag), amount, with add, edit and delete.
 
+### Fixed deposits
+- Stat cards: FD value today (principal + interest so far), Principal (number of deposits), At maturity (with the interest to come), Next maturity (date, bank and days left; "None" when every FD has matured).
+- A note when FDs have matured: they count at the maturity amount until renewed (add a new FD) or deleted.
+- Active (soonest maturity first) and Matured (latest first) as card grids: one column on phones, two from 768px, three from 1280px. Each card: bank (Matured or Matures soon tag within 30 days; portfolio tag in All mode) and an edit button; the maturity amount, large, with the interest to earn (or "Interest paid out"); days left (with "About N months" from 60 days) over a progress bar of the term (primary colour, orange when maturing soon, green once matured; `role="progressbar"` with the percent and days left as its value text), the start and maturity dates under it; then Principal, Rate with compounding, and Value today.
+- Dialog: Portfolio, Bank name, Date of investment and Maturity date (hint shows the term), Principal, Interest rate (% a year), Interest (Quarterly default, Monthly, Half-yearly, Yearly, Payout) and a live "Matures with ₹X (₹Y interest)" preview once the form is valid. Delete from the dialog with confirmation.
+
 ### Cards (monthly bill management)
 - Month selector at the top (previous / next, defaults to the current month).
 - Summary cards: Total pending (red if > 0), Awaiting statement (count), Next due (card name and "in N days" / "today" / "tomorrow" / "overdue"; red if within 3 days or overdue; "All clear" in green if nothing is pending).
@@ -116,7 +122,7 @@ A calm, institutional finance look. Layout and density follow this spec; the loo
 - **Shape:** buttons, chips and badges are pills; cards use 24px radius (`xl`), inputs 12px (`md`), compact rows 8px (`sm`). No sharp corners.
 - **Depth:** mostly flat; cards get a 1px hairline border. A single soft shadow (`0 4px 12px rgba(0,0,0,.04)`) only on hover, light theme only.
 - **Spacing:** 4px base unit (4, 8, 12, 16, 20, 24, 32, 48). Dense on desktop: no marketing-style 96px bands inside the app.
-- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..7` in a fixed order (blue, orange, aqua, yellow, purple, slate, magenta; light and dark steps; purple is PF and carries white labels at 5.8:1, slate is PPF at 5.4:1, magenta is NPS at 4.8:1; allocation-bar labels are black on series 1 to 4), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
+- Charts (Chart.js via the shared `app-line-chart` component) use theme CSS variables so they follow dark mode. Series colors are `--app-series-1..8` in a fixed order (blue, orange, aqua, yellow, purple, slate, magenta, brown; light and dark steps; purple is PF and carries white labels at 5.8:1, slate is PPF at 5.4:1, magenta is NPS at 4.8:1, brown is FD at 5.7:1; allocation-bar labels are black on series 1 to 4), checked for colour-blind separation; a part keeps its color whatever else is shown. The two lighter light-mode colours are below 3:1 contrast, so every chart that uses them prints labels or a legend with values.
 
 ## Responsive test matrix (Playwright)
 Run every page at 360x740, 390x844, 768x1024, 1024x768, 1440x900. Assert: no horizontal page scroll, bottom nav visible only below 768px, sidebar visible only at 1024px and above, primary stat cards visible without scrolling on the Overview page at 390x844.

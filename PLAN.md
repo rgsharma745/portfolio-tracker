@@ -7,19 +7,20 @@ Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop a
 ## Status (update this when work lands)
 _Last updated 8 Nov 2026._
 - **Built:** phases 0 to 10. Live at https://portfolio-tracker.rgsharma745.workers.dev (Cloudflare Workers, deploys on push to `main`). Jobs run in GitHub Actions, started on time by Cloudflare Cron Triggers (Phase 15); backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
-- **Checks:** lint, 265 unit tests + 17 Worker tests, 194 pytest, 88 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
+- **Checks:** lint, 282 unit tests + 17 Worker tests, 210 pytest, 91 Playwright tests (Chrome phone and desktop, WebKit iPhone), axe WCAG 2.1 AA in both themes, Lighthouse on the live site 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
 - **Phase 11 (live, 6 Nov 2026):** Run now for NAVs and prices from Settings › Job runs, via a Cloudflare Worker at `/api/jobs/:job` with a 30-minute lock in Supabase. Migrations 0002 and 0003 applied to production; Worker token and variables set; More sheet redesigned as square tiles.
 - **Phase 12 (live, 7 Nov 2026):** PF (provident fund) page, Overview PF card, allocation and history. Migrations 0004–0006 applied to production and the owner's PF data loaded (wage month Jan…Dec + wage year, transaction date on every row). Every date field is now the PrimeNG DatePicker (`app-date-input`). Workflow schedules are written in IST (`timezone: Asia/Kolkata`); CI caches Playwright browsers.
 - **Phase 13 (live, 7 Nov 2026):** PPF page (investment and interest per financial year, ₹500 to ₹1.5 lakh limits flagged), Overview PPF card, allocation and history. Migration 0007 applied to production and the owner's PPF data loaded. `.gitignore` now ignores only the root `data/` (the old rule also hid new files in `web/src/app/core/data/`).
 - **Phase 14 (live, 8 Nov 2026):** NPS page (Tier I: units per scheme E/C/G/A, self and employer contributions, per financial year, XIRR), daily NPS NAV job (NPS Trust, Protean fallback; runs inside `nav.yml`), Overview NPS card, allocation and history. Migration 0008 applied to production and the owner's NPS data loaded; value, per-year contributions and XIRR checked against the NPS statement (8 Nov 2026). Stat cards in a row now share one height on every page; allocation-bar labels meet 4.5:1 on every colour; the Overview note's link is underlined. PPF's per-year table dropped its Room left column (room left stays on the top card) and its phone cards list investment and interest on separate lines.
+- **Phase 16 (built locally, 8 Nov 2026; not yet in production):** Fixed deposits page (maturity amount, days left with a term progress bar, matured and maturing-soon tags), Overview FD card, allocation and history. Owner: apply migration 0009 to production, push, then add FDs.
 - **Phase 15 (live, 8 Nov 2026):** GitHub's scheduled runs started 3–7 hours late, so Cloudflare Cron Triggers (`web/worker/schedule.ts`) now start the NAV and price workflows on time, and the snapshot runs right after the morning NAV run (`workflow_run`). GitHub schedules stay as a fallback.
 - **Open, owner only:** confirm the jobs now start on time (Phase 15); check the PPF per-year totals and balance against the passbook (Phase 13 acceptance); finish reconciling with the Google Sheet: Mutual funds, Stocks and Savings match (6 Nov 2026); RSU and Card dues still to check (Phases 3, 6, 10); check the PF balance and pension against the EPFO passbook (Phase 12 acceptance); rehearse a restore with a real backup (RUNBOOK › Rehearse a restore); test on a real phone; run app and sheet in parallel for 1 to 2 weeks, then retire the sheet.
-- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (FD, LIC, …) is not started; PF (Phase 12), PPF (Phase 13) and NPS (Phase 14) are built.
+- **Later, owner to define:** RSU + ESOP rules (see the end of this file). Backlog v2 (LIC, …) is not started; PF (Phase 12), PPF (Phase 13), NPS (Phase 14) and FD (Phase 16) are built.
 - **History worth knowing:** the GitHub repo was recreated on 5 Nov 2026 (the original stopped accepting pushes); secrets, Renovate and Cloudflare were reconnected. Hosting moved from Pages to Workers static assets. Sign-in emails go through custom SMTP (Gmail App Password) so the template can carry the code; the project sends 8-digit codes.
 
 ## Scope
 **v1 (this plan):** Overview, Mutual Funds (per portfolio), Stocks (India, US), RSU, Savings, Credit Cards, Settings, auth, daily NAV/price jobs, daily snapshots (history chart), monthly credit card bills, backups, PWA.
-**Backlog (v2, do not build now):** FD, LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR (beyond NPS), Expenses, ESPP wallet.
+**Backlog (v2, do not build now):** LIC, Term insurance, Loans, Dividends, Realized profit, SIP tracker, XIRR (beyond NPS), Expenses, ESPP wallet.
 
 ## Assumptions (confirm with the owner if any is wrong)
 - One login (the owner). No public sign-up. Several **portfolios** (for example Me and Wife) live under that one login; there are no per-portfolio logins.
@@ -201,6 +202,18 @@ GitHub's `schedule` runs started 3 to 7 hours late on every workflow (5–7 Nov 
 - [ ] **Human:** after a day live, check that Cloudflare › Workers › portfolio-tracker › Settings lists the four Cron Triggers, that Workers Logs show `schedule: started …`, and that Actions shows NAV at about 08:17 IST (event `workflow_dispatch`) followed by Snapshot (event `workflow_run`).
 
 **Acceptance:** NAV, price and snapshot runs start within a few minutes of their times for a week; the day's snapshot is written after that morning's NAVs.
+
+## Phase 16: Fixed deposits (FD)
+The owner asked for an FD page: bank, date of investment, principal and rate, with each FD's maturity amount and days left as a progress bar. The owner chose a maturity date (not a tenure), per-FD compounding defaulting to quarterly (payout for interest paid out), and full Overview and history integration.
+- [x] Migration `0009_fixed_deposits.sql`: `fixed_deposits` (owner RLS; principal and rate above 0, rate below 100, maturity after start, compounding check) and `portfolio_snapshots.fd_value`. Tested in `test_fd.py`, `test_rls.py`, `test_jobs.py` (snapshot) and the backup/restore round trip; backup and app export include it.
+- [x] Calculations `core/calc/fd.ts` (maturity amount, value today, days left, progress, matured and maturing-soon flags, totals) with Python parity in `lib/calc.py` (`snapshot_values` now takes the day) and the shared fixture; the snapshot job writes `fd_value`.
+- [x] FD page: stat cards (value today, principal, at maturity, next maturity), matured note, Active and Matured card grids with maturity amount, days left and a term progress bar, add/edit/delete dialog with a live maturity preview. Nav item Fixed deposits. E2E at all three viewports; axe in both themes including the edit dialog. Local seed adds sample FDs.
+- [x] Overview: FD card (stat grid now three rows of four from 1024px), FD in the allocation bar (eighth series colour, brown), history switch includes FD.
+- [x] The shared edit dialog's red Delete text button now meets 4.5:1 in light mode (first audited here).
+- [ ] **Human:** apply `0009_fixed_deposits.sql` to production (SQL editor), then push.
+- [ ] **Human:** add your FDs (Fixed deposits › Add FD, or CSV/SQL per docs/DATA_ENTRY.md).
+
+**Acceptance:** each FD's maturity amount matches the bank's receipt within a few rupees; days left count down daily; the next morning's snapshot shows an FD point in the history chart.
 
 ## Later (owner to define)
 - [ ] **RSU + ESOP:** revisit the RSU after-tax formula (currently `units_granted * price * (1 - tax_rate)`, kept as is for now) and add ESOP handling. Needs a schema change (new migration) and the owner's rules before any work starts.
