@@ -70,38 +70,33 @@
             }
           </span>
         </ng-template>
-        <ng-template appCell="roomLeft" let-row>
-          <span class="app-num">{{ row.roomLeft === null ? '—' : (row.roomLeft | money) }}</span>
-        </ng-template>
         <ng-template appFooter="label" let-t>
           <span class="name-title">Total</span>
         </ng-template>
         <ng-template appFooter="closingBalance" let-t>
           <span class="app-num">{{ totals().balance | money }}</span>
         </ng-template>
-        <ng-template appFooter="roomLeft" let-t></ng-template>
         <ng-template appCard let-row>
           <div class="app-card year-card" [attr.data-testid]="'ppf-year-' + row.fyStart">
             <span class="entry-top">
               <span class="entry-title">{{ row.label }}</span>
               <span class="app-num">{{ row.closingBalance | money }}</span>
             </span>
-            <span class="entry-meta">
-              <span
+            <span class="year-lines">
+              <span class="year-line"
                 >Investment <span class="app-num">{{ row.invested | money }}</span></span
               >
-              <span
+              <span class="year-line"
                 >Interest <span class="app-num">{{ row.interest | money }}</span></span
               >
-              @if (row.roomLeft !== null) {
-                <span
-                  >Room left <span class="app-num">{{ row.roomLeft | money }}</span></span
-                >
-              }
-              @for (flag of flags(row); track flag) {
-                <p-tag [value]="flag" severity="warn" />
-              }
             </span>
+            @if (flags(row).length) {
+              <span class="entry-meta">
+                @for (flag of flags(row); track flag) {
+                  <p-tag [value]="flag" severity="warn" />
+                }
+              </span>
+            }
           </div>
         </ng-template>
       </app-data-table>

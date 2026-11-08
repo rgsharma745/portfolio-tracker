@@ -149,7 +149,7 @@ export class PpfPage {
       this.selectedAccount(),
     ),
   );
-  /** Room left and flags without account names when the table covers one account. */
+  /** Flags without account names when the table covers one account. */
   protected readonly singleAccount = computed(
     () => this.selectedAccount() !== null || this.accounts().length === 1,
   );
@@ -223,7 +223,6 @@ export class PpfPage {
     { key: 'invested', header: 'Investment', type: 'money', sortable: false },
     { key: 'interest', header: 'Interest', type: 'money', sortable: false },
     { key: 'closingBalance', header: 'Closing balance', type: 'money', sortable: false },
-    { key: 'roomLeft', header: 'Room left', type: 'custom', sortable: false, alignEnd: true },
   ];
   protected readonly columns: Column<PpfRow>[] = [
     { key: 'date', header: 'Date', type: 'custom', sortable: true },

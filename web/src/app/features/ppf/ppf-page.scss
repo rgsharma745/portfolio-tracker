@@ -122,6 +122,21 @@
   font-size: 13px;
 }
 
+.year-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+// Label on the left, amount on the right.
+.year-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .field-label {
   font-size: 14px;
   font-weight: 600;
