@@ -17,7 +17,7 @@ from .conftest import AuthUser
 OWNER_TABLES = [
     "portfolios", "mf_holdings", "stock_holdings", "rsu_grants", "savings_accounts",
     "credit_cards", "card_bills", "portfolio_snapshots", "settings", "pf_entries",
-    "ppf_entries", "nps_holdings", "nps_contributions",
+    "ppf_entries", "nps_holdings", "nps_contributions", "fixed_deposits",
 ]
 MARKET_TABLES = [
     "mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers", "nps_nav_latest",
@@ -76,6 +76,10 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
     ids["nps_contributions"] = insert_ok(anon, t, "nps_contributions", {
         "portfolio_id": p, "account": "pytest-nps", "contribution_date": "2026-04-05",
         "contributor": "self", "amount": 5000,
+    })["id"]
+    ids["fixed_deposits"] = insert_ok(anon, t, "fixed_deposits", {
+        "portfolio_id": p, "bank": "pytest-fd", "start_date": "2026-04-05",
+        "maturity_date": "2027-04-05", "principal": 100000, "rate": 7.1,
     })["id"]
     return ids
 

@@ -1,4 +1,5 @@
 import { cardDues } from './cards';
+import { fdValue } from './fd';
 import { mfTotals, navQuotes } from './mf';
 import { npsValue } from './nps';
 import { pfBalance } from './pf';
@@ -41,6 +42,7 @@ describe('snapshot parity with the Python job', () => {
         expected.nps_value,
         2,
       );
+      expect(fdValue(data.fixed_deposits, ids, data.today)).toBeCloseTo(expected.fd_value, 2);
     });
   }
 });

@@ -39,6 +39,11 @@ def load(db: SupabaseRest) -> tuple[list[dict[str, Any]], dict[str, list[dict[st
         ),
         "ppf_entries": fetch_all(db, "ppf_entries", "portfolio_id,amount"),
         "nps_holdings": fetch_all(db, "nps_holdings", "portfolio_id,scheme_code,units"),
+        "fixed_deposits": fetch_all(
+            db,
+            "fixed_deposits",
+            "portfolio_id,start_date,maturity_date,principal,rate,compounding",
+        ),
     }
     market = MarketData.from_rows(
         fetch_all(db, "mf_nav_latest", "scheme_code,nav"),
@@ -57,7 +62,7 @@ def work(db: SupabaseRest, *, today: date | None = None) -> dict[str, Any]:
             "owner_id": p["owner_id"],
             "portfolio_id": p["id"],
             "snap_date": day,
-            **snapshot_values(data, market, p["id"]).rounded(),
+            **snapshot_values(data, market, p["id"], day).rounded(),
         }
         for p in portfolios
     ]

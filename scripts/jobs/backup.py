@@ -35,6 +35,7 @@ TABLES = (
     "ppf_entries",
     "nps_holdings",
     "nps_contributions",
+    "fixed_deposits",
     "credit_cards",
     "card_bills",
     "portfolio_snapshots",

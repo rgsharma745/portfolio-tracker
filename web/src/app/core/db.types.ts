@@ -102,6 +102,57 @@ export type Database = {
           },
         ];
       };
+      fixed_deposits: {
+        Row: {
+          bank: string;
+          compounding: string;
+          created_at: string;
+          id: string;
+          maturity_date: string;
+          owner_id: string;
+          portfolio_id: string;
+          principal: number;
+          rate: number;
+          start_date: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bank: string;
+          compounding?: string;
+          created_at?: string;
+          id?: string;
+          maturity_date: string;
+          owner_id?: string;
+          portfolio_id: string;
+          principal: number;
+          rate: number;
+          start_date: string;
+          updated_at?: string;
+        };
+        Update: {
+          bank?: string;
+          compounding?: string;
+          created_at?: string;
+          id?: string;
+          maturity_date?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          principal?: number;
+          rate?: number;
+          start_date?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fixed_deposits_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       fx_latest: {
         Row: {
           is_manual: boolean;
@@ -443,6 +494,7 @@ export type Database = {
       portfolio_snapshots: {
         Row: {
           card_dues: number;
+          fd_value: number;
           id: string;
           mf_value: number;
           nps_value: number;
@@ -458,6 +510,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           card_dues?: number;
+          fd_value?: number;
           id?: string;
           mf_value?: number;
           nps_value?: number;
@@ -472,6 +525,7 @@ export type Database = {
         };
         Update: {
           card_dues?: number;
+          fd_value?: number;
           id?: string;
           mf_value?: number;
           nps_value?: number;

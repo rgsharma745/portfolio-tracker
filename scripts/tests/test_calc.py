@@ -21,13 +21,13 @@ def test_snapshot_matches_the_app(portfolio_id: str) -> None:
     market = MarketData.from_rows(
         CASE["mf_nav_latest"], CASE["stock_price_latest"], CASE["fx_latest"], CASE["nps_nav_latest"]
     )
-    values = snapshot_values(CASE, market, portfolio_id).rounded()
+    values = snapshot_values(CASE, market, portfolio_id, CASE["today"]).rounded()
     expected = {k: f"{Decimal(str(v)):.2f}" for k, v in CASE["expected"][portfolio_id].items()}
     assert values == expected
 
 
 def test_usd_values_are_left_out_without_a_rate() -> None:
     market = MarketData.from_rows(CASE["mf_nav_latest"], CASE["stock_price_latest"], [])
-    values = snapshot_values(CASE, market, "p-me")
+    values = snapshot_values(CASE, market, "p-me", CASE["today"])
     assert values.stocks_value == Decimal(15000)  # INFY only; SMPL is USD
     assert values.rsu_vested_value == 0

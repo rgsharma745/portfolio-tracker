@@ -9,13 +9,15 @@ rate, is left out of value; RSU value is vested units x price x USDINR; savings 
 card dues are the sum of max(amount - paid, 0) over bills with an amount; the PF balance is
 employee + employer amounts over all PF rows (monthly and interest), pension left out; the
 PPF balance is the sum of all PPF amounts (investments and interest); the NPS value is
-units x NPS NAV over schemes with a NAV.
+units x NPS NAV over schemes with a NAV; the FD value is each FD's principal compounded to
+today (to maturity once matured, the principal for a payout FD).
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -63,6 +65,7 @@ class SnapshotValues:
     pf_balance: Decimal
     ppf_balance: Decimal
     nps_value: Decimal
+    fd_value: Decimal
 
     def rounded(self) -> dict[str, str]:
         """For storage: numeric(18,2) as strings."""
@@ -137,11 +140,38 @@ def ppf_balance(entries: Iterable[Row]) -> Decimal:
     return sum((dec(e["amount"]) for e in entries), ZERO)
 
 
-def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portfolio_id: str) -> SnapshotValues:
+# Compounding periods per year (web/src/app/core/calc/fd.ts); 0 pays interest out.
+COMPOUNDING_PER_YEAR = {"monthly": 12, "quarterly": 4, "half_yearly": 2, "yearly": 1, "payout": 0}
+
+
+def _days(start: Any, end: Any) -> int:
+    return (date.fromisoformat(str(end)) - date.fromisoformat(str(start))).days
+
+
+def fd_amount(fd: Row, today: str) -> Decimal:
+    """Principal x (1 + rate/100/n) ^ (n x days/365), days counted to today or maturity."""
+    principal = dec(fd["principal"])
+    n = COMPOUNDING_PER_YEAR.get(str(fd["compounding"]), 4)
+    if n == 0:
+        return principal
+    term = _days(fd["start_date"], fd["maturity_date"])
+    days = min(max(_days(fd["start_date"], today), 0), term)
+    if days == 0:
+        return principal
+    return principal * (1 + dec(fd["rate"]) / 100 / n) ** (Decimal(n * days) / 365)
+
+
+def fd_value(fds: Iterable[Row], today: str) -> Decimal:
+    return sum((fd_amount(fd, today) for fd in fds), ZERO)
+
+
+def snapshot_values(
+    data: Mapping[str, Iterable[Row]], market: MarketData, portfolio_id: str, today: str
+) -> SnapshotValues:
     """
-    Totals for one portfolio. `data` holds the owner tables: mf_holdings, stock_holdings,
-    rsu_grants, savings_accounts, card_bills (each bill carrying its card's portfolio_id),
-    pf_entries, ppf_entries and nps_holdings.
+    Totals for one portfolio on `today` (`YYYY-MM-DD`). `data` holds the owner tables:
+    mf_holdings, stock_holdings, rsu_grants, savings_accounts, card_bills (each bill carrying
+    its card's portfolio_id), pf_entries, ppf_entries, nps_holdings and fixed_deposits.
     """
     return SnapshotValues(
         mf_value=mf_value(_in(data["mf_holdings"], portfolio_id), market),
@@ -152,4 +182,5 @@ def snapshot_values(data: Mapping[str, Iterable[Row]], market: MarketData, portf
         pf_balance=pf_balance(_in(data["pf_entries"], portfolio_id)),
         ppf_balance=ppf_balance(_in(data["ppf_entries"], portfolio_id)),
         nps_value=nps_value(_in(data["nps_holdings"], portfolio_id), market),
+        fd_value=fd_value(_in(data["fixed_deposits"], portfolio_id), today),
     )

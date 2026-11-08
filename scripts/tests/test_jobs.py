@@ -269,6 +269,9 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
     nps = {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "account": "Pytest PRAN"}
     insert(service, "nps_holdings", {**nps, "scheme_class": "E", "scheme_code": nps_codes[0], "scheme_name": "E", "units": "100.5"})
     insert(service, "nps_holdings", {**nps, "scheme_class": "G", "scheme_code": nps_codes[1], "scheme_name": "G", "units": 7})
+    fd = {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "bank": "Pytest Bank"}
+    insert(service, "fixed_deposits", {**fd, "start_date": "2000-07-01", "maturity_date": "2001-07-01", "principal": 100000, "rate": 7})
+    insert(service, "fixed_deposits", {**fd, "start_date": "1999-01-01", "maturity_date": "2000-01-01", "principal": 50000, "rate": 6, "compounding": "yearly"})
 
     day = date(2001, 1, 1)  # a date no real snapshot uses, so other users' history is untouched
     try:
@@ -281,6 +284,7 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
         assert Decimal(str(mine[0]["pf_balance"])) == Decimal("2500.25")  # pension left out
         assert Decimal(str(mine[0]["ppf_balance"])) == Decimal("160650.75")
         assert Decimal(str(mine[0]["nps_value"])) == Decimal("5547.09")  # G has no NAV yet
+        assert Decimal(str(mine[0]["fd_value"])) == Decimal("156560.15")  # 184 of 365 days; one matured
         assert mine[0]["owner_id"] == user_a.id
     finally:
         service.delete("portfolio_snapshots", snap_date="eq.2001-01-01")

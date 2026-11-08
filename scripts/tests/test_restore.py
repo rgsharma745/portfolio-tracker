@@ -61,6 +61,9 @@ def seed(db: SupabaseRest, owner_id: str) -> None:
     add(db, "nps_contributions", {**o, "portfolio_id": p, "account": "Rahul PRAN",
                                   "contribution_date": "2026-10-05", "contributor": "employer",
                                   "amount": "8123.45"})
+    add(db, "fixed_deposits", {**o, "portfolio_id": q, "bank": "SBI", "start_date": "2026-04-05",
+                               "maturity_date": "2027-04-05", "principal": "100000.00",
+                               "rate": "7.100", "compounding": "monthly"})
     card = add(db, "credit_cards", {**o, "portfolio_id": p, "name": "Card", "bill_day": 14,
                                     "due_day": 3})
     add(db, "card_bills", {**o, "card_id": card, "statement_month": "2026-10-01",
