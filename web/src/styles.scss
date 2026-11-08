@@ -172,6 +172,12 @@ body {
   color: var(--app-text-body);
 }
 
+// Red text buttons (the edit dialog's Delete): Aura's red 500 is 3.8:1 on white; the app's
+// down colour meets 4.5:1 in both themes.
+.p-button-text.p-button-danger:not(:disabled) {
+  color: var(--app-down);
+}
+
 // Dialog forms.
 .form-grid {
   display: flex;
