@@ -200,8 +200,13 @@ export class StocksPage {
     return value?.startsWith(this.today.slice(0, 4)) ? text.replace(/ \d{4}$/, '') : text;
   }
 
+  /**
+   * The mobile card's details: company · Qty: 10 · Price ₹2,450.50 (· ≈ ₹ for US). A
+   * non-breaking space keeps each label on the line of its number.
+   */
   protected meta(row: StockRow): string {
-    const parts = [row.companyName ?? '', `${row.quantity} sh`];
+    const parts = [row.companyName ?? '', `Qty:\u00a0${this.units(row.quantity)}`];
+    if (row.price !== null) parts.push(`Price\u00a0${this.money(row.price, row.currency, 2)}`);
     if (row.currency === 'USD' && row.valueInr !== null)
       parts.push(`≈ ${this.money(row.valueInr, 'INR')}`);
     return parts.filter(Boolean).join(' · ');

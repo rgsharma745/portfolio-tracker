@@ -55,6 +55,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Tabs: India, US (US values shown in USD with INR equivalent; toggle to show everything in INR).
 - Same stats, search, sort, table/card behavior as Mutual Funds.
 - Add / edit / delete holding (symbol, quantity, invested or avg price).
+- Details line: `Qty: 10`, then the average and current price on desktop; mobile cards show company · `Qty: 10` · `Price ₹2,450.50` (the latest close, in the stock's currency) and, for US stocks, the INR equivalent.
 
 ### RSU
 - Stat cards: Total value after tax (INR), Total value USD (pre-tax), after-tax USD, Vested value (INR), Current price (USD).

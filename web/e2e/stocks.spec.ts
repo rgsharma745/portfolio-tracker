@@ -68,6 +68,9 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
     : page.getByRole('table', { name: 'US stocks' });
   await expect(list).toContainText('E2E Corp');
   await expect(list).toContainText('≈ ₹');
+  // Quantity and the latest price, on desktop rows and mobile cards alike
+  await expect(list).toContainText(/Qty:\s10/);
+  await expect(list).toContainText(/[Pp]rice\s\$60\.00/);
   await screenshot(page, 'stocks-us', testInfo.project.name);
   await page.getByRole('switch', { name: 'Show in INR' }).click();
   await expect(stat('Current value')).toContainText('₹');

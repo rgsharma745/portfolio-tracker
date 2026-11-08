@@ -110,7 +110,9 @@
             }
           </span>
           <span class="cell-sub">
-            <span class="app-num">{{ units(row.quantity) }} sh</span>
+            <span
+              >Qty: <span class="app-num">{{ units(row.quantity) }}</span></span
+            >
             @if (row.avgPrice !== null) {
               <span
                 >· avg <span class="app-num">{{ money(row.avgPrice, row.currency, 2) }}</span></span
