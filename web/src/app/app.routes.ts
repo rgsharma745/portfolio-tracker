@@ -58,6 +58,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/nps/nps-page').then((m) => m.NpsPage),
       },
       {
+        path: 'fd',
+        title: 'Fixed deposits',
+        loadComponent: () => import('./features/fd/fd-page').then((m) => m.FdPage),
+      },
+      {
         path: 'cards',
         title: 'Credit cards',
         loadComponent: () => import('./features/cards/cards-page').then((m) => m.CardsPage),

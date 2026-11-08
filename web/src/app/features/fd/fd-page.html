@@ -1,0 +1,303 @@
+@if (!fds.loaded()) {
+  @if (fds.error()) {
+    <app-error-state title="Could not load your fixed deposits" (retry)="fds.load()" />
+  } @else {
+    <app-list-skeleton />
+  }
+} @else if (totals().count === 0) {
+  <app-empty-state
+    icon="pi-lock"
+    title="No fixed deposits yet"
+    message="Add each FD with its bank, date of investment, maturity date, principal and interest rate. The page then shows what each one pays at maturity and how many days are left."
+    actionLabel="Add FD"
+    (action)="add()"
+  />
+} @else {
+  <div class="page-stack">
+    <div class="stat-grid">
+      <app-stat-card
+        label="FD value today"
+        [value]="totals().value"
+        note="Principal + interest so far"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="Principal"
+        [value]="totals().principal"
+        [note]="totals().count + (totals().count === 1 ? ' deposit' : ' deposits')"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="At maturity"
+        [value]="totals().maturityAmount"
+        [note]="'+' + (totals().maturityInterest | money) + ' interest'"
+        [compact]="bp.isMobile()"
+      />
+      @if (next(); as n) {
+        <app-stat-card label="Next maturity" [text]="n.maturityLabel" [note]="nextNote()" />
+      } @else {
+        <app-stat-card label="Next maturity" text="None" [note]="nextNote()" />
+      }
+    </div>
+
+    @if (matured().length) {
+      <p class="note" role="status">
+        <i class="pi pi-info-circle" aria-hidden="true"></i>
+        {{ matured().length }} {{ matured().length === 1 ? 'FD has' : 'FDs have' }} matured and
+        {{ matured().length === 1 ? 'counts' : 'count' }} at the maturity amount. Renew by adding a
+        new FD, or delete once the money is back in savings.
+      </p>
+    }
+
+    <section class="page-stack" aria-labelledby="active-title">
+      <div class="section-head">
+        <h2 class="section-title" id="active-title">Active</h2>
+        <button pButton type="button" (click)="add()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Add FD
+        </button>
+      </div>
+      @if (active().length) {
+        <ul class="fd-grid" aria-label="Active fixed deposits">
+          @for (card of active(); track card.fd.id) {
+            <li>
+              <ng-container *ngTemplateOutlet="fdCard; context: { $implicit: card }" />
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="section-hint">No active FDs. Add one when you book it.</p>
+      }
+    </section>
+
+    @if (matured().length) {
+      <section class="page-stack" aria-labelledby="matured-title">
+        <h2 class="section-title" id="matured-title">Matured</h2>
+        <ul class="fd-grid" aria-label="Matured fixed deposits">
+          @for (card of matured(); track card.fd.id) {
+            <li>
+              <ng-container *ngTemplateOutlet="fdCard; context: { $implicit: card }" />
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+}
+
+<ng-template #fdCard let-card>
+  <article
+    class="app-card fd-card"
+    [class.soon]="card.view.soon"
+    [class.done]="card.view.matured"
+    [attr.aria-label]="cardLabel(card)"
+    [attr.data-testid]="'fd-' + card.fd.bank"
+  >
+    <div class="fd-head">
+      <div class="fd-bank">
+        <span class="fd-bank-name">{{ card.fd.bank }}</span>
+        <span class="fd-tags">
+          @if (card.view.matured) {
+            <p-tag value="Matured" severity="success" />
+          } @else if (card.view.soon) {
+            <p-tag value="Matures soon" severity="warn" />
+          }
+          @if (showPortfolio()) {
+            <p-tag [value]="card.portfolio" severity="secondary" />
+          }
+        </span>
+      </div>
+      <button
+        pButton
+        type="button"
+        iconOnly
+        rounded
+        text
+        severity="secondary"
+        class="fd-edit"
+        [attr.aria-label]="'Edit ' + cardLabel(card)"
+        (click)="edit(card.fd)"
+      >
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="fd-maturity">
+      <span class="fd-label">Maturity amount</span>
+      <span class="fd-amount app-num">{{ card.view.maturityAmount | money }}</span>
+      @if (card.view.maturityInterest > 0) {
+        <span class="fd-interest app-up"
+          ><span class="app-num">+{{ card.view.maturityInterest | money }}</span> interest</span
+        >
+      } @else {
+        <span class="fd-interest">Interest paid out</span>
+      }
+    </div>
+
+    <div class="fd-progress">
+      <div class="fd-progress-top">
+        <span class="fd-days">{{ card.daysText }}</span>
+        @if (card.daysHint) {
+          <span class="fd-days-hint">{{ card.daysHint }}</span>
+        }
+      </div>
+      <div
+        class="fd-bar"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="card.view.progress.toFixed(0)"
+        [attr.aria-valuetext]="
+          card.view.progress.toFixed(0) + '% of the term gone by. ' + card.daysText
+        "
+        [attr.aria-label]="'Term of ' + card.fd.bank"
+      >
+        <span class="fd-fill" [style.width.%]="card.view.progress"></span>
+      </div>
+      <div class="fd-dates">
+        <span>{{ card.startLabel }}</span>
+        <span>{{ card.maturityLabel }}</span>
+      </div>
+    </div>
+
+    <dl class="fd-facts">
+      <div>
+        <dt>Principal</dt>
+        <dd class="app-num">{{ card.fd.principal | money }}</dd>
+      </div>
+      <div>
+        <dt>Rate</dt>
+        <dd>
+          <span class="app-num">{{ card.rateText }}</span>
+          <span class="fd-compounding">{{ compoundingLabel(card.fd.compounding) }}</span>
+        </dd>
+      </div>
+      <div>
+        <dt>{{ card.view.matured ? 'Value' : 'Value today' }}</dt>
+        <dd class="app-num">{{ card.view.value | money }}</dd>
+      </div>
+    </dl>
+  </article>
+</ng-template>
+
+<app-edit-dialog
+  [visible]="dialog.open()"
+  [header]="dialog.isEdit() ? 'Edit FD' : 'Add FD'"
+  [busy]="dialog.busy()"
+  [error]="dialog.error()"
+  [canDelete]="dialog.isEdit()"
+  deleteQuestion="Delete this FD?"
+  (save)="save()"
+  (remove)="remove()"
+  (closed)="dialog.close()"
+>
+  <div class="field">
+    <label for="fd-portfolio">Portfolio</label>
+    <p-select
+      inputId="fd-portfolio"
+      [options]="portfolioOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="dialog.form().portfolioId"
+      (ngModelChange)="dialog.set('portfolioId', $event)"
+      appendTo="body"
+    />
+    @if (dialog.errors().portfolioId; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="field">
+    <label for="fd-bank">Bank name</label>
+    <input
+      pInputText
+      id="fd-bank"
+      autocomplete="off"
+      placeholder="e.g. SBI"
+      [maxlength]="bankMax"
+      [ngModel]="dialog.form().bank"
+      (ngModelChange)="dialog.set('bank', $event)"
+    />
+    @if (dialog.errors().bank; as e) {
+      <p class="field-error">{{ e }}</p>
+    }
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="fd-start">Date of investment</label>
+      <app-date-input
+        inputId="fd-start"
+        [value]="dialog.form().startDate"
+        (valueChange)="dialog.set('startDate', $event)"
+      />
+      @if (dialog.errors().startDate; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="fd-maturity">Maturity date</label>
+      <app-date-input
+        inputId="fd-maturity"
+        describedBy="fd-maturity-help"
+        [value]="dialog.form().maturityDate"
+        (valueChange)="dialog.set('maturityDate', $event)"
+      />
+      <p class="field-help" id="fd-maturity-help">{{ termHint() }}</p>
+      @if (dialog.errors().maturityDate; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field">
+      <label for="fd-principal">Principal (₹)</label>
+      <input
+        pInputText
+        id="fd-principal"
+        inputmode="decimal"
+        autocomplete="off"
+        [ngModel]="dialog.form().principal"
+        (ngModelChange)="dialog.set('principal', $event)"
+      />
+      @if (dialog.errors().principal; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+    <div class="field">
+      <label for="fd-rate">Interest rate (% a year)</label>
+      <input
+        pInputText
+        id="fd-rate"
+        inputmode="decimal"
+        autocomplete="off"
+        placeholder="e.g. 7.25"
+        [ngModel]="dialog.form().rate"
+        (ngModelChange)="dialog.set('rate', $event)"
+      />
+      @if (dialog.errors().rate; as e) {
+        <p class="field-error">{{ e }}</p>
+      }
+    </div>
+  </div>
+  <div class="field">
+    <label for="fd-compounding">Interest</label>
+    <p-select
+      inputId="fd-compounding"
+      ariaLabel="Interest"
+      [options]="compoundingOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="dialog.form().compounding"
+      (ngModelChange)="dialog.set('compounding', $event)"
+      appendTo="body"
+    />
+    <p class="field-help">Most bank FDs compound quarterly. Check your FD receipt.</p>
+  </div>
+  @if (preview(); as p) {
+    <p class="fd-preview" aria-live="polite">
+      Matures with <strong class="app-num">{{ p.maturityAmount | money }}</strong>
+      @if (p.interest > 0) {
+        (<span class="app-num">{{ p.interest | money }}</span> interest)
+      }
+    </p>
+  }
+</app-edit-dialog>

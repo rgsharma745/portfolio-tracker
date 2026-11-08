@@ -7,7 +7,7 @@
 import { execSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { seedHistory, seedHoldings, seedNps, seedPf, seedPpf } from './local-seed.mjs';
+import { seedFd, seedHistory, seedHoldings, seedNps, seedPf, seedPpf } from './local-seed.mjs';
 
 const email = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const seed = process.argv.includes('--seed');
@@ -67,6 +67,7 @@ if (seed) {
   if (await seedPf(api, user.id)) console.log('Seeded a sample PF passbook');
   if (await seedPpf(api, user.id)) console.log('Seeded a sample PPF passbook');
   if (await seedNps(api, user.id)) console.log('Seeded a sample NPS account');
+  if (await seedFd(api, user.id)) console.log('Seeded sample fixed deposits');
 }
 
 console.log(`

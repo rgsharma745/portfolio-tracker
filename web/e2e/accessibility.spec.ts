@@ -20,6 +20,7 @@ const PAGES = [
   '/pf',
   '/ppf',
   '/nps',
+  '/fd',
   '/cards',
   '/settings',
 ];
@@ -144,6 +145,27 @@ for (const theme of ['light', 'dark'] as const) {
       { ...nps, contributor: 'self', contribution_date: '2025-06-15', amount: 3000 },
       { ...nps, contributor: 'employer', contribution_date: '2025-06-15', amount: 1500 },
     ]);
+    // FDs: one active, one maturing within 30 days and one matured, so every tag is audited.
+    const fd = {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      principal: 100000,
+      rate: 7.1,
+      compounding: 'quarterly',
+    };
+    const shift = (days: number) =>
+      new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+    await adminInsert('fixed_deposits', [
+      { ...fd, bank: 'E2E Bank', start_date: shift(-100), maturity_date: shift(265) },
+      { ...fd, bank: 'E2E Soon', start_date: shift(-340), maturity_date: shift(25) },
+      {
+        ...fd,
+        bank: 'E2E Old',
+        start_date: shift(-400),
+        maturity_date: shift(-35),
+        compounding: 'payout',
+      },
+    ]);
     const [card] = await adminInsert('credit_cards', [
       { owner_id: ownerId, portfolio_id: ids['Me'], name: 'E2E Card', bill_day: 1, due_day: 20 },
     ]);
@@ -210,6 +232,16 @@ for (const theme of ['light', 'dark'] as const) {
     await audit(page, `${theme} /nps units dialog`);
     await unitsDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(unitsDialog).toBeHidden();
+
+    // The FD dialog, filled in so the maturity preview is audited too.
+    await page.goto('/fd');
+    await page.getByRole('button', { name: 'Edit E2E Bank' }).click();
+    const fdDialog = page.getByRole('dialog', { name: 'Edit FD' });
+    await expect(fdDialog.getByText(/Matures with/)).toBeVisible();
+    await page.waitForTimeout(400);
+    await audit(page, `${theme} /fd dialog`);
+    await fdDialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(fdDialog).toBeHidden();
 
     // An edit dialog, opened and closed from the keyboard; focus returns to its button.
     await page.goto('/mutual-funds');

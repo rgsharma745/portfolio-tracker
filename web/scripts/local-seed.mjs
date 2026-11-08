@@ -387,6 +387,41 @@ export async function seedNps(api, ownerId) {
   return true;
 }
 
+/**
+ * Sample fixed deposits: three active FDs in "Me" (one maturing within 30 days, one
+ * paying interest out), one in "Wife", and a matured one. Added only if the user has no FDs.
+ */
+export async function seedFd(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/fixed_deposits?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  // Days ago for the start and the maturity; a negative maturity is in the future.
+  const fd = (portfolioId, bank, startAgo, maturityAgo, principal, rate, compounding) => ({
+    owner_id: ownerId,
+    portfolio_id: portfolioId,
+    bank,
+    start_date: daysAgo(startAgo),
+    maturity_date: daysAgo(maturityAgo),
+    principal,
+    rate,
+    compounding,
+  });
+  await insert(api, 'fixed_deposits', [
+    fd(id.Me, 'SBI', 200, -165, 200000, 6.8, 'quarterly'),
+    fd(id.Me, 'HDFC Bank', 420, -24, 150000, 7.25, 'quarterly'),
+    fd(id.Me, 'Post Office TD', 30, -1796, 100000, 7.5, 'payout'),
+    fd(id.Wife, 'ICICI Bank', 90, -640, 300000, 7.1, 'monthly'),
+    fd(id.Wife, 'Axis Bank', 400, 35, 50000, 6.5, 'yearly'),
+  ]);
+  return true;
+}
+
 /** Adds sample daily history for the history chart, unless the user already has some. */
 export async function seedHistory(api, ownerId) {
   const existing = await (
@@ -425,6 +460,7 @@ function sampleHistory(me, wife) {
         pf_balance: Math.round(base * 0.45 * (1 + drift * 0.08)),
         ppf_balance: Math.round(base * 0.6 * (1 + drift * 0.05)),
         nps_value: Math.round(base * 0.5 * factor),
+        fd_value: Math.round(base * 0.55 * (1 + drift * 0.035)),
       });
     }
   }

@@ -1,0 +1,208 @@
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.note {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+
+  .pi {
+    color: var(--p-primary-color);
+  }
+}
+
+// One card per FD: one column on phones, two from 768px, three from 1280px.
+.fd-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  > li {
+    display: flex;
+    min-width: 0;
+  }
+}
+
+.fd-card {
+  --fd-fill: var(--p-primary-color);
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+
+  &.soon {
+    --fd-fill: var(--app-series-2);
+  }
+
+  &.done {
+    --fd-fill: var(--app-up);
+  }
+}
+
+.fd-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fd-bank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  padding-top: 10px;
+}
+
+.fd-bank-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fd-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fd-edit {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -2px -8px 0 0;
+}
+
+.fd-maturity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fd-label {
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.fd-amount {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.fd-interest {
+  font-size: 14px;
+
+  &:not(.app-up) {
+    color: var(--app-text-muted);
+  }
+}
+
+.fd-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fd-progress-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.fd-days {
+  font-weight: 600;
+}
+
+.fd-days-hint,
+.fd-dates {
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.fd-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--p-surface-200);
+  overflow: hidden;
+
+  :host-context(.app-dark) & {
+    background: var(--p-surface-700);
+  }
+}
+
+.fd-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--fd-fill);
+}
+
+.fd-dates {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fd-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--app-hairline);
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  dt {
+    color: var(--app-text-muted);
+    font-size: 12px;
+  }
+
+  dd {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+}
+
+.fd-compounding {
+  color: var(--app-text-muted);
+  font-size: 12px;
+}
+
+.fd-preview {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--app-bg-soft);
+  font-size: 14px;
+}
