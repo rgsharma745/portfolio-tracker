@@ -87,6 +87,8 @@ Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com`
 
 Schedules are set in IST in the workflow files (`timezone: Asia/Kolkata`). GitHub can still start a scheduled run late (on 5 Nov 2026 the NAV run started over 5 hours late) or, under heavy load, skip it; the odd minutes make that less likely. If NAVs look stale, use Settings › Job runs › Run now. Every run is listed in Settings › Job runs; a failed run also sends GitHub's failure email.
 
+**Jobs start late or not at all:** NAVs and prices are started by Cloudflare Cron Triggers (Cloudflare › Workers › portfolio-tracker › Settings › Triggers lists them; Observability › Logs shows `schedule: started …` or `schedule: GitHub did not start …`). A 401 or 403 from GitHub means the Worker's `GITHUB_TOKEN` expired or lost Actions write: create a new fine-grained token and set it as the Worker secret. Without the Worker, the GitHub schedules still run, only hours late. The snapshot follows the morning NAV run; if it is missing, check that NAV run, or run Snapshot by hand.
+
 **Run a job by hand:** in the app, Settings › Job runs › Run now (NAVs, which also refreshes NPS NAVs, and prices; once every 30 minutes per job). Or GitHub › Actions › the job › Run workflow (or `gh workflow run nav.yml`), which has no lock. Jobs are idempotent: re-running one is always safe.
 
 **Run now says:**
