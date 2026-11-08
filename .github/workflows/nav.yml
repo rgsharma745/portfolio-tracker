@@ -5,6 +5,9 @@ name: NAV
 # 23:37 IST, and a retry at 08:17 IST (before the 08:37 snapshot). Times are IST (timezone key).
 # Odd minutes on purpose: GitHub delays, and sometimes drops, runs at the busy start of the hour.
 # Run now in Settings dispatches this workflow, so it refreshes both.
+# On time: a Cloudflare Cron Trigger dispatches it at both times (web/worker/schedule.ts);
+# GitHub's own schedule below often starts hours late and stays only as a fallback.
+# The snapshot runs after the morning run (snapshot.yml).
 on:
   schedule:
     - cron: '37 23 * * *'

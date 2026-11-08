@@ -1,5 +1,6 @@
 // Cloudflare Workers deploy: static assets, plus one small Worker for /api/* (worker/index.ts),
-// which runs a scheduled job from Settings › Job runs (docs/ARCHITECTURE.md, "Run now").
+// which runs a scheduled job from Settings › Job runs (docs/ARCHITECTURE.md, "Run now") and
+// starts the NAV and price jobs on time from Cron Triggers (worker/schedule.ts).
 // Workers Builds runs `npm ci && npm run build` in web/, then `npx wrangler deploy`.
 // The NG_APP_* values are build variables (Settings › Build › Variables and secrets).
 // The Worker's runtime values are set in the dashboard (Settings › Variables and secrets), never
@@ -17,6 +18,12 @@
     "run_worker_first": ["/api/*"],
     // Unknown paths (deep links like /mutual-funds) get index.html; the Angular router takes over.
     "not_found_handling": "single-page-application"
+  },
+  // Cron Triggers (UTC) start the NAV and price workflows on time; GitHub's own schedules run
+  // hours late. Each must match a key in worker/schedule.ts (checked by schedule.spec.ts).
+  // Workers Free: 5 per account.
+  "triggers": {
+    "crons": ["7 18 * * *", "47 2 * * *", "43 13 * * MON-FRI", "53 22 * * MON-FRI"]
   },
   // Workers Logs (free: 200k events a day, 3 days). The Worker logs status codes only.
   // Invocation logs are off: they would record each /api request, which carries the owner's

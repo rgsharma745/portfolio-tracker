@@ -34,7 +34,7 @@ interface Claim {
   next_allowed_at: string;
 }
 
-type Fetch = typeof fetch;
+export type Fetch = typeof fetch;
 
 export async function handleJobs(
   request: Request,
@@ -95,14 +95,41 @@ export async function handleJobs(
     );
   }
 
+  const dispatched = await dispatchWorkflow(GITHUB_REPO, GITHUB_TOKEN, workflow, doFetch);
+  if (dispatched.ok) {
+    return json(202, {
+      status: 'triggered',
+      nextAllowedAt: claim.next_allowed_at,
+      ...(dispatched.runUrl ? { runUrl: dispatched.runUrl } : {}),
+    } satisfies TriggerResult);
+  }
+
+  try {
+    await rpc('release_job_trigger', { p_job: job, p_at: claim.claimed_at });
+  } catch {
+    console.error('jobs: release request failed');
+  }
+  return error(502, 'GitHub did not start the job. Try again.');
+}
+
+/**
+ * Starts `workflow` on `main` through GitHub's workflow_dispatch API. Shared by Run now and
+ * the Cron Triggers (worker/schedule.ts). Logs the status code only, never the token.
+ */
+export async function dispatchWorkflow(
+  repo: string,
+  token: string,
+  workflow: string,
+  doFetch: Fetch = fetch,
+): Promise<{ ok: boolean; runUrl?: string }> {
   try {
     const resp = await doFetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${workflow}/dispatches`,
+      `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`,
       {
         method: 'POST',
         headers: {
           Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           'X-GitHub-Api-Version': GITHUB_API_VERSION,
           'User-Agent': USER_AGENT,
           'Content-Type': 'application/json',
@@ -113,23 +140,13 @@ export async function handleJobs(
     );
     if (resp.ok) {
       const runUrl = await readRunUrl(resp);
-      return json(202, {
-        status: 'triggered',
-        nextAllowedAt: claim.next_allowed_at,
-        ...(runUrl ? { runUrl } : {}),
-      } satisfies TriggerResult);
+      return runUrl ? { ok: true, runUrl } : { ok: true };
     }
-    console.error(`jobs: GitHub dispatch failed with ${resp.status}`);
+    console.error(`jobs: GitHub dispatch of ${workflow} failed with ${resp.status}`);
   } catch {
-    console.error('jobs: GitHub dispatch request failed');
+    console.error(`jobs: GitHub dispatch request for ${workflow} failed`);
   }
-
-  try {
-    await rpc('release_job_trigger', { p_job: job, p_at: claim.claimed_at });
-  } catch {
-    console.error('jobs: release request failed');
-  }
-  return error(502, 'GitHub did not start the job. Try again.');
+  return { ok: false };
 }
 
 function bearer(request: Request): string | null {
