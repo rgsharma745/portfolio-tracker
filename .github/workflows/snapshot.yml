@@ -1,8 +1,15 @@
 name: Snapshot
 
-# One portfolio_snapshots row per active portfolio for the day, after the night's NAV and
-# price runs: 08:37 IST (timezone key; odd minute avoids GitHub's busy hour start).
+# One portfolio_snapshots row per active portfolio for the day (IST date; a re-run replaces it).
+# It runs right after the morning NAV run finishes (workflow_run), so the day's row always has
+# the fresh NAVs. The NAV workflow is started at 08:17 IST by a Cloudflare Cron Trigger
+# (web/worker/schedule.ts), because GitHub's own schedules start hours late.
+# The gate skips NAV runs that finish outside 06:00–11:59 IST (the 23:37 evening run, or a
+# GitHub fallback run that started very late). The 08:37 IST schedule stays as a fallback.
 on:
+  workflow_run:
+    workflows: [NAV]
+    types: [completed]
   schedule:
     - cron: '37 8 * * *'
       timezone: Asia/Kolkata
@@ -15,7 +22,27 @@ concurrency:
   group: job-snapshot
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          hour=$(TZ=Asia/Kolkata date +%H)
+          if [ "$EVENT" != "workflow_run" ] || { [ "$hour" -ge 6 ] && [ "$hour" -lt 12 ]; }; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipped: NAV finished at ${hour}h IST, outside the morning window."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   snapshot:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     uses: ./.github/workflows/_run-job.yml
     with:
       job: snapshot
