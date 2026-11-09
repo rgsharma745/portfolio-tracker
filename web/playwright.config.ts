@@ -6,13 +6,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Viewports from docs/UI_SPEC.md: every page is checked at mobile and desktop size, and in
  * WebKit as an iPhone.
  */
-const OWNER_STATE = 'playwright/.auth/owner.json';
 const PORT = 4300;
 
 export default defineConfig({
   testDir: './e2e',
-  // One worker: specs share the seeded e2e user and its settings row.
-  workers: 1,
+  // Parallel (Playwright's default: half the CPU cores). Each worker has its own e2e users
+  // (e2e/support/fixtures.ts); tests that rewrite shared rows take a lock (`exclusive`).
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? 'github' : 'list',
@@ -21,30 +20,24 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'mobile',
-      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 390, height: 844 },
         hasTouch: true,
-        storageState: OWNER_STATE,
       },
     },
     {
       // Safari's engine with an iPhone's screen, touch and user agent (docs/UI_SPEC.md: iOS).
       name: 'iphone',
-      dependencies: ['setup'],
-      use: { ...devices['iPhone 15'], storageState: OWNER_STATE },
+      use: devices['iPhone 15'],
     },
     {
       name: 'desktop',
-      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 900 },
-        storageState: OWNER_STATE,
       },
     },
   ],

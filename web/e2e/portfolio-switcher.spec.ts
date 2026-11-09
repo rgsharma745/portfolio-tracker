@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import { isMobile } from './support/fixtures';
+import { expect, test, isMobile } from './support/fixtures';
 
 test.describe('portfolio switcher', () => {
   test('defaults to All and remembers the choice across reloads', async ({ page }, testInfo) => {

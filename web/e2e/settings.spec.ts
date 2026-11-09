@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { type Page, expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import {
+  expect,
+  test,
   SETTINGS_EMAIL,
+  exclusive,
   adminDelete,
   adminInsert,
   adminUpsert,
@@ -14,6 +17,19 @@ import {
 
 // A dedicated user: these tests add, rename and delete portfolios.
 test.use({ storageState: { cookies: [], origins: [] } });
+
+/**
+ * For tests that rewrite rows every user shares (job_runs, job_triggers, and market rows
+ * they delete): one at a time across workers, so the same test in another project cannot
+ * clear them halfway through.
+ */
+const sharedRowsTest = test.extend<{ sharedRows: void }>({
+  sharedRows: [
+    // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure.
+    async ({}, use) => exclusive('settings-shared-rows', () => use()),
+    { auto: true },
+  ],
+});
 
 const portfolioNames = (page: Page) =>
   page.locator('app-portfolios-section li.row .name > span:first-child');
@@ -80,7 +96,7 @@ test('manage portfolios: add, rename, reorder, deactivate, delete', async ({ pag
   await expect(portfolioNames(page)).toHaveText(['Me', 'Wife']);
 });
 
-test('data check lists what cannot be valued', async ({ page }) => {
+sharedRowsTest('data check lists what cannot be valued', async ({ page }) => {
   const ownerId = await ensureUser(SETTINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me', 'Old'], ['Old']);
   const me = ids['Me'];
@@ -125,7 +141,7 @@ test('data check lists what cannot be valued', async ({ page }) => {
   await adminDelete('mf_nav_latest', { scheme_code: 'eq.e2e-100' });
 });
 
-test('manual prices, job runs and data export', async ({ page }) => {
+sharedRowsTest('manual prices, job runs and data export', async ({ page }) => {
   const ownerId = await ensureUser(SETTINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me']);
   await adminDelete('stock_price_latest', { symbol: 'eq.E2EMANUAL' });
@@ -184,7 +200,7 @@ test('manual prices, job runs and data export', async ({ page }) => {
   await adminDelete('job_runs', { job: 'eq.fetch_nav' });
 });
 
-test('run NAVs and prices now from Job runs', async ({ page }) => {
+sharedRowsTest('run NAVs and prices now from Job runs', async ({ page }) => {
   // The Worker (/api/jobs/:job) is stubbed: it would dispatch real GitHub workflows.
   await seedPortfolios(await ensureUser(SETTINGS_EMAIL), ['Me']);
   await adminDelete('job_triggers', { job: 'in.(fetch_nav,fetch_prices)' });
@@ -224,6 +240,9 @@ test('run NAVs and prices now from Job runs', async ({ page }) => {
   const runPrices = page.getByRole('button', { name: 'Run now: Stock prices and USD/INR' });
   await expect(runNav).toBeEnabled();
   await expect(page.getByTestId('job-snapshot').getByRole('button')).toHaveCount(0);
+  // The Data check above changes height when it loads; tap only once it has, so the
+  // button is not moved between Playwright scrolling to it and tapping (seen on iPhone).
+  await expect(page.getByRole('region', { name: 'Data check' }).getByRole('status')).toBeVisible();
 
   // Started: locked for 30 minutes, with a link to the run
   await runNav.click();

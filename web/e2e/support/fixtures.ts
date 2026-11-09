@@ -1,19 +1,98 @@
+import { mkdir, rm, writeFile, readFile } from 'node:fs/promises';
 import {
   type APIRequestContext,
   type Locator,
   type Page,
+  test as base,
   expect,
   request,
   type TestInfo,
 } from '@playwright/test';
 import { localSupabase } from './local-supabase';
 
-export const OWNER_EMAIL = 'e2e-owner@example.com';
-export const SIGNOUT_EMAIL = 'e2e-signout@example.com';
-export const WELCOME_EMAIL = 'e2e-welcome@example.com';
-export const SETTINGS_EMAIL = 'e2e-settings@example.com';
-export const HOLDINGS_EMAIL = 'e2e-holdings@example.com';
+export { expect };
+
+/**
+ * Specs run in parallel workers, and each worker has its own users: Playwright sets
+ * TEST_PARALLEL_INDEX (0 to workers - 1) in every worker, so two specs running side by side
+ * never seed or read each other's portfolios, settings or sign-in emails.
+ */
+const SLOT = process.env['TEST_PARALLEL_INDEX'] ?? '0';
+const slotEmail = (name: string) => `e2e-${name}-${SLOT}@example.com`;
+
+export const OWNER_EMAIL = slotEmail('owner');
+export const SIGNOUT_EMAIL = slotEmail('signout');
+export const WELCOME_EMAIL = slotEmail('welcome');
+export const SETTINGS_EMAIL = slotEmail('settings');
+export const HOLDINGS_EMAIL = slotEmail('holdings');
 export const PORTFOLIOS = ['Me', 'Wife'];
+
+/**
+ * Every spec imports `test` from here. Tests start signed in as this worker's owner (with
+ * the portfolios Me and Wife), unless the spec opts out with
+ * `test.use({ storageState: { cookies: [], origins: [] } })`.
+ */
+export const test = base.extend<object, { ownerState: string }>({
+  storageState: ({ ownerState }, use) => use(ownerState),
+  ownerState: [
+    async ({ browser }, use, workerInfo) => {
+      const path = `playwright/.auth/owner-${SLOT}.json`;
+      await seedPortfolios(await ensureUser(OWNER_EMAIL), PORTFOLIOS);
+      const page = await browser.newPage({ baseURL: workerInfo.project.use.baseURL });
+      await signInWithMagicLink(page, OWNER_EMAIL);
+      await page.context().storageState({ path });
+      await page.context().close();
+      await use(path);
+    },
+    { scope: 'worker' },
+  ],
+});
+
+const LOCK_DIR = 'playwright/.locks';
+
+/**
+ * Runs `fn` while no other worker runs it under the same name: for tests that rewrite rows
+ * every user shares (job_runs, job_triggers, market data they delete). The wait is added to
+ * the test's timeout. A lock left by a worker that died is taken over.
+ */
+export async function exclusive<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  const dir = `${LOCK_DIR}/${name}`;
+  const info = base.info();
+  const timeout = info.timeout;
+  const started = Date.now();
+  // Room to wait; set back to the test's own timeout plus the wait once the lock is taken.
+  info.setTimeout(timeout + 120_000);
+  await mkdir(LOCK_DIR, { recursive: true });
+  for (;;) {
+    try {
+      await mkdir(dir);
+      break;
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      if (!(await holderAlive(dir))) await rm(dir, { recursive: true, force: true });
+      else await new Promise((r) => setTimeout(r, 200));
+    }
+  }
+  await writeFile(`${dir}/pid`, String(process.pid));
+  info.setTimeout(timeout + (Date.now() - started));
+  try {
+    return await fn();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+async function holderAlive(dir: string): Promise<boolean> {
+  const pid = Number(await readFile(`${dir}/pid`, 'utf8').catch(() => ''));
+  // No pid yet: the holder has just created the lock and is about to write it.
+  if (!pid) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function admin(): Promise<APIRequestContext> {
   const { apiUrl, serviceKey } = localSupabase();
@@ -112,7 +191,8 @@ export async function signInWithMagicLink(page: Page, email: string): Promise<vo
 /** Asks for a sign-in email on /login and returns its HTML (link and code). */
 export async function requestSignInEmail(page: Page, email: string): Promise<string> {
   const mail = await request.newContext({ baseURL: localSupabase().mailpitUrl });
-  await mail.delete('/api/v1/messages', { data: {} });
+  // Only this address's mail: other workers are signing in at the same time.
+  await mail.delete('/api/v1/search', { params: { query: `to:${email}` } });
 
   // Supabase sends one email per address per second, so back-to-back sign-ins can be
   // refused; retry on a freshly loaded page so the result is always the new attempt's.

@@ -1,5 +1,5 @@
-import { type Page, expect, test } from '@playwright/test';
-import { expectNoHorizontalScroll, isMobile } from './support/fixtures';
+import type { Page } from '@playwright/test';
+import { expect, test, expectNoHorizontalScroll, isMobile } from './support/fixtures';
 
 const PAGES = [
   { label: 'Overview', heading: 'Overview' },
