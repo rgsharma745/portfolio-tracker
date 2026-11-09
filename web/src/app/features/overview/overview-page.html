@@ -12,20 +12,20 @@
         label="Combined (MF + stocks)"
         [value]="combined().value"
         [delta]="combined().dayChange"
-        deltaLabel="today"
+        deltaLabel="1 Day Change"
       />
       <app-stat-card
         label="Mutual funds"
         [value]="mf().value"
         [delta]="mf().dayChange"
-        deltaLabel="today"
+        deltaLabel="1 Day Change"
         [compact]="bp.isMobile()"
       />
       <app-stat-card
         label="Stocks"
         [value]="stocks().value"
         [delta]="stocks().dayChange"
-        deltaLabel="today"
+        deltaLabel="1 Day Change"
         [compact]="bp.isMobile()"
       />
       <app-stat-card label="RSU (vested)" [value]="rsu().vestedInr" [compact]="bp.isMobile()" />
@@ -36,7 +36,7 @@
         label="NPS"
         [value]="npsTotal().value"
         [delta]="npsTotal().dayChange"
-        deltaLabel="today"
+        deltaLabel="1 Day Change"
         [compact]="bp.isMobile()"
       />
       <app-stat-card label="FD" [value]="fdTotal()" [compact]="bp.isMobile()" />

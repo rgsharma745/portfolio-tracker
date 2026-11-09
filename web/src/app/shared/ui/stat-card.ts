@@ -37,14 +37,16 @@ import { PlColorDirective } from './pl-color.directive';
           <p class="stat-note">{{ note() }}</p>
         }
         @if (delta() !== undefined) {
-          <p class="stat-delta app-num" [appPl]="delta()">
-            {{ delta() | money: currency() : { sign: true, compact: compact() } }}
-            @if (deltaPercent() !== undefined) {
-              <span>({{ deltaPercent() | percent2 }})</span>
-            }
+          <p class="stat-delta app-num">
             @if (deltaLabel()) {
-              <span class="stat-delta-label">{{ deltaLabel() }}</span>
+              <span class="stat-delta-label">{{ deltaLabel() }}:</span>
             }
+            <span class="stat-delta-amount" [appPl]="delta()">
+              {{ delta() | money: currency() : { sign: true, compact: compact() } }}
+              @if (deltaPercent() !== undefined) {
+                ({{ deltaPercent() | percent2 }})
+              }
+            </span>
           </p>
         }
       }
@@ -87,8 +89,13 @@ import { PlColorDirective } from './pl-color.directive';
       color: var(--app-text-muted);
       font-size: 13px;
     }
+    // Wraps as a whole under the label on narrow cards, never between the sign and the ₹
+    .stat-delta-amount {
+      white-space: nowrap;
+    }
     .stat-delta-label {
-      margin-left: 4px;
+      margin-right: 4px;
+      white-space: nowrap;
       color: var(--app-text-muted);
       font-family: var(--app-font-sans);
     }
@@ -100,6 +107,7 @@ export class StatCard {
   readonly currency = input<Currency>('INR');
   readonly delta = input<number | null | undefined>(undefined);
   readonly deltaPercent = input<number | null | undefined>(undefined);
+  /** Shown before the change, e.g. "1 Day Change" (the colon is added). */
   readonly deltaLabel = input<string>('');
   /** Show the value in red when above zero (e.g. card dues). */
   readonly danger = input(false);

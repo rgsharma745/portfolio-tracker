@@ -18,7 +18,16 @@ describe('StatCard', () => {
     const delta = el.querySelector('.stat-delta');
     expect(delta?.textContent).toContain('-₹1,250');
     expect(delta?.textContent).toContain('-0.50%');
-    expect(delta?.classList).toContain('app-down');
+    expect(delta?.querySelector('[class*="app-"]')?.classList).toContain('app-down');
+    expect(el.querySelector('.stat-delta-label')).toBeNull();
+  });
+
+  it('puts the delta label before the change, uncolored', () => {
+    const el = render({ label: 'NPS', value: 2000, delta: 40, deltaLabel: '1 Day Change' });
+    const delta = el.querySelector('.stat-delta');
+    expect(delta?.textContent?.replace(/\s+/g, ' ').trim()).toMatch(/^1 Day Change: \+₹40/);
+    expect(el.querySelector('.stat-delta-label')?.classList).not.toContain('app-up');
+    expect(delta?.classList).not.toContain('app-up');
   });
 
   it('turns the value red for dues above zero when danger is set', () => {
