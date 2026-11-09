@@ -146,8 +146,8 @@ export class JobsSection {
   constructor() {
     effect(() => {
       this.refresher.tick();
-      void this.market.loadJobRuns();
-      void this.trigger.load();
+      void this.refresher.track(this.market.loadJobRuns());
+      void this.refresher.track(this.trigger.load());
     });
   }
 

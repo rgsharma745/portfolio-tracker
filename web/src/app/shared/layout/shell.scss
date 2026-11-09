@@ -186,17 +186,34 @@ $bottom-nav-height: 64px;
   gap: 4px;
 }
 
+// Below desktop there is no room to show it, but screen readers still hear the update.
 .updated {
-  display: none;
-  margin-right: 4px;
-  color: var(--app-text-muted);
-  font-size: 13px;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
 
 @media (min-width: $desktop) {
   .updated {
-    display: inline;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    margin-right: 4px;
+    color: var(--app-text-muted);
+    font-size: 13px;
+  }
+}
+
+// Spins while a refresh is loading; with reduced motion it dims instead.
+@media (prefers-reduced-motion: reduce) {
+  .refresh-icon.pi-spin {
+    animation: none;
+    opacity: 0.4;
   }
 }
 

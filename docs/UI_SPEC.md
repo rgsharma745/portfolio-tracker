@@ -106,7 +106,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 Manage portfolios (add, rename, reorder, deactivate; delete only with a strong warning because it removes that portfolio's holdings), theme (system/light/dark), manual price override for a stock or the USD/INR rate, last job runs (NAV, prices, backup, with status and time), and a Run now button for NAVs and prices (disabled for 30 minutes after a run, showing "Available again at …"; the result, a link to the GitHub run or the reason it did not start appears under the row as a status message), export all data as JSON, sign out.
 
 ## Interaction details
-- Pull-to-refresh behavior on mobile is replaced by a visible Refresh button (re-queries Supabase).
+- Pull-to-refresh behavior on mobile is replaced by a visible Refresh button (re-queries Supabase). Its icon spins while data loads (at least 0.6 s, so a fast refresh is still seen; dims instead with reduced motion). The "Updated" time shows on desktop and is announced to screen readers on every width.
 - Data also re-queries by itself: on returning to the tab or app when it is over a minute old, and every 5 minutes while the app is visible (picks up job runs and edits made elsewhere). No Realtime subscriptions.
 - Optimistic UI is not required; show a saving state then refresh the row.
 - Form validation messages inline; number inputs use `inputmode="decimal"`.

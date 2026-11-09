@@ -54,7 +54,7 @@ export class HoldingsService {
     effect(() => {
       this.refresher.tick();
       if (this.auth.isSignedIn()) {
-        void this.load();
+        void this.refresher.track(this.load());
       } else {
         this.loaded.set(false);
       }

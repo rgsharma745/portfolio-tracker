@@ -173,7 +173,7 @@ export class DataCheckSection {
     // Runs on open and whenever the top bar Refresh is pressed.
     effect(() => {
       this.refresher.tick();
-      void this.check.load();
+      void this.refresher.track(this.check.load());
     });
   }
 }

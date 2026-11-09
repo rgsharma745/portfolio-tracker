@@ -42,9 +42,15 @@
           text
           severity="secondary"
           aria-label="Refresh data"
+          [attr.aria-busy]="refresher.busy()"
+          data-testid="refresh"
           (click)="refresher.refresh()"
         >
-          <i class="pi pi-refresh" aria-hidden="true"></i>
+          <i
+            class="pi pi-refresh refresh-icon"
+            [class.pi-spin]="refresher.busy()"
+            aria-hidden="true"
+          ></i>
         </button>
         <button
           pButton

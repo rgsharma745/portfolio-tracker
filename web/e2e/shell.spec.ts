@@ -92,9 +92,17 @@ test.describe('app shell', () => {
 
   test('refresh button re-queries and shows the update time', async ({ page }, testInfo) => {
     await page.goto('/overview');
-    await page.getByRole('button', { name: 'Refresh data' }).click();
-    if (testInfo.project.name === 'desktop') {
-      await expect(page.getByText(/^Updated \d{1,2}:\d{2}/)).toBeVisible();
-    }
+    const refresh = page.getByRole('button', { name: 'Refresh data' });
+    await expect(refresh).toHaveAttribute('aria-busy', 'false');
+    await refresh.click();
+    // Shows it is working (the icon spins), then settles once the data is back
+    await expect(refresh).toHaveAttribute('aria-busy', 'true');
+    await expect(refresh.locator('.pi-refresh')).toHaveClass(/pi-spin/);
+    await expect(refresh).toHaveAttribute('aria-busy', 'false');
+    await expect(refresh.locator('.pi-refresh')).not.toHaveClass(/pi-spin/);
+    // On phones the time is for screen readers only; on desktop it is shown
+    const updated = page.getByText(/^Updated \d{1,2}:\d{2}/);
+    await expect(updated).toBeAttached();
+    if (testInfo.project.name === 'desktop') await expect(updated).toBeVisible();
   });
 });
