@@ -105,6 +105,27 @@ describe('JobTriggerService', () => {
     expect(service.nextAllowedAt()).toEqual({});
   });
 
+  it('keeps a lock this page holds when a slower load finds none', async () => {
+    // The page reads job_triggers on open; if that answer lands after "Run now" returned,
+    // it must not unlock the button again.
+    const { service } = setup([]);
+    respond(202, { status: 'triggered', nextAllowedAt: IN_10_MIN });
+    await service.run('fetch_nav');
+    await service.load();
+    expect(service.nextAllowedAt()).toEqual({ fetch_nav: IN_10_MIN });
+
+    vi.advanceTimersByTime(10 * 60_000);
+    expect(service.nextAllowedAt()).toEqual({});
+  });
+
+  it('takes the later lock when the database has a newer one', async () => {
+    const { service } = setup([{ job: 'fetch_nav', triggered_at: '2026-11-05T09:50:00Z' }]);
+    respond(429, { status: 'cooldown', nextAllowedAt: IN_10_MIN });
+    await service.run('fetch_nav');
+    await service.load();
+    expect(service.nextAllowedAt()).toEqual({ fetch_nav: '2026-11-05T10:20:00.000Z' });
+  });
+
   it('posts with the session token, then locks and re-checks job runs', async () => {
     const { service, refresh } = setup();
     const fetchMock = respond(202, { status: 'triggered', nextAllowedAt: IN_10_MIN });

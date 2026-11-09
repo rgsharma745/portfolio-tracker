@@ -85,13 +85,18 @@ export class JobTriggerService implements OnDestroy {
   readonly pending = signal<TriggerableJob | null>(null);
   readonly notices = signal<Partial<Record<TriggerableJob, TriggerNotice>>>({});
 
-  /** Reads the locks, so a job run from another device shows as locked here too. */
+  /**
+   * Reads the locks, so a job run from another device shows as locked here too. Keeps the later
+   * of the stored lock and the one this page already holds: the read may have started before
+   * "Run now" answered, and a lock only ends by running out (the unlock timer handles that).
+   */
   async load(): Promise<void> {
     const { data, error } = await this.supabase.from('job_triggers').select('job, triggered_at');
     if (error || !data) return;
     for (const job of TRIGGERABLE_JOBS) {
       const row = data.find((r) => r.job === job);
-      this.setNextAllowed(job, row ? nextAllowedFrom(row.triggered_at) : null);
+      const stored = row ? nextAllowedFrom(row.triggered_at) : null;
+      this.setNextAllowed(job, laterOf(stored, this.nextAllowedAt()[job] ?? null));
     }
   }
 
@@ -164,6 +169,11 @@ async function readBody(resp: Response): Promise<WorkerBody> {
   } catch {
     return {};
   }
+}
+
+function laterOf(a: string | null, b: string | null): string | null {
+  if (!a || !b) return a ?? b;
+  return Date.parse(a) >= Date.parse(b) ? a : b;
 }
 
 function without<T extends object>(obj: T, key: keyof T): T {
