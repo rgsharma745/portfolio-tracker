@@ -29,13 +29,13 @@ import { DialogForm } from '../../shared/ui/dialog-form';
 import { EditDialog } from '../../shared/ui/edit-dialog';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorState } from '../../shared/ui/error-state';
-import { HoldingCard } from '../../shared/ui/holding-card';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { ListToolbar } from '../../shared/ui/list-toolbar';
 import { MoneyPipe, PercentPipe } from '../../shared/ui/money.pipe';
 import { PlColorDirective } from '../../shared/ui/pl-color.directive';
 import { StatCard } from '../../shared/ui/stat-card';
 import { StockForm, emptyStockForm, stockFormFrom, validateStockForm } from './stock-form';
+import { StockCard } from './stock-card';
 import { STOCK_CSV_COLUMNS, StockRow, buildStockRows } from './stock-rows';
 
 /** Stocks: India and US tabs, USD or INR for US, totals, list, add/edit/delete, CSV. */
@@ -58,7 +58,7 @@ import { STOCK_CSV_COLUMNS, StockRow, buildStockRows } from './stock-rows';
     EditDialog,
     EmptyState,
     ErrorState,
-    HoldingCard,
+    StockCard,
     ListSkeleton,
     ListToolbar,
     MoneyPipe,
@@ -198,18 +198,6 @@ export class StocksPage {
   protected shortDate(value: string | null): string {
     const text = formatDate(value);
     return value?.startsWith(this.today.slice(0, 4)) ? text.replace(/ \d{4}$/, '') : text;
-  }
-
-  /**
-   * The mobile card's details: company · Qty: 10 · Price ₹2,450.50 (· ≈ ₹ for US). A
-   * non-breaking space keeps each label on the line of its number.
-   */
-  protected meta(row: StockRow): string {
-    const parts = [row.companyName ?? '', `Qty:\u00a0${this.units(row.quantity)}`];
-    if (row.price !== null) parts.push(`Price\u00a0${this.money(row.price, row.currency, 2)}`);
-    if (row.currency === 'USD' && row.valueInr !== null)
-      parts.push(`≈ ${this.money(row.valueInr, 'INR')}`);
-    return parts.filter(Boolean).join(' · ');
   }
 
   protected staleTitle(row: StockRow): string {

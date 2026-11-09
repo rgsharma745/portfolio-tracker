@@ -92,6 +92,16 @@ export function valueHolding(
   };
 }
 
+/**
+ * Today's change as a percentage of yesterday's value (value − day change), the same as the
+ * price's move since the previous close. Null without a value; 0 when yesterday was worth 0.
+ */
+export function dayChangePercent(value: number | null, dayChange: number | null): number | null {
+  if (value === null || dayChange === null) return null;
+  const before = value - dayChange;
+  return before ? (dayChange / before) * 100 : 0;
+}
+
 /** Converts a valuation's money fields with `rate` (for example USD to INR). */
 export function convertValuation(valuation: Valuation, rate: number): Valuation {
   const times = (n: number | null) => (n === null ? null : n * rate);

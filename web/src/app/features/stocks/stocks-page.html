@@ -173,18 +173,9 @@
         </div>
       </ng-template>
       <ng-template appCard let-row>
-        <app-holding-card
-          [title]="row.symbol"
-          [value]="row.value"
-          [currency]="row.currency"
-          [pl]="row.pl"
-          [plPercent]="row.plPercent"
-          [dayChange]="row.dayChange"
-          [meta]="meta(row)"
-          (open)="edit(row)"
-        >
+        <app-stock-card [row]="row" (open)="edit(row)">
           <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
-        </app-holding-card>
+        </app-stock-card>
       </ng-template>
     </app-data-table>
   </div>

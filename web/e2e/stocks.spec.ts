@@ -66,11 +66,21 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
   const list = mobile
     ? page.getByRole('list', { name: 'US stocks' })
     : page.getByRole('table', { name: 'US stocks' });
-  await expect(list).toContainText('E2E Corp');
-  await expect(list).toContainText('≈ ₹');
-  // Quantity and the latest price, on desktop rows and mobile cards alike
-  await expect(list).toContainText(/Qty:\s10/);
-  await expect(list).toContainText(/[Pp]rice\s\$60\.00/);
+  if (mobile) {
+    // Broker-style card: Qty and P&L %; symbol and value; invested and LTP with today's %
+    // (10 x $60, $700 invested, previous close $62)
+    const card = list.getByRole('button', { name: /E2EUS/ });
+    await expect(card).toContainText(/Qty\.\s10/);
+    await expect(card).toContainText('-14.29%');
+    await expect(card).toContainText('$600.00');
+    await expect(card).toContainText('Invested $700.00');
+    await expect(card).toContainText(/LTP \$60\.00\s?\(-3\.23%\)/);
+  } else {
+    await expect(list).toContainText('E2E Corp');
+    await expect(list).toContainText('≈ ₹');
+    await expect(list).toContainText(/Qty:\s10/);
+    await expect(list).toContainText(/price\s\$60\.00/);
+  }
   await screenshot(page, 'stocks-us', testInfo.project.name);
   await page.getByRole('switch', { name: 'Show in INR' }).click();
   await expect(stat('Current value')).toContainText('₹');

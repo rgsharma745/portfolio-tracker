@@ -1,5 +1,6 @@
 import {
   convertValuation,
+  dayChangePercent,
   daysBetween,
   daysInMonth,
   inPortfolios,
@@ -134,5 +135,19 @@ describe('dates', () => {
 
   it('formats a local date', () => {
     expect(localIsoDate(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
+  });
+});
+
+describe('dayChangePercent', () => {
+  it("is today's move against yesterday's value", () => {
+    // 10 shares at 150, previous close 140: +100 today on 1,400 yesterday
+    expect(dayChangePercent(1500, 100)).toBeCloseTo(7.142857, 5);
+    expect(dayChangePercent(600, -20)).toBeCloseTo(-3.225806, 5);
+  });
+
+  it('is null without a value and 0 when yesterday was worth nothing', () => {
+    expect(dayChangePercent(null, 5)).toBeNull();
+    expect(dayChangePercent(100, null)).toBeNull();
+    expect(dayChangePercent(100, 100)).toBe(0);
   });
 });

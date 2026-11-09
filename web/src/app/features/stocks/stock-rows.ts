@@ -1,4 +1,4 @@
-import { Valuation, inPortfolios } from '../../core/calc/common';
+import { Valuation, dayChangePercent, inPortfolios } from '../../core/calc/common';
 import { Market, PriceQuotes, valueStockHolding } from '../../core/calc/stocks';
 import type { StockHolding } from '../../core/data/holdings.service';
 import { CsvColumn } from '../../shared/format/csv';
@@ -23,6 +23,8 @@ export interface StockRow {
   pl: number | null;
   plPercent: number | null;
   dayChange: number | null;
+  /** Today's move in percent: the price against the previous close. */
+  dayChangePercent: number | null;
   stale: boolean;
   valuation: Valuation;
   holding: StockHolding;
@@ -66,6 +68,7 @@ export function buildStockRows(
         pl: shown.pl,
         plPercent: shown.plPercent,
         dayChange: shown.dayChange,
+        dayChangePercent: dayChangePercent(shown.value, shown.dayChange),
         stale: shown.stale,
         valuation: shown,
         holding: h,
