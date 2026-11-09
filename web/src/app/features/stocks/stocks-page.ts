@@ -95,7 +95,7 @@ export class StocksPage {
     { label: 'Symbol', value: 'name' },
     { label: 'P&L', value: 'pl' },
     { label: 'P&L %', value: 'plPercent' },
-    { label: 'Today', value: 'dayChange' },
+    { label: '1 Day Change', value: 'dayChange' },
   ];
 
   protected readonly dialog = new DialogForm<StockForm>();
@@ -170,7 +170,7 @@ export class StocksPage {
     { key: 'name', header: 'Stock', type: 'custom', sortable: true },
     { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
     { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
-    { key: 'dayChange', header: 'Today', type: 'pl', currency: this.rowCurrency },
+    { key: 'dayChange', header: '1 Day Change', type: 'pl', currency: this.rowCurrency },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
 

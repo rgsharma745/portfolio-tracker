@@ -79,7 +79,7 @@ export class MfPage {
     { label: 'Name', value: 'name' },
     { label: 'P&L', value: 'pl' },
     { label: 'P&L %', value: 'plPercent' },
-    { label: 'Today', value: 'dayChange' },
+    { label: '1 Day Change', value: 'dayChange' },
   ];
 
   protected readonly dialog = new DialogForm<MfForm>();
@@ -126,7 +126,7 @@ export class MfPage {
     { key: 'name', header: 'Fund', type: 'custom', sortable: true },
     { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
     { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
-    { key: 'dayChange', header: 'Today', type: 'pl' },
+    { key: 'dayChange', header: '1 Day Change', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
 

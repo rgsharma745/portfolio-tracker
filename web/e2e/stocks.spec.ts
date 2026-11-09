@@ -53,7 +53,7 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
 
   // India tab: 10 x 150
   await expect(stat('Current value')).toContainText('₹1,500');
-  await expect(stat('Today')).toContainText('+₹100');
+  await expect(stat('1 Day Change')).toContainText('+₹100');
   await expectNoHorizontalScroll(page);
 
   // US tab in USD, then INR (rates may differ if another test changed USDINR, so the INR check

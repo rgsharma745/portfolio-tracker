@@ -356,7 +356,7 @@ export class NpsPage {
     { key: 'units', header: 'Units', type: 'units' },
     { key: 'nav', header: 'NAV', type: 'custom', sortable: true, alignEnd: true },
     { key: 'value', header: 'Value', type: 'money' },
-    { key: 'dayChange', header: 'Today', type: 'pl' },
+    { key: 'dayChange', header: '1 Day Change', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
   protected readonly yearColumns: Column<NpsYearRow>[] = [

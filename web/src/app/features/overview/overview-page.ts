@@ -197,7 +197,7 @@ export class OverviewPage {
     { key: 'value', header: 'Current', type: 'money', sortable: false },
     { key: 'pl', header: 'P&L', type: 'pl', sortable: false },
     { key: 'plPercent', header: 'P&L %', type: 'percent', sortable: false },
-    { key: 'dayChange', header: 'Today', type: 'pl', sortable: false },
+    { key: 'dayChange', header: '1 Day Change', type: 'pl', sortable: false },
   ];
 
   protected retry(): void {

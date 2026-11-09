@@ -51,7 +51,7 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(stat('Current value')).toContainText('₹6,000');
   await expect(stat('Invested')).toContainText('₹5,200');
   await expect(stat('Total P&L')).toContainText('+₹800');
-  await expect(stat('Today')).toContainText('+₹50');
+  await expect(stat('1 Day Change')).toContainText('+₹50');
 
   const list = mobile
     ? page.getByRole('list', { name: 'Mutual fund holdings' })
