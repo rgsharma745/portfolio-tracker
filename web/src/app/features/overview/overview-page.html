@@ -126,8 +126,11 @@
               <span class="app-num" [appPl]="row.pl"
                 >{{ row.pl | money: 'INR' : { sign: true } }} ({{ row.plPercent | percent2 }})</span
               >
-              <span class="app-num" [appPl]="row.dayChange"
-                >{{ row.dayChange | money: 'INR' : { sign: true } }} today</span
+              <span class="app-num"
+                >1 Day Change:
+                <span class="whitespace-nowrap" [appPl]="row.dayChange">{{
+                  row.dayChange | money: 'INR' : { sign: true }
+                }}</span></span
               >
             </div>
           </article>
@@ -150,8 +153,11 @@
                 familyTotal().plPercent | percent2
               }})</span
             >
-            <span class="app-num" [appPl]="familyTotal().dayChange"
-              >{{ familyTotal().dayChange | money: 'INR' : { sign: true } }} today</span
+            <span class="app-num"
+              >1 Day Change:
+              <span class="whitespace-nowrap" [appPl]="familyTotal().dayChange">{{
+                familyTotal().dayChange | money: 'INR' : { sign: true }
+              }}</span></span
             >
           </div>
         </article>

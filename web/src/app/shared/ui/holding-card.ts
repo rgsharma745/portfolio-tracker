@@ -29,8 +29,11 @@ import { PlColorDirective } from './pl-color.directive';
             {{ pl() | money: currency() : { sign: true } }} ({{ plPercent() | percent2 }})
           </span>
           @if (dayChange() !== undefined) {
-            <span [appPl]="dayChange()">
-              {{ dayChange() | money: currency() : { sign: true } }} today
+            <span>
+              1 Day Change:
+              <span class="whitespace-nowrap" [appPl]="dayChange()">{{
+                dayChange() | money: currency() : { sign: true }
+              }}</span>
             </span>
           }
         </span>

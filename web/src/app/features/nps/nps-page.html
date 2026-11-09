@@ -229,8 +229,11 @@
                   <span class="app-num">NAV {{ units(row.nav) }} · {{ date(row.navDate) }}</span>
                 }
                 @if (row.dayChange !== null && row.dayChange !== 0) {
-                  <span class="app-num" [appPl]="row.dayChange"
-                    >{{ row.dayChange | money: 'INR' : { sign: true } }} today</span
+                  <span class="app-num"
+                    >1 Day Change:
+                    <span class="whitespace-nowrap" [appPl]="row.dayChange">{{
+                      row.dayChange | money: 'INR' : { sign: true }
+                    }}</span></span
                   >
                 }
                 @if (row.value === null && row.units > 0) {
