@@ -80,7 +80,9 @@ jobs:
       # Coverage comes from pytest (above), the unit tests and the Playwright run (below).
       - name: SonarQube enabled
         id: sonar
-        run: echo "enabled=${{ secrets.SONAR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "enabled=${{ secrets.SONAR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+          echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
       - name: Unit test coverage for SonarQube
         if: steps.sonar.outputs.enabled == 'true'
         working-directory: web
@@ -141,6 +143,17 @@ jobs:
         if: ${{ !cancelled() && steps.sonar.outputs.enabled == 'true' }}
         working-directory: web
         run: sed -i 's#^SF:src/#SF:web/src/#' coverage/portfolio-tracker/lcov.info coverage/e2e/lcov.info
+      # The scanner's Java runtime and analyzer plugins (about 15 s to download). Sonar
+      # updates its plugins often: a new cache each week, starting from the last one; the
+      # scanner checks each file and downloads only what changed. Sonar caches the analysis
+      # itself on its side, so unchanged files are not re-analysed.
+      - name: Cache SonarQube scanner downloads
+        if: ${{ !cancelled() && steps.sonar.outputs.enabled == 'true' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.sonar/cache
+          key: sonar-${{ runner.os }}-${{ steps.sonar.outputs.week }}
+          restore-keys: sonar-${{ runner.os }}-
       - name: SonarQube
         if: ${{ !cancelled() && steps.sonar.outputs.enabled == 'true' }}
         continue-on-error: true
