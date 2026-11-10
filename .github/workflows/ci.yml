@@ -55,8 +55,18 @@ jobs:
       - name: Start local Supabase
         run: npx -y supabase@3.0.0 start -x realtime,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,studio
       - run: pip install -r scripts/requirements-dev.txt
+      # The release binary from GitHub (a second or two), not apt: `apt-get update` alone took
+      # 25-40 s. Pinned by version and checksum; bump both together.
       - name: Install age (backup encryption test)
-        run: sudo apt-get update -q && sudo apt-get install -y -q age
+        env:
+          AGE_VERSION: v1.3.2
+          AGE_SHA256: cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/age.tgz" "https://github.com/FiloSottile/age/releases/download/$AGE_VERSION/age-$AGE_VERSION-linux-amd64.tar.gz"
+          echo "$AGE_SHA256  $RUNNER_TEMP/age.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/age.tgz" -C "$RUNNER_TEMP"
+          sudo install -m 755 "$RUNNER_TEMP/age/age" "$RUNNER_TEMP/age/age-keygen" /usr/local/bin/
+          age --version
       - run: pytest --cov --cov-report=xml
         working-directory: scripts
       - name: db.types.ts matches the migrations
@@ -84,29 +94,48 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Browsers are cached per exact Playwright version (from package-lock), so a Renovate
-      # bump fetches new ones. The system libraries come from apt and are installed each run.
+      # bump fetches new ones. The system libraries are apt packages and must be installed on
+      # every run, but their downloads (about 140 MB, 6+ minutes from Ubuntu's mirror) are
+      # cached: apt then only unpacks them (about 30 s). A new runner image or Playwright
+      # version starts from the previous cache and downloads only what changed.
       - name: Playwright version
         id: playwright
         working-directory: web
-        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-webkit
-      # Normally 2-3 minutes (under 1 with cached browsers). A slow Ubuntu mirror once made
-      # this 30 minutes: fail fast instead, and re-run the job.
+      - name: Cache Playwright system library downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/apt-debs
+          key: playwright-debs-${{ steps.playwright.outputs.image }}-${{ steps.playwright.outputs.version }}
+          restore-keys: playwright-debs-
+      # A slow Ubuntu mirror once made an install take 30 minutes: fail fast instead, and
+      # re-run the job.
+      - name: Install Playwright system libraries
+        working-directory: web
+        timeout-minutes: 10
+        run: |
+          mkdir -p ~/apt-debs
+          sudo cp ~/apt-debs/*.deb /var/cache/apt/archives/ 2>/dev/null || true
+          rm -f ~/apt-debs/*.deb # saved again below: only what this install used
+          # Keep what apt downloads (some images delete it after each install).
+          echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99keep-debs > /dev/null
+          sudo rm -f /etc/apt/apt.conf.d/docker-clean
+          npx playwright install-deps chromium webkit
+          find /var/cache/apt/archives -maxdepth 1 -name '*.deb' -exec cp -t ~/apt-debs/ {} +
+          echo "Cached $(ls ~/apt-debs | wc -l) packages"
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: web
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium webkit
-      - name: Install Playwright system libraries
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        working-directory: web
-        timeout-minutes: 10
-        run: npx playwright install-deps chromium webkit
+        run: npx playwright install chromium webkit
       - name: Playwright
         working-directory: web
         run: npm run e2e
