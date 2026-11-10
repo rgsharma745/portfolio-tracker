@@ -8,12 +8,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 TIMEOUT_SECONDS = 15
+
+
+# Plain http only for the local stack (npx supabase start); anywhere else the key would travel
+# unencrypted, so a mistyped SUPABASE_URL is refused rather than used.
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+def _check_url(url: str) -> None:
+    parts = urlsplit(url)
+    if parts.scheme == "https" or (parts.scheme == "http" and parts.hostname in LOCAL_HOSTS):
+        return
+    raise ValueError("Supabase URL must be https:// (http:// only for localhost)")
 
 
 def _session() -> requests.Session:
@@ -40,6 +53,7 @@ class SupabaseRest:
     """The API key: anon/publishable for user-level calls, service-role/secret for jobs."""
 
     def __post_init__(self) -> None:
+        _check_url(self.url)
         object.__setattr__(self, "_http", _session())
 
     def _headers(self, token: str | None, prefer: str | None) -> dict[str, str]:

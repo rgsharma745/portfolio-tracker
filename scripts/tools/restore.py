@@ -38,7 +38,8 @@ def load_backup(path: Path, identity: Path | None = None) -> Backup:
         if not shutil.which("age"):
             raise JobError("The `age` command is not installed (brew install age)")
         result = subprocess.run(
-            ["age", "--decrypt", "--identity", str(identity), str(path)],
+            # Absolute paths, so a file name starting with "-" is never read as an age option.
+            ["age", "--decrypt", "--identity", str(identity.resolve()), str(path.resolve())],
             capture_output=True,
             check=False,
             timeout=120,
