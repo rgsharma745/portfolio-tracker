@@ -54,6 +54,12 @@
       "matchDepNames": ["python"],
       "matchUpdateTypes": ["major", "minor"],
       "enabled": false
+    },
+    {
+      "description": "Angular's compiler accepts only the TypeScript minor it was built for (Angular 22: >=6.0 <6.1), so TypeScript minors and majors are not offered. Move TypeScript with Angular instead: when an Angular major's PR needs a newer TypeScript, bump it on that branch (`ng update` does both). Patches still arrive in the dev tooling group.",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["minor", "major"],
+      "enabled": false
     }
   ]
 }
