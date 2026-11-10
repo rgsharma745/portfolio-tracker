@@ -193,6 +193,36 @@ def test_load_backup_rejects_other_files(tmp_path: Path) -> None:
         tool.load_backup(tmp_path / "backup.json.age")
 
 
+def test_load_backup_checks_paths_before_reading(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with pytest.raises(JobError, match="not a file"):
+        tool.load_backup(tmp_path / "missing.json")
+    folder = tmp_path / "folder.json"
+    folder.mkdir()
+    with pytest.raises(JobError, match="not a file"):
+        tool.load_backup(folder)
+    wrong = tmp_path / "notes.txt"
+    wrong.write_text("{}")
+    with pytest.raises(JobError, match=r"\.json or \.age"):
+        tool.load_backup(wrong)
+    age = tmp_path / "backup.json.age"
+    age.write_bytes(b"x")
+    with pytest.raises(JobError, match="--identity key is not a file"):
+        tool.load_backup(age, tmp_path / "no-key.txt")
+    big = tmp_path / "big.json"
+    big.write_text("{}")
+    monkeypatch.setattr(tool, "MAX_FILE_BYTES", 1)
+    with pytest.raises(JobError, match="larger than"):
+        tool.load_backup(big)
+
+
+def test_input_file_returns_an_absolute_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    (tmp_path / "-backup.json").write_text("{}")
+    monkeypatch.chdir(tmp_path)
+    resolved = tool.input_file(Path("-backup.json"), "backup", tool.BACKUP_SUFFIXES)
+    assert resolved.is_absolute()
+    assert not str(resolved).startswith("-")
+
+
 @pytest.mark.skipif(not shutil.which("age"), reason="age is not installed")
 def test_age_backup_round_trip(tmp_path: Path, service: SupabaseRest, owner: AuthUser) -> None:
     """The real path: the Backup job's encrypted file, decrypted in memory and restored."""

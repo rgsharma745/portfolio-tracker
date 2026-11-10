@@ -28,6 +28,40 @@ from lib.supabase_rest import SupabaseRest
 
 Backup = dict[str, list[dict[str, Any]]]
 BATCH = 500
+BACKUP_SUFFIXES = (".json", ".age")
+MAX_FILE_BYTES = 100 * 1024 * 1024  # backups are a few MB; refuse anything far bigger
+
+
+def input_file(path: Path, what: str, suffixes: tuple[str, ...] | None = None) -> Path:
+    """The absolute path of an existing regular file, checked before anything reads it.
+
+    The restore tool is run by hand with paths the owner types, so this guards against a typo
+    (a directory, a device, the wrong kind of file) rather than an attacker.
+    """
+    resolved = path.expanduser().resolve()
+    if suffixes is not None and resolved.suffix not in suffixes:
+        raise JobError(f"The {what} must be a {' or '.join(suffixes)} file")
+    if not resolved.is_file():
+        raise JobError(f"The {what} is not a file: {path}")
+    if resolved.stat().st_size > MAX_FILE_BYTES:
+        raise JobError(f"The {what} is larger than {MAX_FILE_BYTES // (1024 * 1024)} MB")
+    return resolved
+
+
+def decrypt(path: Path, identity: Path) -> bytes:
+    """Decrypts an .age backup in memory. Both paths come from input_file (absolute)."""
+    if not shutil.which("age"):
+        raise JobError("The `age` command is not installed (brew install age)")
+    result = subprocess.run(
+        # Absolute paths, so a file name starting with "-" is never read as an age option.
+        ["age", "--decrypt", "--identity", str(identity), str(path)],
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+    if result.returncode != 0:
+        raise JobError("age could not decrypt the backup: wrong key or damaged file")
+    return result.stdout
 
 
 def load_backup(path: Path, identity: Path | None = None) -> Backup:
@@ -35,20 +69,9 @@ def load_backup(path: Path, identity: Path | None = None) -> Backup:
     if path.suffix == ".age":
         if identity is None:
             raise JobError("An .age backup needs --identity (the private key file from age-keygen)")
-        if not shutil.which("age"):
-            raise JobError("The `age` command is not installed (brew install age)")
-        result = subprocess.run(
-            # Absolute paths, so a file name starting with "-" is never read as an age option.
-            ["age", "--decrypt", "--identity", str(identity.resolve()), str(path.resolve())],
-            capture_output=True,
-            check=False,
-            timeout=120,
-        )
-        if result.returncode != 0:
-            raise JobError("age could not decrypt the backup: wrong key or damaged file")
-        raw = result.stdout
+        raw = decrypt(input_file(path, "backup", BACKUP_SUFFIXES), input_file(identity, "--identity key"))
     else:
-        raw = path.read_bytes()
+        raw = input_file(path, "backup", BACKUP_SUFFIXES).read_bytes()
     try:
         tables = json.loads(raw)["tables"]
     except (ValueError, KeyError, TypeError) as exc:
