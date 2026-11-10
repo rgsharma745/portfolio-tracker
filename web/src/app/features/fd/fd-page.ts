@@ -6,10 +6,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { localIsoDate } from '../../core/calc/common';
-import { FD_SOON_DAYS, FdView, fdTotals, fdView } from '../../core/calc/fd';
+import { FD_SOON_DAYS, fdTotals } from '../../core/calc/fd';
 import { FdService, FixedDeposit } from '../../core/data/fd.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
-import { formatDate } from '../../shared/format/number';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import { DateInput } from '../../shared/ui/date-input';
 import { DialogForm } from '../../shared/ui/dialog-form';
@@ -30,29 +29,7 @@ import {
   fdPreview,
   validateFdForm,
 } from './fd-form';
-
-export interface FdCard {
-  fd: FixedDeposit;
-  view: FdView;
-  portfolio: string;
-  startLabel: string;
-  maturityLabel: string;
-  rateText: string;
-  /** "183 days left", "Matures today", "Matured 12 Oct 2026". */
-  daysText: string;
-  /** "About 6 months", shown under the days for terms of 60 days or more. */
-  daysHint: string;
-}
-
-/** "7.25%": up to 3 decimals, no sign. */
-export function rateText(rate: number): string {
-  return `${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 3 }).format(rate)}%`;
-}
-
-function daysText(view: FdView, maturityLabel: string): string {
-  if (!view.matured) return `${view.daysLeft} ${view.daysLeft === 1 ? 'day' : 'days'} left`;
-  return `Matured ${maturityLabel}`;
-}
+import { FdCard, fdCards, nextMaturityNote } from './fd-cards';
 
 /** Fixed deposits: totals, one card per FD with maturity amount and days left, add/edit/delete. */
 @Component({
@@ -97,45 +74,17 @@ export class FdPage {
     fdTotals(this.fds.deposits(), this.portfolios.scopeIds(), this.today),
   );
 
-  private readonly cards = computed<FdCard[]>(() => {
-    const ids = new Set(this.portfolios.scopeIds());
-    return this.fds
-      .deposits()
-      .filter((fd) => ids.has(fd.portfolio_id))
-      .map((fd) => {
-        const view = fdView(fd, this.today);
-        const maturityLabel = formatDate(fd.maturity_date);
-        return {
-          fd,
-          view,
-          portfolio: this.names().get(fd.portfolio_id) ?? '',
-          startLabel: formatDate(fd.start_date),
-          maturityLabel,
-          rateText: rateText(fd.rate),
-          daysText: daysText(view, maturityLabel),
-          daysHint:
-            !view.matured && view.daysLeft >= 60 ? `About ${durationText(view.daysLeft)}` : '',
-        };
-      });
-  });
+  private readonly cards = computed(() =>
+    fdCards(this.fds.deposits(), this.portfolios.scopeIds(), this.names(), this.today),
+  );
   /** Soonest maturity first. */
-  protected readonly active = computed(() =>
-    this.cards()
-      .filter((c) => !c.view.matured)
-      .sort((a, b) => a.fd.maturity_date.localeCompare(b.fd.maturity_date)),
-  );
+  protected readonly active = computed(() => this.cards().active);
   /** Most recently matured first. */
-  protected readonly matured = computed(() =>
-    this.cards()
-      .filter((c) => c.view.matured)
-      .sort((a, b) => b.fd.maturity_date.localeCompare(a.fd.maturity_date)),
-  );
+  protected readonly matured = computed(() => this.cards().matured);
   protected readonly next = computed(() => this.active()[0] ?? null);
-  protected readonly nextNote = computed(() => {
-    const n = this.next();
-    if (!n) return this.matured().length ? 'Every FD has matured' : '';
-    return `${n.fd.bank} · ${n.daysText}`;
-  });
+  protected readonly nextNote = computed(() =>
+    nextMaturityNote(this.next(), this.matured().length),
+  );
 
   protected readonly portfolioOptions = computed(() =>
     this.portfolios.active().map((p) => ({ label: p.name, value: p.id })),
