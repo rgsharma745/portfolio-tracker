@@ -127,6 +127,7 @@ Do one at a time and check the app or a job afterwards.
 - **Backup key:** `age-keygen` a new one, save it, update `BACKUP_AGE_RECIPIENT`. Keep the old private key for 90 days: older backups still need it.
 - **Gmail App Password:** Google Account › App passwords › revoke the old one and create a new one › Supabase › Authentication › Emails › SMTP Settings › paste it › send yourself a sign-in email.
 - **Run now GitHub token (before it expires):** generate a new fine-grained token as in "Set up Run now" › Cloudflare › Worker › Variables and secrets › `GITHUB_TOKEN` › replace › press Run now once to check › delete the old token in GitHub.
+- **SonarQube token (before it expires):** generate a new one as in "SonarQube" step 4, replace the GitHub secret `SONAR_TOKEN`, re-run CI, revoke the old token.
 - **PrimeUI licence (yearly):** update `NG_APP_PRIMEUI_LICENSE` in Cloudflare and retry the latest build. Without it PrimeNG shows a licence notice; nothing breaks.
 
 ## Everyday tasks
@@ -139,6 +140,22 @@ Do one at a time and check the app or a job afterwards.
 
 - **Dependency updates (Renovate, Monday mornings IST):** merge each PR once CI is green. Majors wait on the Dependency Dashboard for approval; read PrimeNG majors' release notes first (AGENTS.md). TypeScript minors and majors are not offered at all, because Angular's compiler accepts only the TypeScript minor it was built for (Angular 22: 6.0): when an Angular major's PR fails because it needs a newer TypeScript, bump TypeScript on that branch (`ng update` does both). A Renovate PR whose CI fails at `npm ci` with "package.json and package-lock.json … in sync" has a stale lockfile: ask Renovate to rebase it (tick its box on the PR), or run `npm install` on its branch and push.
 - **CI is slow or fails on time:** a normal run takes about 10 minutes, Playwright about 7 on 2 workers. The first run after a Playwright upgrade also installs browsers and their system libraries (2–3 minutes). If Ubuntu's mirror is slow that step stops after 10 minutes (it once took 30): re-run the failed job. A test that fails with "Test timeout of 60000ms exceeded" at a different step on each attempt ran out of time on the slow runner rather than hanging.
+
+## SonarQube
+Code quality, security hotspots and coverage on SonarQube Cloud (Free plan: private code up to 50k lines; the whole repo, tests included, is about 28k). CI's integration job scans after pytest (`sonar-project.properties` at the repo root). Report only: results show on the dashboard and on PRs into main, and a failing quality gate (default "Sonar way", which looks at new code) never fails CI. Until the `SONAR_TOKEN` secret exists the scan steps are skipped.
+
+Set up once:
+1. sonarcloud.io › Log in with GitHub › create an organization from your GitHub account (Free plan) › Analyze new project › `portfolio-tracker`. Install the SonarQube Cloud GitHub app on this repository only when asked (it adds the PR comments).
+2. Check the keys in Administration › Project information match `sonar-project.properties` (`sonar.organization=rgsharma745`, `sonar.projectKey=rgsharma745_portfolio-tracker`); if not, change the file.
+3. Administration › Analysis Method › turn **Automatic Analysis off** (CI does the scan; with both on, the CI scan fails).
+4. My Account › Security › generate a token (type: project analysis, for this project, with an expiry) › GitHub › Settings › Secrets and variables › Actions › New secret `SONAR_TOKEN`.
+5. Push, or re-run CI: the "SonarQube" step uploads the analysis; the dashboard fills a minute later.
+
+Notes:
+- New code is measured from the previous version by default; set Administration › New Code to "Number of days: 30" if that suits better.
+- Coverage: the app's unit tests (`npm run test:sonar`, lcov of all of `src/app`; `npm run test:coverage` still gates `core/calc` at 90%) and pytest (`pytest --cov --cov-report=xml` in `scripts/`). The Worker and `web/scripts` are analysed but excluded from coverage.
+- If the scan fails (Sonar outage, expired token) CI stays green and the step shows a warning; renew the token as in step 4.
+- To stop: delete the `SONAR_TOKEN` secret (the steps skip), then delete the project in SonarQube Cloud.
 
 ## Checks
 - **Security checklist:** `docs/SECURITY.md` › Checklist.

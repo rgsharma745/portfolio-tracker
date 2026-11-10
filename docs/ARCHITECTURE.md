@@ -39,6 +39,7 @@ supabase/        migrations/ (0001_init.sql, …), templates/magic_link.html, co
 .github/workflows/  ci.yml, _run-job.yml (shared), nav.yml prices.yml snapshot.yml backup.yml keepalive.yml
 docs/
 renovate.json    dependency updates (Renovate app)
+sonar-project.properties  SonarQube Cloud analysis (run by ci.yml, report only)
 ```
 
 ## Data flow

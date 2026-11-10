@@ -35,10 +35,13 @@ jobs:
 
   integration:
     # Applies supabase/migrations to a throwaway local stack, then runs the RLS/upsert and
-    # job tests and the Playwright suite (real magic-link sign-in via the local Mailpit).
+    # job tests, the SonarQube scan (it needs the pytest coverage, and pytest needs the stack)
+    # and the Playwright suite (real magic-link sign-in via the local Mailpit).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0 # SonarQube uses the history to tell new code from old
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 26
@@ -54,7 +57,7 @@ jobs:
       - run: pip install -r scripts/requirements-dev.txt
       - name: Install age (backup encryption test)
         run: sudo apt-get update -q && sudo apt-get install -y -q age
-      - run: pytest
+      - run: pytest --cov --cov-report=xml
         working-directory: scripts
       - name: db.types.ts matches the migrations
         working-directory: web
@@ -62,6 +65,24 @@ jobs:
           npm ci
           npm run gen:types
           git diff --exit-code src/app/core/db.types.ts
+      # SonarQube Cloud, report only: results go to the PR and the dashboard, a failing quality
+      # gate does not fail CI, and the scan is skipped until the SONAR_TOKEN secret exists.
+      - name: SonarQube enabled
+        id: sonar
+        run: echo "enabled=${{ secrets.SONAR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - name: Unit test coverage for SonarQube
+        if: steps.sonar.outputs.enabled == 'true'
+        working-directory: web
+        run: |
+          npm run test:sonar
+          sed -i 's#^SF:src/#SF:web/src/#' coverage/portfolio-tracker/lcov.info
+      - name: SonarQube
+        if: steps.sonar.outputs.enabled == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       # Browsers are cached per exact Playwright version (from package-lock), so a Renovate
       # bump fetches new ones. The system libraries come from apt and are installed each run.
       - name: Playwright version
