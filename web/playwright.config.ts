@@ -15,6 +15,9 @@ export default defineConfig({
   // GitHub's runner for this private repo has 2 cores, where that default is 1 worker; the
   // tests mostly wait on the browser, database and dev server, so 2 still run side by side.
   workers: process.env['CI'] ? 2 : undefined,
+  // The long add/edit/delete journeys (FD, PPF, PF) take about 15 s locally; on the slower
+  // 2-core runner, sharing it with a second worker, they passed the default 30 s.
+  timeout: process.env['CI'] ? 60_000 : 30_000,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? 'github' : 'list',
