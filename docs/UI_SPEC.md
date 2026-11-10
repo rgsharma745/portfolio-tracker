@@ -18,10 +18,11 @@
 - Touch targets at least 44x44px on mobile.
 
 ## Shared components
-- `StatCard` (label, value, optional delta with color and sign). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
+- `StatCard` (label, value, optional delta with color and sign, and an optional delta label shown before it, e.g. `1 Day Change: +₹144`). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
+- **Day change wording:** headings, table columns and sort options say "1 Day Change"; inline it reads `1 Day Change: +₹144`, the label in the line's own colour and only the amount in the P&L colour, never wrapping inside the amount. The Stocks CSV export keeps its `Today` column name so anything reading the file still finds it.
 - `AllocationBar` (one whole split into parts: segmented bar with shares inside, plus a legend with amounts). Colours follow the `--app-series-*` order; labels inside the bar are black on series 1 to 4 and white on 5 to 8, so every label meets 4.5:1 in both themes.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
-- `HoldingCard` (mobile list item: name, current value, P&L and %, today, tap to open details/edit)
+- `HoldingCard` (mobile list item: name, current value, P&L and %, 1 day change, tap to open details/edit)
 - `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used.
 - `PortfolioSwitcher` (All, then one entry per active portfolio; segmented control or dropdown on desktop, a chip row or bottom sheet on mobile; persisted in settings; default All)
 - `PageHeader` (title, last-updated time, refresh button)
@@ -36,17 +37,17 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- Stat cards: Combined (MF + Stocks) with today first, then Mutual funds (value + today), Stocks (value + today), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + today), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
+- Stat cards: Combined (MF + Stocks) with its 1 day change first, then Mutual funds (value + 1 day change), Stocks (value + 1 day change), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + 1 day change), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
-- Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, Today). On mobile, becomes stacked rows.
+- Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 
 ### Mutual Funds
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
-- Header stats: Current value, Invested, Total P&L (value and %), Today.
-- Search box, sort (name, current value, P&L, P&L %, today), optional filter chips (Gainers, Losers).
-- Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, Today; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
-- Mobile card: fund name (2 lines max), current value, P&L and %, today, NAV date.
+- Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change.
+- Search box, sort (name, current value, P&L, P&L %, 1 day change), optional filter chips (Gainers, Losers).
+- Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
+- Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date.
 - Stale NAV badge when the NAV date is older than 4 days.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.
 - Export CSV.
@@ -80,7 +81,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Entries: filter by financial year; date, account (Interest tag), Investment, Interest, with add, edit and delete. Dialog: Type (Investment / Interest), Portfolio, Account (suggests known names), Date (hint names the FY it counts for), Amount.
 
 ### NPS
-- Stat cards: NPS value (latest NAV date and today's change), Invested (self · employer), P&L with %, XIRR (a yearly %, or "—" with the reason), Contributed this financial year (self · employer). Five across from 1280px.
+- Stat cards: NPS value (latest NAV date and its 1 day change), Invested (self · employer), P&L with %, XIRR (a yearly %, or "—" with the reason), Contributed this financial year (self · employer). Five across from 1280px.
 - By account: value, invested, P&L, XIRR, units as of, a warning tag when a contribution is newer than the units, the scheme mix (E, C, G, A) as an allocation bar, and Add scheme, Update units (every scheme of the account plus the statement date, in one dialog) and Add contribution.
 - Schemes: desktop table (scheme with class tag, units, NAV with date and a Stale or No NAV tag, value, today) with a totals row; mobile cards. Tap or the pencil edits the scheme (class, name, code `SM` + six digits, units, units as of); delete from the dialog.
 - By financial year: self, employer, total and contributed to date per FY (April to March), filtered by account; cards on mobile.

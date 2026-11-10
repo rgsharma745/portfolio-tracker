@@ -137,6 +137,9 @@ Do one at a time and check the app or a job afterwards.
 - **After a deploy:** an open app shows "A new version of the app is ready" with Reload: when you return to it, within 30 minutes if it stays on screen, or straight after a reload. Cloudflare takes a minute or two to finish the deploy first.
 - **Sign-in email template** (after any Supabase project change): Authentication › Emails › Magic link: subject `Your sign-in link`, body = `supabase/templates/magic_link.html`. Editing templates needs custom SMTP. The app accepts codes of any length Supabase sends (6 to 10 digits). The local stack reads the same file from `supabase/config.toml`.
 
+- **Dependency updates (Renovate, Monday mornings IST):** merge each PR once CI is green. Majors wait on the Dependency Dashboard for approval: leave TypeScript 7 until Angular's compiler accepts it (Angular 22 needs TypeScript 6.0); read PrimeNG majors' release notes first (AGENTS.md). A Renovate PR whose CI fails at `npm ci` with "package.json and package-lock.json … in sync" has a stale lockfile: ask Renovate to rebase it (tick its box on the PR), or run `npm install` on its branch and push.
+- **CI is slow or fails on time:** a normal run takes about 10 minutes, Playwright about 7 on 2 workers. The first run after a Playwright upgrade also installs browsers and their system libraries (2–3 minutes, once took 30 when Ubuntu's mirror was slow: just a slow download). A test that fails with "Test timeout of 60000ms exceeded" at a different step on each attempt ran out of time on the slow runner rather than hanging.
+
 ## Checks
 - **Security checklist:** `docs/SECURITY.md` › Checklist.
 - **RLS on production (optional):** creates and deletes two throwaway `pytest-…@example.com` users; your rows are never read or changed. Run only `test_rls.py` against production, never the whole suite (the job tests write market data):
