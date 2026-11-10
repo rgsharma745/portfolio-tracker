@@ -7,3 +7,9 @@ requires-python = ">=3.15"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
+
+# `pytest --cov --cov-report=xml` (CI, for SonarQube): measured from scripts/ so the report
+# names files as jobs/…, lib/…, tools/…, which SonarQube can match to the repo.
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*"]

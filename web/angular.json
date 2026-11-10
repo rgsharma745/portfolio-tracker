@@ -112,6 +112,11 @@
                 "functions": 90,
                 "lines": 90
               }
+            },
+            "sonar": {
+              "coverage": true,
+              "coverageInclude": ["src/app/**/*.ts"],
+              "coverageReporters": ["lcov"]
             }
           }
         },
