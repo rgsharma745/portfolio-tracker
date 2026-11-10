@@ -77,22 +77,14 @@ jobs:
           git diff --exit-code src/app/core/db.types.ts
       # SonarQube Cloud, report only: results go to the PR and the dashboard, a failing quality
       # gate does not fail CI, and the scan is skipped until the SONAR_TOKEN secret exists.
+      # Coverage comes from pytest (above), the unit tests and the Playwright run (below).
       - name: SonarQube enabled
         id: sonar
         run: echo "enabled=${{ secrets.SONAR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
       - name: Unit test coverage for SonarQube
         if: steps.sonar.outputs.enabled == 'true'
         working-directory: web
-        run: |
-          npm run test:sonar
-          sed -i 's#^SF:src/#SF:web/src/#' coverage/portfolio-tracker/lcov.info
-      - name: SonarQube
-        if: steps.sonar.outputs.enabled == 'true'
-        continue-on-error: true
-        timeout-minutes: 10
-        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: npm run test:sonar
       # Browsers are cached per exact Playwright version (from package-lock), so a Renovate
       # bump fetches new ones. The system libraries are apt packages and must be installed on
       # every run, but their downloads (about 140 MB, 6+ minutes from Ubuntu's mirror) are
@@ -138,7 +130,24 @@ jobs:
         run: npx playwright install chromium webkit
       - name: Playwright
         working-directory: web
+        env:
+          # Chromium records which app code the tests run, for SonarQube (e2e/support/coverage.ts).
+          E2E_COVERAGE: ${{ steps.sonar.outputs.enabled == 'true' && '1' || '' }}
         run: npm run e2e
+      # Run even if a Playwright test failed, so the dashboard stays current; a failed E2E run
+      # can leave out its coverage, which only lowers the reported number. Both lcov files name
+      # sources from web/ (src/app/…), Sonar from the repo root (web/src/app/…).
+      - name: Coverage paths for SonarQube
+        if: ${{ !cancelled() && steps.sonar.outputs.enabled == 'true' }}
+        working-directory: web
+        run: sed -i 's#^SF:src/#SF:web/src/#' coverage/portfolio-tracker/lcov.info coverage/e2e/lcov.info
+      - name: SonarQube
+        if: ${{ !cancelled() && steps.sonar.outputs.enabled == 'true' }}
+        continue-on-error: true
+        timeout-minutes: 10
+        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure()
         with:

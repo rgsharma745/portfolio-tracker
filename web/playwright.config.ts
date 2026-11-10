@@ -10,6 +10,9 @@ const PORT = 4300;
 
 export default defineConfig({
   testDir: './e2e',
+  // E2E code coverage, only with E2E_COVERAGE=1 (e2e/support/coverage.ts).
+  globalSetup: './e2e/support/coverage-setup.ts',
+  globalTeardown: './e2e/support/coverage-teardown.ts',
   // Parallel. Each worker has its own e2e users (e2e/support/fixtures.ts); tests that rewrite
   // shared rows take a lock (`exclusive`). Locally Playwright's default (half the cores).
   // GitHub's runner for this private repo has 2 cores, where that default is 1 worker; the

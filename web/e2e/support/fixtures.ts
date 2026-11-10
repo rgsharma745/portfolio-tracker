@@ -8,6 +8,8 @@ import {
   request,
   type TestInfo,
 } from '@playwright/test';
+import { CoverageReport } from 'monocart-coverage-reports';
+import { coverageOptions, E2E_COVERAGE } from './coverage';
 import { localSupabase } from './local-supabase';
 
 export { expect };
@@ -34,6 +36,13 @@ export const PORTFOLIOS = ['Me', 'Wife'];
  */
 export const test = base.extend<object, { ownerState: string }>({
   storageState: ({ ownerState }, use) => use(ownerState),
+  // With E2E_COVERAGE=1, records the app code each test runs (Chromium only; coverage.ts).
+  page: async ({ page, browserName }, use) => {
+    const record = E2E_COVERAGE && browserName === 'chromium';
+    if (record) await page.coverage.startJSCoverage({ resetOnNavigation: false });
+    await use(page);
+    if (record) await new CoverageReport(coverageOptions).add(await page.coverage.stopJSCoverage());
+  },
   ownerState: [
     async ({ browser }, use, workerInfo) => {
       const path = `playwright/.auth/owner-${SLOT}.json`;
