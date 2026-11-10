@@ -6,8 +6,8 @@ export const UPDATE_CHECK_MS = 30 * 60_000;
 
 /**
  * New deploys: the service worker downloads the new version in the background; this offers
- * a reload once it is ready. Created at startup (app.config) so it never misses the
- * "ready" message, and it checks at startup, on returning to the app, and every 30 minutes
+ * a reload once it is ready. Started at startup (`start()`, from app.config) so it never misses
+ * the "ready" message, and it checks at startup, on returning to the app, and every 30 minutes
  * while visible (the service worker by itself only checks when the app is opened).
  */
 @Injectable({ providedIn: 'root' })
@@ -17,8 +17,12 @@ export class AppUpdateService {
 
   readonly ready = signal(false);
 
-  constructor() {
-    if (!this.updates.isEnabled) return;
+  private started = false;
+
+  /** Listens for new versions and schedules the checks. Safe to call more than once. */
+  start(): void {
+    if (this.started || !this.updates.isEnabled) return;
+    this.started = true;
     this.updates.versionUpdates.subscribe((event) => {
       if (event.type === 'VERSION_READY') this.ready.set(true);
     });

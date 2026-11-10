@@ -28,6 +28,7 @@ function setup({ enabled = true, newVersion = false, checkFails = false } = {}) 
     ],
   });
   const service = TestBed.inject(AppUpdateService);
+  service.start();
   return {
     service,
     doc,
@@ -83,6 +84,12 @@ describe('AppUpdateService', () => {
     const { service } = setup({ checkFails: true });
     await settle();
     expect(service.ready()).toBe(false);
+  });
+
+  it('starts only once', () => {
+    const { service, checkForUpdate } = setup();
+    service.start();
+    expect(checkForUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('reloads when asked, and when the cached version can no longer be served', () => {

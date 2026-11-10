@@ -86,7 +86,7 @@ export function nextDue<T extends BillInput>(
 ): NextDue<T> | null {
   const owed = inPortfolios(bills, portfolioIds).filter((b) => billBalance(b) > 0);
   if (!owed.length) return null;
-  const bill = owed.reduce((a, b) => (b.due_date < a.due_date ? b : a));
+  const bill = owed.reduce((a, b) => (b.due_date < a.due_date ? b : a), owed[0]);
   const daysLeft = daysBetween(today, bill.due_date);
   return { bill, daysLeft, urgent: daysLeft <= URGENT_WITHIN_DAYS };
 }

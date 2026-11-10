@@ -10,6 +10,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { PageTitleStrategy } from './core/page-title.strategy';
 import { providePrimeTheme } from './core/theme/theme.config';
+import { AppUpdateService } from './core/pwa/app-update.service';
 import { ThemeService } from './core/theme/theme.service';
 
 export const appConfig: ApplicationConfig = {
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     }),
     provideAppInitializer(() => {
       inject(ThemeService);
+      inject(AppUpdateService).start();
     }),
   ],
 };

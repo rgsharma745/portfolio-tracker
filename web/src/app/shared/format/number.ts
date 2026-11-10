@@ -36,7 +36,7 @@ export function parseDecimal(text: string | number | null | undefined): number |
   if (typeof text === 'number') return text;
   const cleaned = (text ?? '').replace(/[\s,₹$]/g, '');
   if (!cleaned) return null;
-  return /^-?(\d+(\.\d*)?|\.\d+)$/.test(cleaned) ? Number(cleaned) : NaN;
+  return /^-?(\d+(\.\d*)?|\.\d+)$/.test(cleaned) ? Number(cleaned) : Number.NaN;
 }
 
 /** Text for a number input, without grouping so it parses back unchanged. */

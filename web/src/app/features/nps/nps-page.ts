@@ -198,13 +198,14 @@ export class NpsPage {
   );
   /** The newest NAV date across held schemes, for the value card. */
   protected readonly navNote = computed(() => {
-    const dates = this.schemes()
-      .map((s) => s.navDate)
-      .filter((d): d is string => d !== null)
-      .sort();
     const unpriced = this.totals().unpriced;
     if (unpriced) return `${unpriced} ${unpriced === 1 ? 'scheme has' : 'schemes have'} no NAV`;
-    return dates.length ? `NAV ${formatDate(dates[dates.length - 1])}` : '';
+    // ISO dates compare as strings.
+    const newest = this.schemes().reduce<string>(
+      (max, s) => (s.navDate && s.navDate > max ? s.navDate : max),
+      '',
+    );
+    return newest ? `NAV ${formatDate(newest)}` : '';
   });
   protected readonly mix = computed<AllocationSlice[]>(() =>
     npsMixIn(this.nps.holdings(), this.navs(), this.portfolios.scopeIds(), this.today).map((m) => ({

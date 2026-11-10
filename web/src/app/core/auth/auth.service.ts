@@ -20,7 +20,7 @@ export class AuthService {
   readonly isSignedIn = computed(() => !!this.session());
 
   /** Resolves once the initial session is known. */
-  readonly ready: Promise<void>;
+  readonly ready = this.loadSession();
 
   constructor() {
     this.supabase.auth.onAuthStateChange((event, session) => {
@@ -29,9 +29,11 @@ export class AuthService {
         void this.router.navigateByUrl('/login');
       }
     });
-    this.ready = this.supabase.auth.getSession().then(({ data }) => {
-      this.session.set(data.session);
-    });
+  }
+
+  private async loadSession(): Promise<void> {
+    const { data } = await this.supabase.auth.getSession();
+    this.session.set(data.session);
   }
 
   /**

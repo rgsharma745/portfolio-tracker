@@ -195,7 +195,9 @@ export class PricesSection {
     for (const g of this.holdings.rsu()) map.set(g.symbol, 'USD');
     return map;
   });
-  protected readonly symbols = computed(() => [...this.currencyOf().keys()].sort());
+  protected readonly symbols = computed(() =>
+    [...this.currencyOf().keys()].sort((a, b) => a.localeCompare(b)),
+  );
   protected readonly priceLabel = computed(() => {
     const f = this.form();
     if (f.kind === 'usdinr') return 'Rate (₹ per $1)';
