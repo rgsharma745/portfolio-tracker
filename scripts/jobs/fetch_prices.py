@@ -18,8 +18,6 @@ from collections.abc import Callable
 from datetime import date
 from typing import Any
 
-import requests
-
 from jobs.providers import NseBhavcopy, PriceProvider, Quote, YahooChart, fetch_usd_inr
 from lib import http
 from lib.jobs import JobError, fetch_all, run_job, today_ist
@@ -50,7 +48,7 @@ def price_india(symbols: set[str], today: date, nse: PriceProvider, yahoo: Price
     quotes: dict[str, Quote] = {}
     try:
         quotes = nse.fetch(symbols, today)
-    except (requests.RequestException, OSError, ValueError) as e:
+    except (OSError, ValueError) as e:  # OSError includes requests.RequestException
         print(f"NSE bhavcopy unavailable ({type(e).__name__}); using the fallback", file=sys.stderr)
     rest = symbols - quotes.keys()
     if rest:
