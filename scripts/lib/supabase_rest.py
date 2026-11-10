@@ -29,7 +29,8 @@ def _check_url(url: str) -> None:
     raise ValueError("Supabase URL must be https:// (http:// only for localhost)")
 
 
-def _session() -> requests.Session:
+def _session(base_url: str) -> requests.Session:
+    """A session that retries requests to `base_url` (the project) and nowhere else."""
     retry = Retry(
         total=3,
         backoff_factor=1,
@@ -37,8 +38,7 @@ def _session() -> requests.Session:
         allowed_methods=None,  # retry every method; our writes are idempotent upserts
     )
     session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    session.mount("http://", HTTPAdapter(max_retries=retry))
+    session.mount(base_url.rstrip("/") + "/", HTTPAdapter(max_retries=retry))
     return session
 
 
@@ -54,7 +54,7 @@ class SupabaseRest:
 
     def __post_init__(self) -> None:
         _check_url(self.url)
-        object.__setattr__(self, "_http", _session())
+        object.__setattr__(self, "_http", _session(self.url))
 
     def _headers(self, token: str | None, prefer: str | None) -> dict[str, str]:
         headers = {"apikey": self.key, "Content-Type": "application/json"}

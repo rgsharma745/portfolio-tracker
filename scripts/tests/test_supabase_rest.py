@@ -17,3 +17,9 @@ def test_accepts_https_and_local_http(url: str) -> None:
 def test_refuses_other_urls(url: str) -> None:
     with pytest.raises(ValueError, match="https"):
         SupabaseRest(url, "key")
+
+
+def test_retries_only_requests_to_the_project() -> None:
+    session = SupabaseRest("http://127.0.0.1:54321", "key")._http  # type: ignore[attr-defined]
+    assert session.get_adapter("http://127.0.0.1:54321/rest/v1/portfolios").max_retries.total == 3
+    assert session.get_adapter("https://elsewhere.example/").max_retries.total == 0

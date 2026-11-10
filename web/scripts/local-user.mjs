@@ -4,9 +4,7 @@
 //           bills (only if the user has no funds yet), plus sample latest prices.
 // Sign-up is disabled, so users can only be created through the admin API. This script only
 // ever talks to the local stack (keys come from `supabase status`), never to production.
-import { execSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { localStatus } from './supabase-cli.mjs';
 import { seedFd, seedHistory, seedHoldings, seedNps, seedPf, seedPpf } from './local-seed.mjs';
 
 const email = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
@@ -16,26 +14,20 @@ if (!email) {
   process.exit(1);
 }
 
-let status;
-try {
-  const out = execSync('npx -y supabase@3.0.0 status -o json', {
-    cwd: resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
-  status = JSON.parse(out.slice(out.indexOf('{')));
-} catch {
-  console.error('Local Supabase is not running. Start it with `npx supabase start`.');
+const status = localStatus();
+if (!status) {
+  console.error('Local Supabase is not running. Start it with `npm run db:start`.');
   process.exit(1);
 }
 
 const headers = {
-  apikey: status.SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${status.SERVICE_ROLE_KEY}`,
+  apikey: status.serviceRoleKey,
+  Authorization: `Bearer ${status.serviceRoleKey}`,
   'Content-Type': 'application/json',
 };
 const api = (path, init = {}) =>
-  fetch(`${status.API_URL}${path}`, { ...init, headers: { ...headers, ...init.headers } });
+  // Always the local stack's origin (checked by localStatus); `path` is one of the fixed paths below.
+  fetch(new URL(path, status.api), { ...init, headers: { ...headers, ...init.headers } });
 
 async function findOrCreateUser() {
   const created = await api('/auth/v1/admin/users', {
@@ -74,4 +66,4 @@ console.log(`
 Next:
   1. npm run start:local          (app on http://localhost:4300, local database)
   2. Sign in with ${email}
-  3. Open the email in Mailpit:   ${status.MAILPIT_URL}`);
+  3. Open the email in Mailpit:   ${status.mailpitUrl}`);

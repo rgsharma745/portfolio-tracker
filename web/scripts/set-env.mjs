@@ -4,28 +4,22 @@
 // (`npx supabase start`); the `local` build configuration swaps it in. Used by
 // `npm run start:local` and Playwright, so they never touch the env.ts of `npm start`.
 // Refuses to embed a Supabase service-role/secret key in the frontend bundle.
-import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { loadEnv, webDir } from './load-env.mjs';
+import { localStatus } from './supabase-cli.mjs';
 
 const local = process.argv.includes('--local');
 const outFile = resolve(webDir, `src/environments/${local ? 'env.local.ts' : 'env.ts'}`);
 const env = loadEnv();
 
 function localStack() {
-  try {
-    const out = execSync('npx -y supabase@3.0.0 status -o json', {
-      cwd: resolve(webDir, '..'),
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-    const status = JSON.parse(out.slice(out.indexOf('{')));
-    return { url: status.API_URL, anonKey: status.ANON_KEY };
-  } catch {
-    console.error('set-env: local Supabase is not running. Start it with `npx supabase start`.');
+  const status = localStatus();
+  if (!status) {
+    console.error('set-env: local Supabase is not running. Start it with `npm run db:start`.');
     process.exit(1);
   }
+  return { url: status.api.origin, anonKey: status.anonKey };
 }
 
 const stack = local ? localStack() : undefined;
