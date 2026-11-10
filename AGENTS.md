@@ -95,7 +95,7 @@ See `docs/UI_SPEC.md`.
 
 ## Gotchas (learned the hard way)
 - **E2E hangs before any test starts:** a leftover `ng serve --configuration local --port 4300` from an earlier run accepts connections but never answers, and Playwright reuses it. Kill it (`lsof -iTCP:4300 -sTCP:LISTEN`) and rerun.
-- **Magic-link sign-in refused in tests:** Supabase sends one email per address per second; the e2e helper retries. Local `otp_length` is 8 to match production; the app accepts 6 to 10 digits.
+- **Magic-link sign-in refused in tests:** Supabase sends one email per address per second; the e2e helper retries with `toPass` (1.5 s apart). Local `otp_length` is 8 to match production; the app accepts 6 to 10 digits.
 - **Never point the whole pytest suite at production:** the job tests write market data. Only `tests/test_rls.py` is safe there (it uses throwaway users).
 - **Production has no `supabase-js`:** use `core/data/supabase.client.ts` (`auth`, `from`). Realtime and storage are not available; the CSP has no `wss://`.
 - **A PrimeNG component not listed in `core/theme/preset.ts` renders unstyled:** add its Aura tokens there when you start using it.
@@ -107,6 +107,7 @@ See `docs/UI_SPEC.md`.
 - **CSP:** `script-src 'self'` means no inline scripts (critical-CSS inlining is off for that reason). `npm run build` writes `_headers`; check new external origins there.
 - **Jobs and price sources:** fetch only codes and symbols present in the database, identify honestly as `portfolio-tracker-jobs/1.0`, never pose as a browser or get around bot checks (Stooq is out for that reason).
 - **A new file missing from `git status`:** check `git check-ignore -v <file>`. `.gitignore` rules without a leading `/` match at any depth (an unanchored `data/` once hid new files in `core/data/` and broke the deployed build).
+- **No fixed waits in E2E:** never `page.waitForTimeout` (SonarQube flags it, and it is either flaky or slow). Wait on a condition: `expect(...)` on a locator, `expect.poll`, `toPass` for retries, or `animationsDone(page)` from `e2e/support/fixtures.ts` before checking something a PrimeNG animation affects (contrast, scroll position, screenshots; `audit()` and `screenshot()` already call it).
 - **E2E runs in parallel:** specs import `test` and `expect` from `e2e/support/fixtures.ts`, not `@playwright/test`. Each worker has its own users (`OWNER_EMAIL` and the others end in the worker's slot, from `TEST_PARALLEL_INDEX`) and starts signed in as its own owner. Rows every user shares (market data, `job_runs`, `job_triggers`): give each spec its own scheme codes and symbols, and wrap a test that deletes or rewrites shared rows in `exclusive()` (a lock across workers; see `sharedRowsTest` in `settings.spec.ts`). Clear only your address in Mailpit, never the whole inbox.
 - **The owner's data never goes in git, logs or chat:** tools print counts, not rows; decrypted backups stay out of the repo.
 
