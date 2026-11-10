@@ -10,8 +10,11 @@ const PORT = 4300;
 
 export default defineConfig({
   testDir: './e2e',
-  // Parallel (Playwright's default: half the CPU cores). Each worker has its own e2e users
-  // (e2e/support/fixtures.ts); tests that rewrite shared rows take a lock (`exclusive`).
+  // Parallel. Each worker has its own e2e users (e2e/support/fixtures.ts); tests that rewrite
+  // shared rows take a lock (`exclusive`). Locally Playwright's default (half the cores).
+  // GitHub's runner for this private repo has 2 cores, where that default is 1 worker; the
+  // tests mostly wait on the browser, database and dev server, so 2 still run side by side.
+  workers: process.env['CI'] ? 2 : undefined,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
   reporter: process.env['CI'] ? 'github' : 'list',
