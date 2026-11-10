@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import {
+  animationsDone,
   expect,
   test,
   HOLDINGS_EMAIL,
@@ -127,7 +128,7 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   const before = await scrollY();
   await page.getByRole('combobox', { name: 'Financial year' }).click();
   await expect(page.getByRole('option', { name: 'All years' })).toBeVisible();
-  await page.waitForTimeout(300);
+  await animationsDone(page);
   expect(await scrollY()).toBe(before);
   await page.getByRole('option', { name: 'All years' }).click();
   if (!mobile) await expect(page.locator('tfoot')).toContainText('3 entries');

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import {
+  animationsDone,
   expect,
   test,
   HOLDINGS_EMAIL,
@@ -32,6 +33,7 @@ const today = new Date().toISOString().slice(0, 10);
 const monthStart = new Date().toISOString().slice(0, 8) + '01';
 
 async function audit(page: import('@playwright/test').Page, where: string) {
+  await animationsDone(page); // fading dialogs and overlays would fail the contrast check
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const report = violations.map(
     (v) =>
@@ -197,12 +199,10 @@ for (const theme of ['light', 'dark'] as const) {
     const pfDialog = page.getByRole('dialog', { name: 'Add PF month' });
     await expect(pfDialog).toBeVisible();
     await expect(pfDialog.locator(':focus')).toHaveCount(1);
-    await page.waitForTimeout(400); // let the open animation finish before checking contrast
     await audit(page, `${theme} /pf dialog`);
     // The shared date picker (app-date-input), open
     await pfDialog.getByLabel('Transaction date').click();
     await expect(page.locator('.p-datepicker-panel')).toBeVisible();
-    await page.waitForTimeout(400);
     await audit(page, `${theme} date picker`);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cancel' }).click();
@@ -212,7 +212,6 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Add investment to E2E PPF' }).click();
     const ppfDialog = page.getByRole('dialog', { name: 'Add PPF investment' });
     await expect(ppfDialog).toBeVisible();
-    await page.waitForTimeout(400);
     await audit(page, `${theme} /ppf dialog`);
     await ppfDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(ppfDialog).toBeHidden();
@@ -222,14 +221,12 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Add contribution to E2E PRAN' }).click();
     const npsDialog = page.getByRole('dialog', { name: 'Add contribution' });
     await expect(npsDialog).toBeVisible();
-    await page.waitForTimeout(400);
     await audit(page, `${theme} /nps contribution dialog`);
     await npsDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(npsDialog).toBeHidden();
     await page.getByRole('button', { name: 'Update units of E2E PRAN' }).click();
     const unitsDialog = page.getByRole('dialog', { name: 'Update units · E2E PRAN' });
     await expect(unitsDialog).toBeVisible();
-    await page.waitForTimeout(400);
     await audit(page, `${theme} /nps units dialog`);
     await unitsDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(unitsDialog).toBeHidden();
@@ -239,7 +236,6 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Edit E2E Bank' }).click();
     const fdDialog = page.getByRole('dialog', { name: 'Edit FD' });
     await expect(fdDialog.getByText(/Matures with/)).toBeVisible();
-    await page.waitForTimeout(400);
     await audit(page, `${theme} /fd dialog`);
     await fdDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(fdDialog).toBeHidden();

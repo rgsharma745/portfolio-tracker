@@ -207,15 +207,13 @@ export async function requestSignInEmail(page: Page, email: string): Promise<str
   // refused; retry on a freshly loaded page so the result is always the new attempt's.
   const sent = page.getByText('Check your email.');
   const refused = page.getByText('Could not send the link');
-  for (let attempt = 0; ; attempt++) {
+  await expect(async () => {
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
     await page.getByRole('button', { name: 'Email me a sign-in link' }).click();
     await expect(sent.or(refused)).toBeVisible();
-    if (await sent.isVisible()) break;
-    if (attempt === 2) throw new Error(`Supabase would not send a magic link to ${email}`);
-    await page.waitForTimeout(1500);
-  }
+    expect(await sent.isVisible(), `Supabase would not send a magic link to ${email}`).toBe(true);
+  }).toPass({ intervals: [1500], timeout: 15_000 });
 
   let html = '';
   await expect
@@ -240,10 +238,23 @@ export function statCard(page: Page, label: string) {
     .filter({ has: page.getByRole('heading', { name: label, exact: true }) });
 }
 
+/**
+ * Waits until no CSS animation or transition is running (PrimeNG dialogs, overlays, selected
+ * states). Endless ones, such as loading skeletons, are ignored.
+ */
+export async function animationsDone(page: Page): Promise<void> {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity,
+      ),
+  );
+}
+
 /** Saves a full-page screenshot under test-results/screens for visual review. */
 export async function screenshot(page: Page, name: string, project: string): Promise<void> {
-  // Let PrimeNG transitions (selected states, dialogs) settle first.
-  await page.waitForTimeout(500);
+  await animationsDone(page);
   await page.screenshot({ path: `test-results/screens/${name}-${project}.png`, fullPage: true });
 }
 
