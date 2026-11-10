@@ -20,7 +20,7 @@
 ## Shared components
 - `StatCard` (label, value, optional delta with color and sign, and an optional delta label shown before it, e.g. `1 Day Change: +₹144`). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
 - **Day change wording:** headings, table columns and sort options say "1 Day Change"; inline it reads `1 Day Change: +₹144`, the label in the line's own colour and only the amount in the P&L colour, never wrapping inside the amount. The Stocks CSV export keeps its `Today` column name so anything reading the file still finds it.
-- `AllocationBar` (one whole split into parts: segmented bar with shares inside, plus a legend with amounts). Colours follow the `--app-series-*` order; labels inside the bar are black on series 1 to 4 and white on 5 to 8, so every label meets 4.5:1 in both themes.
+- `AllocationBar` (one whole split into parts: segmented bar with no labels inside, plus a legend with every part's amount and share). Colours follow the `--app-series-*` order. Shares are not printed in the bar because small parts are too narrow for one and a bar showing only some of them reads as inconsistent.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, 1 day change, tap to open details/edit)
 - `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used.
@@ -38,7 +38,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
 - Stat cards: Combined (MF + Stocks) with its 1 day change first, then Mutual funds (value + 1 day change), Stocks (value + 1 day change), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + 1 day change), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
-- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a tall segmented bar with each share printed inside, plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 

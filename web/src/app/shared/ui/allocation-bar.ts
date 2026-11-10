@@ -10,12 +10,9 @@ export interface AllocationSlice {
   share: number;
 }
 
-/** Below this share a block is too narrow for its label; the legend still lists it. */
-const LABEL_MIN_SHARE = 12;
-
 /**
- * One whole split into a few parts: a tall segmented bar with shares printed inside, and a
- * legend that lists every part with its amount and share (the table view). Colors are the
+ * One whole split into a few parts: a segmented bar (no labels inside: small parts are too narrow
+ * for one), and a legend that lists every part with its amount and share (the table view). Colors are the
  * chart series tokens in a fixed order, so a part keeps its color across portfolios.
  */
 @Component({
@@ -30,13 +27,7 @@ const LABEL_MIN_SHARE = 12;
           [style.flex-grow]="part.share"
           [style.background]="colorOf(part.key)"
           [title]="part.label + ': ' + percent(part.share)"
-        >
-          @if (part.share >= labelMin) {
-            <span class="block-label" [class.dark-label]="darkLabel(part.key)">{{
-              percent(part.share)
-            }}</span>
-          }
-        </span>
+        ></span>
       }
     </div>
     <ul class="legend">
@@ -54,24 +45,11 @@ const LABEL_MIN_SHARE = 12;
     .bar {
       display: flex;
       gap: 2px;
-      height: 28px;
+      height: 16px;
     }
     .block {
-      display: flex;
-      align-items: center;
       min-width: 4px;
-      padding: 0 8px;
       border-radius: 4px;
-      overflow: hidden;
-    }
-    .block-label {
-      color: #fff;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .block-label.dark-label {
-      color: #000; // 4.8:1 on light-theme blue, the closest of the four
     }
     .legend {
       display: grid;
@@ -105,7 +83,6 @@ export class AllocationBar {
   readonly parts = input.required<readonly AllocationSlice[]>();
   /** Slice keys in color order; a key's position picks its series color. */
   readonly order = input.required<readonly string[]>();
-  protected readonly labelMin = LABEL_MIN_SHARE;
 
   protected readonly summary = computed(() =>
     this.parts()
@@ -116,15 +93,6 @@ export class AllocationBar {
   protected colorOf(key: string): string {
     const index = this.order().indexOf(key);
     return `var(--app-series-${(index < 0 ? 0 : index) + 1})`;
-  }
-
-  /**
-   * Dark text on series 1 to 4 (blue, orange, green, yellow): white on them is below 4.5:1
-   * in one theme or both (blue 4.4:1 light, 3.6:1 dark). Series 5 to 8 keep white.
-   */
-  protected darkLabel(key: string): boolean {
-    const index = this.order().indexOf(key);
-    return index >= 0 && index <= 3;
   }
 
   protected percent(share: number): string {
