@@ -12,6 +12,7 @@ import pytest
 import requests
 
 from jobs.fetch_nav import parse_nav_file
+from jobs.fetch_prices import price_india
 from jobs.fetch_nps_nav import (
     Nav,
     Source,
@@ -22,6 +23,7 @@ from jobs.fetch_nps_nav import (
 )
 from jobs.providers import (
     NseBhavcopy,
+    Quote,
     YahooChart,
     parse_bhavcopy,
     parse_frankfurter,
@@ -131,6 +133,72 @@ def test_parse_yahoo_chart_takes_the_last_close_in_exchange_time() -> None:
     earlier = parse_yahoo_chart(yahoo_payload([170.5, None]))
     assert earlier is not None and earlier.price == Decimal("170.5")
     assert parse_yahoo_chart({"chart": {"result": None}}) is None
+
+
+def test_parse_yahoo_chart_prefers_the_live_market_price() -> None:
+    payload = yahoo_payload([1324.4, 1340.1], 19800)
+    # 2026-11-03 05:30 UTC = 11:00 IST: the market is open and the quote is newer than the candle.
+    payload["chart"]["result"][0]["meta"].update(regularMarketPrice=1340.2, regularMarketTime=1793691000)
+    quote = parse_yahoo_chart(payload)
+    assert quote == Quote(Decimal("1340.2"), date(2026, 11, 3), "yahoo")
+    # A live price older than the last candle, or a broken one, is ignored.
+    payload["chart"]["result"][0]["meta"].update(regularMarketPrice=1300, regularMarketTime=1793500000)
+    assert parse_yahoo_chart(payload) == Quote(Decimal("1340.1"), date(2026, 11, 3), "yahoo")
+    payload["chart"]["result"][0]["meta"].update(regularMarketPrice="NaN", regularMarketTime=1793691000)
+    assert parse_yahoo_chart(payload) == Quote(Decimal("1340.1"), date(2026, 11, 3), "yahoo")
+
+
+class Fixed:
+    def __init__(self, name: str, quotes: dict[str, Quote]) -> None:
+        self.name = name
+        self.quotes = quotes
+        self.asked: set[str] = set()
+
+    def fetch(self, symbols: set[str], today: date) -> dict[str, Quote]:
+        self.asked |= symbols
+        return {s: q for s, q in self.quotes.items() if s in symbols}
+
+
+def test_price_india_takes_the_live_price_until_todays_bhavcopy() -> None:
+    today, yesterday = date(2026, 11, 11), date(2026, 11, 10)
+    nse = Fixed(
+        "nse",
+        {
+            "DONE": Quote(Decimal("10"), today, "nse"),  # today's bhavcopy is out: final
+            "OPEN": Quote(Decimal("20"), yesterday, "nse"),  # market open: live price is newer
+            "TIE": Quote(Decimal("30"), yesterday, "nse"),  # holiday: same day, official wins
+            "NOLIVE": Quote(Decimal("40"), yesterday, "nse"),
+        },
+    )
+    yahoo = Fixed(
+        "yahoo",
+        {
+            "DONE": Quote(Decimal("11"), today, "yahoo"),
+            "OPEN": Quote(Decimal("21"), today, "yahoo"),
+            "TIE": Quote(Decimal("31"), yesterday, "yahoo"),
+            "NEW": Quote(Decimal("50"), today, "yahoo"),  # not in the bhavcopy at all
+        },
+    )
+    quotes = price_india({"DONE", "OPEN", "TIE", "NOLIVE", "NEW", "GONE"}, today, nse, yahoo)
+    assert {s: (q.price, q.source) for s, q in quotes.items()} == {
+        "DONE": (Decimal("10"), "nse"),
+        "OPEN": (Decimal("21"), "yahoo"),
+        "TIE": (Decimal("30"), "nse"),
+        "NOLIVE": (Decimal("40"), "nse"),
+        "NEW": (Decimal("50"), "yahoo"),
+    }
+    assert "DONE" not in yahoo.asked
+
+
+def test_price_india_uses_yahoo_when_nse_is_down() -> None:
+    class Down:
+        name = "nse"
+
+        def fetch(self, symbols: set[str], today: date) -> dict[str, Quote]:
+            raise requests.ConnectionError("down")
+
+    live = Quote(Decimal("21"), date(2026, 11, 11), "yahoo")
+    assert price_india({"OPEN"}, date(2026, 11, 11), Down(), Fixed("yahoo", {"OPEN": live})) == {"OPEN": live}
 
 
 def test_yahoo_maps_symbols_and_skips_failures() -> None:

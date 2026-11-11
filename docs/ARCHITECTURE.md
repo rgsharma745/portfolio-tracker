@@ -87,7 +87,7 @@ Every job records one `job_runs` row (status, JSON summary or the error, start a
 The lock counts manual triggers only; scheduled runs do not take it. The workflows' `concurrency` group still queues a manual run behind a scheduled one. The app reads `job_triggers` to show "Available again at …", also for a run started from another device. Worker settings: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GITHUB_REPO` (text) and `GITHUB_TOKEN` (secret), set in Cloudflare and kept across deploys (`keep_vars`).
 
 **Price sources** (`scripts/jobs/providers.py`, one `PriceProvider` interface):
-- India stocks: NSE's official daily bhavcopy (one CSV of all closing prices; the job looks back over weekends and holidays), then Yahoo Finance (`SYMBOL.NS`) for any symbol it lacks.
+- India stocks: NSE's official daily bhavcopy (one CSV of all closing prices; the job looks back over weekends and holidays), and Yahoo Finance (`SYMBOL.NS`) for any symbol the bhavcopy lacks or has only for an earlier day. So a run during market hours (Settings › Run now) stores Yahoo's live price, dated today (`prev_close` keeps the last close, so day change works), and the evening run replaces it with the official close. On a tie (weekend, holiday, before the open) the bhavcopy wins.
 - US stocks and RSU symbols: Yahoo Finance's chart endpoint. It is unofficial and may change; Stooq, the planned US source, now blocks scripts with a browser check. Alternatives if Yahoo breaks: a free Alpha Vantage or Finnhub key, or a published GOOGLEFINANCE price sheet.
 - USD/INR: Frankfurter (European Central Bank reference rate), Yahoo `INR=X` as the fallback.
 - The jobs send an honest User-Agent (`portfolio-tracker-jobs/1.0`) and never pose as a browser or get around a site's bot checks.

@@ -1,8 +1,8 @@
 """Market-data sources behind one small interface, so a source can be swapped in one place.
 
 - India stocks: NSE's official daily bhavcopy (one CSV with every closing price).
-- US stocks and RSUs, and the fallback for India: Yahoo Finance's chart endpoint
-  (unofficial; answers an honestly identified script, no key).
+- US stocks and RSUs, and for India the fallback and the live price during market hours:
+  Yahoo Finance's chart endpoint (unofficial; answers an honestly identified script, no key).
 - USD/INR: Frankfurter (European Central Bank reference rate), Yahoo as the fallback.
 
 Every source returns only the symbols asked for.
@@ -97,23 +97,39 @@ YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 
 
 def parse_yahoo_chart(payload: dict) -> Quote | None:
-    """The last daily close in the chart, dated in the exchange's own time zone."""
+    """
+    The latest price, dated in the exchange's own time zone: `regularMarketPrice` (live
+    during market hours, the close after it), else the last daily close in the chart.
+    """
     try:
         result = payload["chart"]["result"][0]
-        offset = int(result["meta"].get("gmtoffset", 0))
-        stamps = result["timestamp"]
-        closes = result["indicators"]["quote"][0]["close"]
-    except (KeyError, IndexError, TypeError):
+        meta = result["meta"]
+        offset = int(meta.get("gmtoffset", 0))
+        stamps = result.get("timestamp") or []
+        closes = result["indicators"]["quote"][0].get("close") or []
+    except (KeyError, IndexError, TypeError, AttributeError):
         return None
+    candle: Quote | None = None
     for stamp, close in reversed(list(zip(stamps, closes, strict=False))):
-        if close is None:
-            continue
-        price = Decimal(str(close))
-        if price <= 0:
-            return None
-        day = datetime.fromtimestamp(stamp + offset, UTC).date()
-        return Quote(price, day, "yahoo")
-    return None
+        if close is not None:
+            candle = _yahoo_quote(close, stamp, offset)
+            break
+    live = _yahoo_quote(meta.get("regularMarketPrice"), meta.get("regularMarketTime"), offset)
+    if live and (candle is None or live.price_date >= candle.price_date):
+        return live
+    return candle
+
+
+def _yahoo_quote(price: object, stamp: object, offset: int) -> Quote | None:
+    if price is None or not isinstance(stamp, int | float):
+        return None
+    try:
+        value = Decimal(str(price))
+    except InvalidOperation:
+        return None
+    if not value.is_finite() or value <= 0:
+        return None
+    return Quote(value, datetime.fromtimestamp(stamp + offset, UTC).date(), "yahoo")
 
 
 class YahooChart:

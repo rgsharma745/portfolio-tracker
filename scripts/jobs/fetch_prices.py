@@ -1,8 +1,9 @@
 """Latest stock prices and USD/INR, for what the owner holds only.
 
 Symbols come from `stock_holdings` (India or US) and `rsu_grants` (US). Rows marked
-`is_manual` are skipped (the owner set them by hand). India: NSE bhavcopy, then Yahoo for
-any symbol the bhavcopy lacks. US: Yahoo. USD/INR is fetched only when something is priced
+`is_manual` are skipped (the owner set them by hand). India: NSE bhavcopy, and Yahoo for any
+symbol the bhavcopy lacks or has only an older day for (so a run during market hours stores
+the live price, and the evening run replaces it with the official close). US: Yahoo. USD/INR is fetched only when something is priced
 in USD. Prices are stored with `upsert_stock_price` / `upsert_fx_rate` (latest + previous).
 
 Succeeds with a list of `missing` symbols when some cannot be priced (Data check and the
@@ -45,14 +46,26 @@ def manual_overrides(db: SupabaseRest) -> tuple[set[str], bool]:
 
 
 def price_india(symbols: set[str], today: date, nse: PriceProvider, yahoo: PriceProvider) -> dict[str, Quote]:
-    quotes: dict[str, Quote] = {}
+    """
+    The freshest price per symbol. NSE's bhavcopy is official but only exists after the
+    close, so a symbol without today's bhavcopy price also asks Yahoo, whose quote is live
+    during market hours. Yahoo wins only when it is newer; on a tie (weekend, holiday,
+    before the open) the bhavcopy is kept. Once today's bhavcopy is out it replaces the
+    live price (`upsert_stock_price` lets a same-day price overwrite).
+    """
+    official: dict[str, Quote] = {}
     try:
-        quotes = nse.fetch(symbols, today)
+        official = nse.fetch(symbols, today)
     except (OSError, ValueError) as e:  # OSError includes requests.RequestException
         print(f"NSE bhavcopy unavailable ({type(e).__name__}); using the fallback", file=sys.stderr)
+    quotes = {s: q for s, q in official.items() if q.price_date >= today}
     rest = symbols - quotes.keys()
-    if rest:
-        quotes.update(yahoo.fetch(rest, today))
+    live = yahoo.fetch(rest, today) if rest else {}
+    for symbol in rest:
+        newest = [q for q in (official.get(symbol), live.get(symbol)) if q]
+        if newest:
+            # max() returns the first of equal dates: the bhavcopy.
+            quotes[symbol] = max(newest, key=lambda q: q.price_date)
     return quotes
 
 
