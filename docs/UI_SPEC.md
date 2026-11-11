@@ -14,7 +14,7 @@
 | >= 1024px (desktop) | Left sidebar with labels | Full PrimeNG table: sort, filter, totals footer | Centered dialog |
 - Content fills the full width beside the navigation (no max width). Page padding 16px mobile, 32px desktop.
 - Respect safe-area insets (`env(safe-area-inset-*)`) for the bottom bar and top bar.
-- No horizontal page scroll anywhere. Wide tables scroll inside their own container.
+- No horizontal page scroll anywhere. Wide tables scroll inside their own container; long tables too, capped at the viewport height with the header row (and the totals row) pinned.
 - Touch targets at least 44x44px on mobile.
 
 ## Shared components

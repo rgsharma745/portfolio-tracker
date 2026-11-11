@@ -202,10 +202,29 @@ export class CardTemplate {
       padding: 0;
       list-style: none;
     }
+    /* A long table scrolls inside its own box (at most the viewport, less the page header) with
+       its header row pinned on top and the totals row at the bottom, so the columns stay
+       labelled; short tables are unaffected. */
     .table-scroll {
-      overflow-x: auto;
+      overflow: hidden;
       border: 1px solid var(--app-hairline);
       border-radius: 24px;
+    }
+    /* PrimeNG's container already scrolls (inline overflow: auto); it gets the height cap. */
+    :host ::ng-deep .p-datatable-table-container {
+      max-height: max(20rem, calc(100dvh - 9rem));
+      overscroll-behavior: contain;
+    }
+    /* PrimeNG makes thead and tfoot sticky, and a sticky element is its own stacking context,
+       so the rows themselves (not their cells) are pinned and layered above the body, its
+       pinned first column and its buttons. */
+    :host ::ng-deep thead {
+      top: 0;
+      z-index: 2;
+    }
+    :host ::ng-deep tfoot {
+      bottom: 0;
+      z-index: 2;
     }
     th,
     td {

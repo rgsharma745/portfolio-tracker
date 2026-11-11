@@ -68,7 +68,7 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 - Breakpoints: mobile < 768px, tablet 768 to 1023px, desktop >= 1024px.
 - Mobile: bottom navigation bar, cards instead of wide tables for holdings lists, touch targets at least 44px, dialogs become full-screen sheets.
 - Desktop: left sidebar navigation, full data tables with sorting, filtering and totals.
-- No horizontal page scroll on any viewport. Wide tables scroll inside their own container.
+- No horizontal page scroll on any viewport. Wide tables scroll inside their own container; long tables too, capped at the viewport height with the header row (and the totals row) pinned.
 - Respect `prefers-color-scheme`; support a manual light/dark toggle. Respect iOS safe-area insets.
 - Every new page needs a Playwright check at 390x844 and 1440x900, and an entry in `e2e/accessibility.spec.ts` (axe-core, WCAG 2.1 AA, both themes).
 See `docs/UI_SPEC.md`.

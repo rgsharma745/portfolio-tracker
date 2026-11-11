@@ -9,6 +9,7 @@ import {
   pickDate,
   screenshot,
   seedPortfolios,
+  adminInsert,
   signInWithMagicLink,
   statCard,
 } from './support/fixtures';
@@ -68,7 +69,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
 }, testInfo) => {
   const mobile = isMobile(testInfo);
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
-  await seedPortfolios(ownerId, ['Me', 'Wife']); // cascades: no dividends
+  const ids = await seedPortfolios(ownerId, ['Me', 'Wife']); // cascades: no dividends
 
   await signInWithMagicLink(page, HOLDINGS_EMAIL);
   await page.goto('/dividends');
@@ -178,4 +179,40 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await tab('By year').click();
   await expect(last).toContainText('₹1,800');
   await expect(statCard(page, 'All time')).toContainText('2 dividends');
+
+  // A long table scrolls inside its own box with the header row pinned (desktop: phones list cards)
+  if (mobile) return;
+  await adminInsert(
+    'dividends',
+    Array.from({ length: 60 }, (_, i) => ({
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      market: 'IN',
+      symbol: `E2ELONG${i}`,
+      paid_on: `${lastFy}-07-01`,
+      amount_inr: 100 + i,
+    })),
+  );
+  await page.reload();
+  await tab('Entries').click();
+  const table = page.getByRole('table', { name: /^Dividend entries/ });
+  await expect(table.getByText('E2ELONG59', { exact: true })).toBeAttached();
+  const box = page.locator('.p-datatable-table-container').filter({ has: table });
+  await box.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+  await expect.poll(() => box.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  const header = table.locator('thead th').first();
+  await expect(header).toBeInViewport();
+  const [boxTop, headerTop] = await Promise.all([
+    box.evaluate((el) => el.getBoundingClientRect().top),
+    header.evaluate((el) => el.getBoundingClientRect().top),
+  ]);
+  expect(Math.abs(headerTop - boxTop)).toBeLessThan(4);
+  // Nothing in the body draws over the pinned header (the first column and buttons are layered too)
+  const onTop = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return el.contains(document.elementFromPoint(r.left + 8, r.top + r.height / 2));
+  };
+  expect(await header.evaluate(onTop)).toBe(true);
+  expect(await table.locator('thead th').last().evaluate(onTop)).toBe(true);
 });
