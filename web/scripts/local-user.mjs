@@ -5,7 +5,15 @@
 // Sign-up is disabled, so users can only be created through the admin API. This script only
 // ever talks to the local stack (keys come from `supabase status`), never to production.
 import { localStatus } from './supabase-cli.mjs';
-import { seedFd, seedHistory, seedHoldings, seedNps, seedPf, seedPpf } from './local-seed.mjs';
+import {
+  seedDividends,
+  seedFd,
+  seedHistory,
+  seedHoldings,
+  seedNps,
+  seedPf,
+  seedPpf,
+} from './local-seed.mjs';
 
 const email = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const seed = process.argv.includes('--seed');
@@ -60,6 +68,7 @@ if (seed) {
   if (await seedPpf(api, user.id)) console.log('Seeded a sample PPF passbook');
   if (await seedNps(api, user.id)) console.log('Seeded a sample NPS account');
   if (await seedFd(api, user.id)) console.log('Seeded sample fixed deposits');
+  if (await seedDividends(api, user.id)) console.log('Seeded sample dividends');
 }
 
 console.log(`

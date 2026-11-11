@@ -422,6 +422,41 @@ export async function seedFd(api, ownerId) {
   return true;
 }
 
+/**
+ * Sample dividends over the last two years: Indian stocks in both portfolios and a US stock
+ * (rupees as credited plus dollars). Added only if the user has no dividends.
+ */
+export async function seedDividends(api, ownerId) {
+  const existing = await (
+    await api(`/rest/v1/dividends?select=id&limit=1&owner_id=eq.${ownerId}`)
+  ).json();
+  if (existing.length) return false;
+  const portfolios = await (
+    await api(`/rest/v1/portfolios?select=id,name&owner_id=eq.${ownerId}`)
+  ).json();
+  const id = Object.fromEntries(portfolios.map((p) => [p.name, p.id]));
+  if (!id.Me || !id.Wife) return false;
+  const dividend = (portfolioId, market, symbol, ago, inr, usd = null) => ({
+    owner_id: ownerId,
+    portfolio_id: portfolioId,
+    market,
+    symbol,
+    paid_on: daysAgo(ago),
+    amount_inr: inr,
+    amount_usd: usd,
+  });
+  await insert(api, 'dividends', [
+    dividend(id.Me, 'IN', 'SAMPLEIN1', 20, 1850),
+    dividend(id.Me, 'IN', 'SAMPLEIN1', 200, 1200),
+    dividend(id.Me, 'IN', 'SAMPLEIN2', 95, 640.5),
+    dividend(id.Me, 'US', 'SMPL', 45, 2105.4, 25.2),
+    dividend(id.Me, 'US', 'SMPL', 410, 1980.25, 24),
+    dividend(id.Wife, 'IN', 'SAMPLEIN2', 60, 320),
+    dividend(id.Wife, 'IN', 'SAMPLEIN1', 500, 900),
+  ]);
+  return true;
+}
+
 /** Adds sample daily history for the history chart, unless the user already has some. */
 export async function seedHistory(api, ownerId) {
   const existing = await (

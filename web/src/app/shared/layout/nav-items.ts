@@ -18,6 +18,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     primary: true,
   },
   { path: '/stocks', label: 'Stocks', shortLabel: 'Stocks', icon: 'pi-chart-bar', primary: true },
+  {
+    path: '/dividends',
+    label: 'Dividends',
+    shortLabel: 'Dividends',
+    icon: 'pi-money-bill',
+    primary: false,
+  },
   { path: '/rsu', label: 'RSU', shortLabel: 'RSU', icon: 'pi-briefcase', primary: false },
   { path: '/savings', label: 'Savings', shortLabel: 'Savings', icon: 'pi-wallet', primary: false },
   {

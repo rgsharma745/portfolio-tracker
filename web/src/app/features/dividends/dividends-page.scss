@@ -1,0 +1,132 @@
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+
+  p-select {
+    min-width: 10rem;
+  }
+}
+
+// Three figures: two on a phone row with "All time" across, three in a row from 1024px.
+.stat-grid-3 {
+  > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    > :last-child {
+      grid-column: auto;
+    }
+  }
+}
+
+// The financial year in the table picks the year shown below it.
+.year-link {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--p-primary-color);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+// Mobile: one card per year, stock or entry. Year cards pick the year; entry cards edit.
+.year-card,
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.year-card,
+.entry-card {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.year-card.selected {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: -2px;
+}
+
+.entry-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.entry-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.year-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+// Label on the left, amount on the right.
+.year-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint-button {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--p-primary-color);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

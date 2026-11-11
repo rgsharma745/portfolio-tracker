@@ -33,6 +33,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/stocks/stocks-page').then((m) => m.StocksPage),
       },
       {
+        path: 'dividends',
+        title: 'Dividends',
+        loadComponent: () =>
+          import('./features/dividends/dividends-page').then((m) => m.DividendsPage),
+      },
+      {
         path: 'rsu',
         title: 'RSU',
         loadComponent: () => import('./features/rsu/rsu-page').then((m) => m.RsuPage),
