@@ -64,6 +64,15 @@ from (values
 ) as v(account, kind, on_date, amount)
 join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
 
+-- Dividends: one row per credit. amount_usd only for US stocks (and required there)
+insert into dividends (owner_id, portfolio_id, market, symbol, paid_on, amount_inr, amount_usd)
+select 'OWNER_UUID', p.id, v.market, v.symbol, v.paid_on::date, v.inr, v.usd
+from (values
+  ('IN', 'ITC', '2026-06-11', 1250.50, null::numeric),
+  ('US', 'MSFT', '2026-09-11', 6890.15, 82.40)
+) as v(market, symbol, paid_on, inr, usd)
+join portfolios p on p.owner_id = 'OWNER_UUID' and p.name = 'Me';
+
 -- Fixed deposits: one row per FD (compounding defaults to quarterly)
 insert into fixed_deposits (owner_id, portfolio_id, bank, start_date, maturity_date, principal, rate, compounding)
 select 'OWNER_UUID', p.id, v.bank, v.start_on::date, v.matures_on::date, v.principal, v.rate, v.compounding
@@ -119,6 +128,7 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 | `nps_holdings` | `owner_id,portfolio_id,account,scheme_class,scheme_code,scheme_name,units,units_as_of` |
 | `nps_contributions` | `owner_id,portfolio_id,account,contribution_date,contributor,amount` |
 | `fixed_deposits` | `owner_id,portfolio_id,bank,start_date,maturity_date,principal,rate,compounding` |
+| `dividends` | `owner_id,portfolio_id,market,symbol,paid_on,amount_inr,amount_usd` |
 | `credit_cards` | `owner_id,portfolio_id,name,bank,bill_day,due_day` |
 | `card_bills` | `owner_id,card_id,statement_month,due_date,amount,paid_amount,paid_on,notes` |
 
