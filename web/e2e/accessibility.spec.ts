@@ -17,6 +17,7 @@ const PAGES = [
   '/overview',
   '/mutual-funds',
   '/stocks',
+  '/dividends',
   '/rsu',
   '/savings',
   '/pf',
@@ -121,6 +122,19 @@ for (const theme of ['light', 'dark'] as const) {
       { ...ppf, entry_type: 'investment', entry_date: today, amount: 60000 },
       { ...ppf, entry_type: 'interest', entry_date: '2026-03-31', amount: 7100 },
     ]);
+    // Dividends: an Indian and a US one (rupees and dollars), so both tags and the $ line show.
+    const dividend = { owner_id: ownerId, portfolio_id: ids['Me'] };
+    await adminInsert('dividends', [
+      { ...dividend, market: 'IN', symbol: 'E2EDIVA', paid_on: today, amount_inr: 1500 },
+      {
+        ...dividend,
+        market: 'US',
+        symbol: 'E2EDIVUS',
+        paid_on: today,
+        amount_inr: 1700,
+        amount_usd: 20,
+      },
+    ]);
     // NPS: two schemes, one without a NAV so the warning tag is audited too.
     await adminUpsert('nps_nav_latest', [
       { scheme_code: 'SM990002', nav: 50, nav_date: today, prev_nav: 49, is_manual: false },
@@ -215,6 +229,18 @@ for (const theme of ['light', 'dark'] as const) {
     await audit(page, `${theme} /ppf dialog`);
     await ppfDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(ppfDialog).toBeHidden();
+
+    // The dividend dialog for a US stock: the dollar field and the rate hint.
+    await page.goto('/dividends');
+    await page.getByRole('button', { name: 'Add dividend' }).click();
+    const dividendDialog = page.getByRole('dialog', { name: 'Add dividend' });
+    await expect(dividendDialog).toBeVisible();
+    await dividendDialog.getByRole('button', { name: 'US' }).click();
+    await dividendDialog.getByLabel('Amount ($)').fill('20');
+    await expect(dividendDialog.getByRole('button', { name: 'Use it' })).toBeVisible();
+    await audit(page, `${theme} /dividends dialog`);
+    await dividendDialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dividendDialog).toBeHidden();
 
     // The NPS dialogs: a contribution (with its Self/Employer switch) and Update units.
     await page.goto('/nps');
