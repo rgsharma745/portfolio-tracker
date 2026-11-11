@@ -102,6 +102,54 @@ export type Database = {
           },
         ];
       };
+      dividends: {
+        Row: {
+          amount_inr: number;
+          amount_usd: number | null;
+          created_at: string;
+          id: string;
+          market: string;
+          owner_id: string;
+          paid_on: string;
+          portfolio_id: string;
+          symbol: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_inr: number;
+          amount_usd?: number | null;
+          created_at?: string;
+          id?: string;
+          market: string;
+          owner_id?: string;
+          paid_on: string;
+          portfolio_id: string;
+          symbol: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount_inr?: number;
+          amount_usd?: number | null;
+          created_at?: string;
+          id?: string;
+          market?: string;
+          owner_id?: string;
+          paid_on?: string;
+          portfolio_id?: string;
+          symbol?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dividends_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       fixed_deposits: {
         Row: {
           bank: string;

@@ -13,6 +13,7 @@ export const EXPORT_TABLES = [
   'nps_holdings',
   'nps_contributions',
   'fixed_deposits',
+  'dividends',
   'credit_cards',
   'card_bills',
   'portfolio_snapshots',
