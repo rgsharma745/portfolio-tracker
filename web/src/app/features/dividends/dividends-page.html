@@ -35,256 +35,209 @@
       />
     </div>
 
-    <section class="page-stack" aria-labelledby="years-title">
-      <div class="section-head">
-        <div>
-          <h2 class="section-title" id="years-title">By financial year</h2>
+    <p-tabs [value]="tab()" (valueChange)="selectTab($event)">
+      <p-tablist>
+        <p-tab value="years">By year</p-tab>
+        <p-tab value="stocks">By stock</p-tab>
+        <p-tab value="entries">Entries</p-tab>
+      </p-tablist>
+
+      <div class="toolbar">
+        @if (tab() === 'years') {
           <p class="section-hint">
             April to March, US dividends in rupees as credited. Pick a year to see it by stock.
           </p>
-        </div>
+        } @else {
+          <p-select
+            [options]="fyOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="selectedFy()"
+            (ngModelChange)="chooseFy($event)"
+            ariaLabel="Financial year"
+            appendTo="body"
+          />
+        }
         <button pButton type="button" (click)="add()">
           <i class="pi pi-plus" aria-hidden="true"></i>
           Add dividend
         </button>
       </div>
 
-      <app-data-table
-        label="Dividends by financial year"
-        dataKey="fyStart"
-        [rows]="years()"
-        [columns]="yearColumns"
-        [footer]="yearTotals()"
-        minWidth="40rem"
-      >
-        <ng-template appCell="label" let-row>
-          <button
-            type="button"
-            class="year-link"
-            [attr.aria-pressed]="row.fyStart === selectedFy()"
-            (click)="selectFy(row.fyStart)"
+      <p-tabpanels>
+        <p-tabpanel value="years">
+          <app-data-table
+            label="Dividends by financial year"
+            dataKey="fyStart"
+            [rows]="years()"
+            [columns]="yearColumns"
+            [footer]="yearTotals()"
+            minWidth="40rem"
           >
-            {{ row.label }}
-          </button>
-        </ng-template>
-        <ng-template appCell="us" let-row>
-          <span class="app-num">{{ row.us | money }}</span>
-          @if (row.usd > 0) {
-            <span class="cell-sub app-num">{{ row.usd | money: 'USD' }}</span>
-          }
-        </ng-template>
-        <ng-template appFooter="label" let-t>
-          <span class="name-title">Total</span>
-        </ng-template>
-        <ng-template appFooter="us" let-t>
-          <span class="app-num">{{ t.us | money }}</span>
-          @if (t.usd > 0) {
-            <span class="cell-sub app-num">{{ t.usd | money: 'USD' }}</span>
-          }
-        </ng-template>
-        <ng-template appCard let-row>
-          <button
-            type="button"
-            class="app-card year-card"
-            [class.selected]="row.fyStart === selectedFy()"
-            [attr.aria-pressed]="row.fyStart === selectedFy()"
-            [attr.data-testid]="'dividend-year-' + row.fyStart"
-            (click)="selectFy(row.fyStart)"
-          >
-            <span class="entry-top">
-              <span class="entry-title">{{ row.label }}</span>
-              <span class="app-num">{{ row.total | money }}</span>
-            </span>
-            <span class="year-lines">
-              <span class="year-line"
-                >India <span class="app-num">{{ row.india | money }}</span></span
+            <ng-template appCell="label" let-row>
+              <button
+                type="button"
+                class="year-link"
+                [attr.aria-label]="row.label + ' by stock'"
+                (click)="showYear(row.fyStart)"
               >
-              <span class="year-line"
-                >US
-                <span class="app-num"
-                  >{{ row.us | money }}
-                  @if (row.usd > 0) {
-                    ({{ row.usd | money: 'USD' }})
+                {{ row.label }}
+              </button>
+            </ng-template>
+            <ng-template appCell="us" let-row>
+              <span class="app-num">{{ row.us | money }}</span>
+              @if (row.usd > 0) {
+                <span class="cell-sub app-num">{{ row.usd | money: 'USD' }}</span>
+              }
+            </ng-template>
+            <ng-template appFooter="label" let-t>
+              <span class="name-title">Total</span>
+            </ng-template>
+            <ng-template appFooter="us" let-t>
+              <span class="app-num">{{ t.us | money }}</span>
+              @if (t.usd > 0) {
+                <span class="cell-sub app-num">{{ t.usd | money: 'USD' }}</span>
+              }
+            </ng-template>
+            <ng-template appCard let-row>
+              <button
+                type="button"
+                class="app-card year-card"
+                [attr.data-testid]="'dividend-year-' + row.fyStart"
+                (click)="showYear(row.fyStart)"
+              >
+                <span class="entry-top">
+                  <span class="entry-title">{{ row.label }}</span>
+                  <span class="app-num">{{ row.total | money }}</span>
+                </span>
+                <span class="year-lines">
+                  <span class="year-line"
+                    >India <span class="app-num">{{ row.india | money }}</span></span
+                  >
+                  <span class="year-line"
+                    >US
+                    <span class="app-num"
+                      >{{ row.us | money }}
+                      @if (row.usd > 0) {
+                        ({{ row.usd | money: 'USD' }})
+                      }
+                    </span></span
+                  >
+                </span>
+              </button>
+            </ng-template>
+          </app-data-table>
+        </p-tabpanel>
+
+        <p-tabpanel value="stocks">
+          <app-data-table
+            [label]="'Dividends by stock, ' + selectedLabel()"
+            dataKey="key"
+            [rows]="symbols()"
+            [columns]="symbolColumns"
+            [footer]="symbolTotals()"
+            emptyMessage="No dividends in this year."
+            minWidth="40rem"
+          >
+            <ng-template appCell="symbol" let-row>
+              <span class="name-cell">
+                <span>{{ row.symbol }}</span>
+                <span class="name-tags"
+                  ><p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary"
+                /></span>
+              </span>
+            </ng-template>
+            <ng-template appCell="usd" let-row>
+              <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
+            </ng-template>
+            <ng-template appFooter="symbol" let-t>
+              <span class="name-title">Total</span>
+            </ng-template>
+            <ng-template appFooter="usd" let-t>
+              <span class="app-num">{{ t.usd === null ? '' : (t.usd | money: 'USD') }}</span>
+            </ng-template>
+            <ng-template appCard let-row>
+              <div class="app-card year-card" [attr.data-testid]="'dividend-stock-' + row.key">
+                <span class="entry-top">
+                  <span class="entry-title">{{ row.symbol }}</span>
+                  <span class="app-num">{{ row.inr | money }}</span>
+                </span>
+                <span class="entry-meta">
+                  <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
+                  @if (row.usd !== null) {
+                    <span class="app-num">{{ row.usd | money: 'USD' }}</span>
                   }
-                </span></span
-              >
-            </span>
-          </button>
-        </ng-template>
-      </app-data-table>
-    </section>
+                  <span>{{ row.count }} {{ row.count === 1 ? 'dividend' : 'dividends' }}</span>
+                  <span>Last {{ formatDate(row.lastPaid) }}</span>
+                </span>
+              </div>
+            </ng-template>
+          </app-data-table>
+        </p-tabpanel>
 
-    <section class="page-stack" aria-labelledby="stocks-title">
-      <div>
-        <h2 class="section-title" id="stocks-title">By stock, all years</h2>
-        <p class="section-hint">Everything each stock has paid you, largest first.</p>
-      </div>
-
-      <app-data-table
-        label="Dividends per stock, all years"
-        dataKey="key"
-        [rows]="allTimeSymbols()"
-        [columns]="allTimeColumns"
-        [footer]="allTimeTotals()"
-        minWidth="40rem"
-      >
-        <ng-template appCell="symbol" let-row>
-          <span class="name-cell">
-            <span>{{ row.symbol }}</span>
-            <span class="name-tags"
-              ><p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary"
-            /></span>
-          </span>
-        </ng-template>
-        <ng-template appCell="usd" let-row>
-          <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
-        </ng-template>
-        <ng-template appFooter="symbol" let-t>
-          <span class="name-title">Total</span>
-        </ng-template>
-        <ng-template appFooter="usd" let-t>
-          <span class="app-num">{{ t.usd === null ? '' : (t.usd | money: 'USD') }}</span>
-        </ng-template>
-        <ng-template appCard let-row>
-          <div class="app-card year-card" [attr.data-testid]="'dividend-stock-' + row.key">
-            <span class="entry-top">
-              <span class="entry-title">{{ row.symbol }}</span>
-              <span class="app-num">{{ row.inr | money }}</span>
-            </span>
-            <span class="entry-meta">
-              <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
-              @if (row.usd !== null) {
-                <span class="app-num">{{ row.usd | money: 'USD' }}</span>
-              }
-              <span>{{ row.count }} {{ row.count === 1 ? 'dividend' : 'dividends' }}</span>
-              <span>Last {{ formatDate(row.lastPaid) }}</span>
-            </span>
-          </div>
-        </ng-template>
-      </app-data-table>
-    </section>
-
-    <section class="page-stack" aria-labelledby="symbols-title">
-      <div class="section-head">
-        <h2 class="section-title" id="symbols-title">{{ selectedLabel() }} by stock</h2>
-        <p-select
-          [options]="fyOptions()"
-          optionLabel="label"
-          optionValue="value"
-          [ngModel]="selectedFy()"
-          (ngModelChange)="selectFy($event)"
-          ariaLabel="Financial year"
-          appendTo="body"
-        />
-      </div>
-
-      <app-data-table
-        [label]="'Dividends by stock in ' + selectedLabel()"
-        dataKey="key"
-        [rows]="symbols()"
-        [columns]="symbolColumns"
-        [footer]="symbolTotals()"
-        emptyMessage="No dividends in this year."
-        minWidth="32rem"
-      >
-        <ng-template appCell="symbol" let-row>
-          <span class="name-cell">
-            <span>{{ row.symbol }}</span>
-            <span class="name-tags"
-              ><p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary"
-            /></span>
-          </span>
-        </ng-template>
-        <ng-template appCell="usd" let-row>
-          <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
-        </ng-template>
-        <ng-template appFooter="symbol" let-t>
-          <span class="name-title">Total</span>
-        </ng-template>
-        <ng-template appFooter="usd" let-t>
-          <span class="app-num">{{ t.usd === null ? '' : (t.usd | money: 'USD') }}</span>
-        </ng-template>
-        <ng-template appCard let-row>
-          <div class="app-card year-card" [attr.data-testid]="'dividend-symbol-' + row.key">
-            <span class="entry-top">
-              <span class="entry-title">{{ row.symbol }}</span>
-              <span class="app-num">{{ row.inr | money }}</span>
-            </span>
-            <span class="entry-meta">
-              <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
-              @if (row.usd !== null) {
-                <span class="app-num">{{ row.usd | money: 'USD' }}</span>
-              }
-              <span>{{ row.count }} {{ row.count === 1 ? 'dividend' : 'dividends' }}</span>
-            </span>
-          </div>
-        </ng-template>
-      </app-data-table>
-    </section>
-
-    <section class="page-stack" aria-labelledby="entries-title">
-      <h2 class="section-title" id="entries-title">{{ selectedLabel() }} entries</h2>
-
-      <app-data-table
-        [label]="'Dividend entries in ' + selectedLabel()"
-        [rows]="visible()"
-        [columns]="columns"
-        [sort]="sort()"
-        (sortChange)="sort.set($event)"
-        emptyMessage="No dividends in this year."
-        minWidth="36rem"
-      >
-        <ng-template appCell="date" let-row>{{ row.dateLabel }}</ng-template>
-        <ng-template appCell="symbol" let-row>
-          <span class="name-cell">
-            <span>{{ row.symbol }}</span>
-            <span class="name-tags">
-              <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
-              @if (showPortfolio()) {
-                <p-tag [value]="row.portfolio" severity="secondary" />
-              }
-            </span>
-          </span>
-        </ng-template>
-        <ng-template appCell="usd" let-row>
-          <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
-        </ng-template>
-        <ng-template appCell="actions" let-row>
-          <div class="row-actions">
-            <button
-              pButton
-              type="button"
-              iconOnly
-              rounded
-              text
-              severity="secondary"
-              [attr.aria-label]="'Edit ' + row.symbol + ' dividend ' + row.dateLabel"
-              (click)="edit(row)"
-            >
-              <i class="pi pi-pencil" aria-hidden="true"></i>
-            </button>
-          </div>
-        </ng-template>
-        <ng-template appCard let-row>
-          <button type="button" class="app-card entry-card" (click)="edit(row)">
-            <span class="entry-top">
-              <span class="entry-title">{{ row.symbol }}</span>
-              <span class="app-num">{{ row.inr | money }}</span>
-            </span>
-            <span class="entry-meta">
-              <span>{{ row.dateLabel }}</span>
-              <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
-              @if (row.usd !== null) {
-                <span class="app-num">{{ row.usd | money: 'USD' }}</span>
-              }
-              @if (showPortfolio()) {
-                <p-tag [value]="row.portfolio" severity="secondary" />
-              }
-            </span>
-          </button>
-        </ng-template>
-      </app-data-table>
-    </section>
+        <p-tabpanel value="entries">
+          <app-data-table
+            [label]="'Dividend entries, ' + selectedLabel()"
+            [rows]="visible()"
+            [columns]="columns"
+            [sort]="sort()"
+            (sortChange)="sort.set($event)"
+            emptyMessage="No dividends in this year."
+            minWidth="36rem"
+          >
+            <ng-template appCell="date" let-row>{{ row.dateLabel }}</ng-template>
+            <ng-template appCell="symbol" let-row>
+              <span class="name-cell">
+                <span>{{ row.symbol }}</span>
+                <span class="name-tags">
+                  <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
+                  @if (showPortfolio()) {
+                    <p-tag [value]="row.portfolio" severity="secondary" />
+                  }
+                </span>
+              </span>
+            </ng-template>
+            <ng-template appCell="usd" let-row>
+              <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
+            </ng-template>
+            <ng-template appCell="actions" let-row>
+              <div class="row-actions">
+                <button
+                  pButton
+                  type="button"
+                  iconOnly
+                  rounded
+                  text
+                  severity="secondary"
+                  [attr.aria-label]="'Edit ' + row.symbol + ' dividend ' + row.dateLabel"
+                  (click)="edit(row)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
+              </div>
+            </ng-template>
+            <ng-template appCard let-row>
+              <button type="button" class="app-card entry-card" (click)="edit(row)">
+                <span class="entry-top">
+                  <span class="entry-title">{{ row.symbol }}</span>
+                  <span class="app-num">{{ row.inr | money }}</span>
+                </span>
+                <span class="entry-meta">
+                  <span>{{ row.dateLabel }}</span>
+                  <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
+                  @if (row.usd !== null) {
+                    <span class="app-num">{{ row.usd | money: 'USD' }}</span>
+                  }
+                  @if (showPortfolio()) {
+                    <p-tag [value]="row.portfolio" severity="secondary" />
+                  }
+                </span>
+              </button>
+            </ng-template>
+          </app-data-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
   </div>
 }
 

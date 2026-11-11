@@ -60,10 +60,10 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Dividends
 - Stat cards: Received in the current FY, Received in last FY, All time (number of dividends). Mobile: two columns with All time full width; from 1024px one row of three.
-- By financial year (April to March): financial year, India, US (₹ as credited with the $ under it), Total, Entries, with a totals row; mobile cards (year and total, then India and US lines). The year is a button: it picks the year shown below (the newest year by default; the picked one is outlined on mobile).
-- By stock, all years: Symbol (India / US tag), Received (₹), In USD, Entries, Last received, largest first, with a totals row; mobile cards (symbol and total, then market, $, count and last date).
-- "FY … by stock": a year select (follows the table), then Symbol (India / US tag), Received (₹), In USD, Entries, largest first, with a totals row.
-- "FY … entries": date (newest first, sortable), symbol (market and, in All mode, portfolio tags), Received, In USD; tap or the pencil edits; delete from the dialog with confirmation.
+- Below the cards, three tabs (PrimeNG Tabs). Under the tab bar a toolbar: on By year a hint, on the other two a year select (All years, then each FY; All years by default, shared by both tabs); "Add dividend" on the right.
+- By year (April to March): financial year, India, US (₹ as credited with the $ under it), Total, Entries, with a totals row; mobile cards (year and total, then India and US lines). The year is a button: it picks that year and opens By stock.
+- By stock: Symbol (India / US tag), Received (₹), In USD, Entries, Last received, largest first, with a totals row; mobile cards (symbol and total, then market, $, count and last date).
+- Entries: date (newest first, sortable), symbol (market and, in All mode, portfolio tags), Received, In USD; tap or the pencil edits; delete from the dialog with confirmation.
 - Dialog: Market (India / US), Portfolio, Symbol (upper-cased; suggests the market's stock holdings and past dividends), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
 - Not on Overview: no card, allocation share or history line.
 

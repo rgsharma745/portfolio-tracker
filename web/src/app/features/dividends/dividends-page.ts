@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { fyLabel, fyStart, localIsoDate } from '../../core/calc/common';
 import {
@@ -60,9 +61,13 @@ export interface DividendRow {
   usd: number | null;
 }
 
+export type DividendTab = 'years' | 'stocks' | 'entries';
+/** A financial year's start, or every year. */
+export type DividendYearFilter = number | 'all';
+
 /**
- * Dividends received: totals per financial year and per stock across all years, and per stock
- * and entry for one year.
+ * Dividends received, in three tabs: totals per financial year, per stock, and the entries.
+ * The year filter (all years by default) applies to the stock and entry tabs.
  */
 @Component({
   selector: 'app-dividends-page',
@@ -72,6 +77,7 @@ export interface DividendRow {
     InputTextModule,
     SelectModule,
     SelectButtonModule,
+    TabsModule,
     TagModule,
     CardTemplate,
     CellTemplate,
@@ -99,8 +105,9 @@ export class DividendsPage {
 
   protected readonly formatDate = formatDate;
   protected readonly dialog = new DialogForm<DividendForm>();
-  /** The financial year picked for the per-symbol view; null until the owner picks one. */
-  private readonly chosenFy = signal<number | null>(null);
+  protected readonly tab = signal<DividendTab>('years');
+  /** The year picked for the stock and entry tabs. */
+  private readonly chosenFy = signal<DividendYearFilter>('all');
   protected readonly sort = signal<Sort>({ key: 'date', order: -1 });
 
   protected readonly showPortfolio = computed(() => this.portfolios.scopeIds().length > 1);
@@ -130,37 +137,36 @@ export class DividendsPage {
     ),
   );
 
-  /** The picked year if it still has dividends in scope, else the newest year. */
-  protected readonly selectedFy = computed(() => {
+  /** The picked year if it still has dividends in scope, else all years. */
+  protected readonly selectedFy = computed<DividendYearFilter>(() => {
     const chosen = this.chosenFy();
-    const years = this.years();
-    if (chosen !== null && years.some((y) => y.fyStart === chosen)) return chosen;
-    return years[0]?.fyStart ?? fyStart(this.today);
+    return this.years().some((y) => y.fyStart === chosen) ? chosen : 'all';
   });
-  protected readonly selectedLabel = computed(() => fyLabel(this.selectedFy()));
-  protected readonly fyOptions = computed(() =>
-    this.years().map((y) => ({ label: y.label, value: y.fyStart })),
-  );
+  protected readonly selectedLabel = computed(() => {
+    const fy = this.selectedFy();
+    return fy === 'all' ? 'all years' : fyLabel(fy);
+  });
+  protected readonly fyOptions = computed<{ label: string; value: DividendYearFilter }[]>(() => [
+    { label: 'All years', value: 'all' },
+    ...this.years().map((y) => ({ label: y.label, value: y.fyStart })),
+  ]);
 
-  protected readonly symbols = computed(() =>
-    dividendsBySymbol(this.dividends.entries(), this.portfolios.scopeIds(), this.selectedFy()),
-  );
+  protected readonly symbols = computed(() => {
+    const fy = this.selectedFy();
+    return dividendsBySymbol(
+      this.dividends.entries(),
+      this.portfolios.scopeIds(),
+      fy === 'all' ? null : fy,
+    );
+  });
   protected readonly symbolTotals = computed(() => {
-    const year = this.years().find((y) => y.fyStart === this.selectedFy());
+    const fy = this.selectedFy();
+    const t = fy === 'all' ? this.yearTotals() : this.years().find((y) => y.fyStart === fy);
     return {
-      inr: year?.total ?? 0,
-      usd: year && year.usd > 0 ? year.usd : null,
-      count: year?.count ?? 0,
+      inr: t?.total ?? 0,
+      usd: t && t.usd > 0 ? t.usd : null,
+      count: t?.count ?? 0,
     };
-  });
-
-  /** Every year's dividends per stock, largest first. */
-  protected readonly allTimeSymbols = computed(() =>
-    dividendsBySymbol(this.dividends.entries(), this.portfolios.scopeIds(), null),
-  );
-  protected readonly allTimeTotals = computed(() => {
-    const t = this.yearTotals();
-    return { inr: t.total, usd: t.usd > 0 ? t.usd : null, count: t.count };
   });
 
   protected readonly rows = computed<DividendRow[]>(() => {
@@ -183,7 +189,7 @@ export class DividendsPage {
   });
   protected readonly visible = computed(() =>
     sortRows(
-      this.rows().filter((r) => r.fy === this.selectedFy()),
+      this.rows().filter((r) => this.selectedFy() === 'all' || r.fy === this.selectedFy()),
       this.sort(),
     ),
   );
@@ -214,9 +220,6 @@ export class DividendsPage {
     { key: 'inr', header: 'Received', type: 'money', sortable: false },
     { key: 'usd', header: 'In USD', type: 'custom', sortable: false, alignEnd: true },
     { key: 'count', header: 'Entries', type: 'units', sortable: false },
-  ];
-  protected readonly allTimeColumns: Column<DividendSymbolRow>[] = [
-    ...this.symbolColumns,
     { key: 'lastPaid', header: 'Last received', type: 'date', sortable: false },
   ];
   protected readonly columns: Column<DividendRow>[] = [
@@ -253,8 +256,18 @@ export class DividendsPage {
     return this.portfolios.scope() ?? this.portfolios.active()[0]?.id ?? '';
   }
 
-  protected selectFy(fy: number): void {
+  protected selectTab(value: string | number | undefined): void {
+    if (value === 'years' || value === 'stocks' || value === 'entries') this.tab.set(value);
+  }
+
+  protected chooseFy(fy: DividendYearFilter): void {
     this.chosenFy.set(fy);
+  }
+
+  /** A year in the per-year table opens it by stock. */
+  protected showYear(fy: number): void {
+    this.chosenFy.set(fy);
+    this.tab.set('stocks');
   }
 
   protected add(): void {

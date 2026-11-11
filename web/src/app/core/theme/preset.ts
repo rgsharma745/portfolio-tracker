@@ -11,6 +11,7 @@ import message from '@primeuix/themes/aura/message';
 import select from '@primeuix/themes/aura/select';
 import selectbutton from '@primeuix/themes/aura/selectbutton';
 import skeleton from '@primeuix/themes/aura/skeleton';
+import tabs from '@primeuix/themes/aura/tabs';
 import tag from '@primeuix/themes/aura/tag';
 import textarea from '@primeuix/themes/aura/textarea';
 import togglebutton from '@primeuix/themes/aura/togglebutton';
@@ -35,6 +36,7 @@ const Aura = {
     select,
     selectbutton,
     skeleton,
+    tabs,
     tag,
     textarea,
     togglebutton,
@@ -100,6 +102,13 @@ export const AppPreset = definePreset(Aura, {
     togglebutton: {
       root: { color: 'light-dark({surface.600}, {surface.400})' },
       icon: { color: 'light-dark({surface.600}, {surface.400})' },
+    },
+    // Tabs sit on the page background with no panel padding, so the content lines up with
+    // the cards above; inactive tabs use surface 600 (Aura's muted 500 fails AA on white).
+    tabs: {
+      tablist: { background: 'transparent' },
+      tab: { color: 'light-dark({surface.600}, {surface.400})' },
+      tabpanel: { background: 'transparent', padding: '0' },
     },
     // Holdings tables: roomy rows, a soft header band and a totals bar (UI_SPEC).
     datatable: {

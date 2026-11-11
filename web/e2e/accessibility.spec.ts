@@ -254,8 +254,13 @@ for (const theme of ['light', 'dark'] as const) {
     await ppfDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(ppfDialog).toBeHidden();
 
-    // The dividend dialog for a US stock: the dollar field and the rate hint.
+    // The dividends tabs past the first, then the dialog for a US stock (dollars, rate hint).
     await page.goto('/dividends');
+    for (const name of ['By stock', 'Entries']) {
+      await page.getByRole('tab', { name }).click();
+      await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true');
+      await audit(page, `${theme} /dividends ${name}`);
+    }
     await page.getByRole('button', { name: 'Add dividend' }).click();
     const dividendDialog = page.getByRole('dialog', { name: 'Add dividend' });
     await expect(dividendDialog).toBeVisible();

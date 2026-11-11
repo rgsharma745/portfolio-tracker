@@ -1,9 +1,14 @@
-.section-head {
+.toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
+  margin: 16px 0;
+
+  .section-hint {
+    margin: 0;
+  }
 
   p-select {
     min-width: 10rem;
@@ -38,11 +43,6 @@
   text-underline-offset: 3px;
   cursor: pointer;
 
-  &[aria-pressed='true'] {
-    color: inherit;
-    text-decoration: none;
-  }
-
   &:focus-visible {
     outline: 2px solid var(--p-primary-color);
     outline-offset: 2px;
@@ -72,11 +72,6 @@ button.year-card,
     outline: 2px solid var(--p-primary-color);
     outline-offset: 2px;
   }
-}
-
-.year-card.selected {
-  outline: 2px solid var(--p-primary-color);
-  outline-offset: -2px;
 }
 
 .entry-top {

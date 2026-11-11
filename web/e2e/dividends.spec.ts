@@ -37,20 +37,11 @@ const yearRow = (page: Page, mobile: boolean, fy: number) =>
     : page
         .getByRole('table', { name: 'Dividends by financial year' })
         .locator('tr', { hasText: fyLabel(fy) });
-/** A stock's row in the per-stock table for the selected year. */
+/** A stock's row in the By stock tab (for the year picked there). */
 const stockRow = (page: Page, mobile: boolean, market: string, symbol: string) =>
   mobile
-    ? page.getByTestId(`dividend-symbol-${market}:${symbol}`)
-    : page
-        .locator('app-data-table', { has: page.getByRole('table', { name: /by stock/ }) })
-        .locator('tr', { hasText: symbol });
-/** A stock's row in the all-years per-stock table. */
-const allYearsRow = (page: Page, mobile: boolean, market: string, symbol: string) =>
-  mobile
     ? page.getByTestId(`dividend-stock-${market}:${symbol}`)
-    : page
-        .getByRole('table', { name: 'Dividends per stock, all years' })
-        .locator('tr', { hasText: symbol });
+    : page.getByRole('table', { name: /^Dividends by stock/ }).locator('tr', { hasText: symbol });
 /** An entry's edit button: the pencil on desktop, the whole card on mobile. */
 const editButton = (page: Page, mobile: boolean, symbol: string, iso: string) =>
   mobile
@@ -121,32 +112,40 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
 
   await expect(statCard(page, `Received in ${fyLabel(currentFy)}`)).toContainText('₹500');
   await expect(statCard(page, 'All time')).toContainText('3 dividends');
+  const tab = (name: string) => page.getByRole('tab', { name });
+  await expect(tab('By year')).toHaveAttribute('aria-selected', 'true');
   const last = yearRow(page, mobile, lastFy);
   await expect(last).toContainText('₹1,500');
   await expect(last).toContainText('₹1,700');
   await expect(last).toContainText('$20.00');
   await expect(last).toContainText('₹3,200');
   await expect(yearRow(page, mobile, currentFy)).toContainText('₹500');
-
-  // Across all years, per stock: both years of E2EDIVA added up, largest first
-  const allA = allYearsRow(page, mobile, 'IN', 'E2EDIVA');
-  await expect(allA).toContainText('₹2,000');
-  await expect(allA).toContainText(mobile ? '2 dividends' : '2');
-  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,700');
-  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('$20.00');
-
-  // The newest year is shown by stock first; picking last year shows its stocks, largest first
-  await expect(page.getByRole('heading', { name: `${fyLabel(currentFy)} by stock` })).toBeVisible();
-  await expect(stockRow(page, mobile, 'IN', 'E2EDIVA')).toContainText('₹500');
-  if (mobile) await last.click();
-  else await last.getByRole('button', { name: fyLabel(lastFy) }).click();
-  await expect(page.getByRole('heading', { name: `${fyLabel(lastFy)} by stock` })).toBeVisible();
-  await expect(stockRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,700');
-  await expect(stockRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('$20.00');
-  await expect(stockRow(page, mobile, 'IN', 'E2EDIVA')).toContainText('₹1,500');
-
   await expectNoHorizontalScroll(page);
   await screenshot(page, 'dividends', testInfo.project.name);
+
+  // By stock covers all years at first: both years of E2EDIVA added up
+  await tab('By stock').click();
+  const year = page.getByRole('combobox', { name: 'Financial year' });
+  await expect(year).toHaveText('All years');
+  await expect(stockRow(page, mobile, 'IN', 'E2EDIVA')).toContainText('₹2,000');
+  await expect(stockRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,700');
+  await expect(stockRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('$20.00');
+  await expectNoHorizontalScroll(page);
+
+  // Picking a year in By year opens that year by stock
+  await tab('By year').click();
+  if (mobile) await last.click();
+  else await last.getByRole('button', { name: `${fyLabel(lastFy)} by stock` }).click();
+  await expect(tab('By stock')).toHaveAttribute('aria-selected', 'true');
+  await expect(year).toHaveText(fyLabel(lastFy));
+  await expect(stockRow(page, mobile, 'IN', 'E2EDIVA')).toContainText('₹1,500');
+
+  // Entries keep the same year: the current year's Wife dividend is not listed
+  await tab('Entries').click();
+  await expect(editButton(page, mobile, 'E2EDIVUS', SEPTEMBER)).toBeVisible();
+  await expect(editButton(page, mobile, 'E2EDIVA', JUNE)).toBeVisible();
+  await expect(page.getByRole('button', { name: /E2EDIVA/ })).toHaveCount(1);
+  await expectNoHorizontalScroll(page);
 
   // Edit the US dividend's rupees
   await editButton(page, mobile, 'E2EDIVUS', SEPTEMBER).click();
@@ -155,8 +154,8 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await edit.getByLabel('Amount (₹)').fill('1800');
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(edit).toBeHidden();
+  await tab('By year').click();
   await expect(last).toContainText('₹3,300');
-  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,800');
 
   // Scoped to Me, the Wife dividend drops out of this year
   await choosePortfolio(page, testInfo, 'Me');
@@ -165,6 +164,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await choosePortfolio(page, testInfo, 'All');
 
   // Delete the Indian dividend from last year
+  await tab('Entries').click();
   await editButton(page, mobile, 'E2EDIVA', JUNE).click();
   await edit.getByRole('button', { name: 'Delete' }).click();
   await edit
@@ -172,6 +172,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
     .getByRole('button', { name: 'Delete' })
     .click();
   await expect(edit).toBeHidden();
+  await tab('By year').click();
   await expect(last).toContainText('₹1,800');
   await expect(statCard(page, 'All time')).toContainText('2 dividends');
 });
