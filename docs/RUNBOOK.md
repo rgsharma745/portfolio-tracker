@@ -91,6 +91,8 @@ Schedules are set in IST in the workflow files (`timezone: Asia/Kolkata`). GitHu
 
 **Run a job by hand:** in the app, Settings › Job runs › Run now (NAVs, which also refreshes NPS NAVs, and prices; once every 30 minutes per job). Or GitHub › Actions › the job › Run workflow (or `gh workflow run nav.yml`), which has no lock. Jobs are idempotent: re-running one is always safe.
 
+**Run a job from your machine against production:** once, `cp scripts/.env.prod.example scripts/.env.prod`, fill in the project URL and the secret key (plus `BACKUP_AGE_RECIPIENT` for `backup`), and `chmod 600 scripts/.env.prod` (git-ignored; never commit it). Then `cd scripts && .venv/bin/python -m tools.run_prod fetch_prices` (or any job from `--list`). It shows the project host, asks `Run it? [y/N]` (`--yes` skips that), runs the job exactly as GitHub Actions does and records it in Job runs. No 30-minute lock. It refuses a localhost URL and the publishable/anon key, and never prints the key. It runs the jobs only, never the pytest suite (the job tests write market data).
+
 **Run now says:**
 | Message | Cause | Fix |
 |---|---|---|

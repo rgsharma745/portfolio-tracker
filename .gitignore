@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.prod.example
 scripts/data/
 scripts/backup-out/
 __pycache__/
