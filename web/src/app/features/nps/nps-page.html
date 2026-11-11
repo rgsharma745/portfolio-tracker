@@ -406,12 +406,6 @@
   </div>
 }
 
-<datalist id="nps-accounts">
-  @for (a of knownAccounts(); track a) {
-    <option [value]="a"></option>
-  }
-</datalist>
-
 <app-edit-dialog
   [visible]="contributionDialog.open()"
   [header]="contributionTitle()"
@@ -452,15 +446,14 @@
   </div>
   <div class="field">
     <label for="nps-c-account">Account</label>
-    <input
-      pInputText
-      id="nps-c-account"
-      autocomplete="off"
-      list="nps-accounts"
+    <app-suggest-input
+      inputId="nps-c-account"
+      [options]="knownAccounts()"
+      dropdownLabel="Show accounts"
       placeholder="e.g. Rahul PRAN"
-      [maxlength]="accountMax"
-      [ngModel]="contributionDialog.form().account"
-      (ngModelChange)="contributionDialog.set('account', $event)"
+      [maxLength]="accountMax"
+      [value]="contributionDialog.form().account"
+      (valueChange)="contributionDialog.set('account', $event)"
     />
     @if (contributionDialog.errors().account; as e) {
       <p class="field-error">{{ e }}</p>
@@ -525,15 +518,14 @@
   </div>
   <div class="field">
     <label for="nps-s-account">Account</label>
-    <input
-      pInputText
-      id="nps-s-account"
-      autocomplete="off"
-      list="nps-accounts"
+    <app-suggest-input
+      inputId="nps-s-account"
+      [options]="knownAccounts()"
+      dropdownLabel="Show accounts"
       placeholder="e.g. Rahul PRAN"
-      [maxlength]="accountMax"
-      [ngModel]="schemeDialog.form().account"
-      (ngModelChange)="schemeDialog.set('account', $event)"
+      [maxLength]="accountMax"
+      [value]="schemeDialog.form().account"
+      (valueChange)="schemeDialog.set('account', $event)"
     />
     @if (schemeDialog.errors().account; as e) {
       <p class="field-error">{{ e }}</p>

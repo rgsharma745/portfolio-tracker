@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -38,12 +37,13 @@ import { ErrorState } from '../../shared/ui/error-state';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { MoneyPipe } from '../../shared/ui/money.pipe';
 import { StatCard } from '../../shared/ui/stat-card';
+import { SuggestInput } from '../../shared/ui/suggest-input';
 import {
   DividendForm,
   dividendFormFrom,
   emptyDividendForm,
   inrAtRate,
-  matchSymbols,
+  SYMBOL_MAX,
   normalizeSymbol,
   validateDividendForm,
 } from './dividend-form';
@@ -74,7 +74,6 @@ export type DividendYearFilter = number | 'all';
   selector: 'app-dividends-page',
   imports: [
     FormsModule,
-    AutoCompleteModule,
     ButtonModule,
     InputTextModule,
     SelectModule,
@@ -92,6 +91,7 @@ export type DividendYearFilter = number | 'all';
     ListSkeleton,
     MoneyPipe,
     StatCard,
+    SuggestInput,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dividends-page.html',
@@ -103,6 +103,7 @@ export class DividendsPage {
   private readonly holdings = inject(HoldingsService);
   protected readonly bp = inject(BreakpointService);
   private readonly today = localIsoDate();
+  protected readonly symbolMax = SYMBOL_MAX;
 
   protected readonly formatDate = formatDate;
   protected readonly dialog = new DialogForm<DividendForm>();
@@ -208,11 +209,6 @@ export class DividendsPage {
       .map((d) => d.symbol);
     return [...new Set([...fromHoldings, ...fromDividends])].sort((a, b) => a.localeCompare(b));
   });
-  /** What the symbol field typed so far matches: symbols starting with it, then containing it. */
-  private readonly symbolQuery = signal('');
-  protected readonly symbolSuggestions = computed(() =>
-    matchSymbols(this.knownSymbols(), this.symbolQuery()),
-  );
 
   protected readonly yearColumns: Column<DividendYearRow>[] = [
     { key: 'label', header: 'Financial year', type: 'custom', sortable: false },
@@ -260,10 +256,6 @@ export class DividendsPage {
 
   private defaultPortfolio(): string {
     return this.portfolios.scope() ?? this.portfolios.active()[0]?.id ?? '';
-  }
-
-  protected filterSymbols(query: string): void {
-    this.symbolQuery.set(query);
   }
 
   protected selectTab(value: string | number | undefined): void {

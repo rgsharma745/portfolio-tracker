@@ -12,6 +12,7 @@ import { formatDate } from '../../shared/format/number';
 import { FormErrors } from '../../shared/format/validation';
 import { OverrideForm, OverrideKind, validateOverrideForm } from './settings-calc';
 import { DateInput } from '../../shared/ui/date-input';
+import { SuggestInput } from '../../shared/ui/suggest-input';
 
 interface OverrideRow {
   kind: OverrideKind;
@@ -28,6 +29,7 @@ interface OverrideRow {
 @Component({
   selector: 'app-prices-section',
   imports: [
+    SuggestInput,
     FormsModule,
     ButtonModule,
     InputTextModule,
@@ -91,21 +93,13 @@ interface OverrideRow {
           @if (form().kind === 'stock') {
             <div class="field">
               <label for="override-symbol">Symbol</label>
-              <input
-                pInputText
-                id="override-symbol"
-                name="symbol"
-                list="override-symbols"
-                autocomplete="off"
-                autocapitalize="characters"
-                [ngModel]="form().symbol"
-                (ngModelChange)="set('symbol', $event)"
+              <app-suggest-input
+                inputId="override-symbol"
+                [options]="symbols()"
+                dropdownLabel="Show symbols"
+                [value]="form().symbol"
+                (valueChange)="set('symbol', $event)"
               />
-              <datalist id="override-symbols">
-                @for (s of symbols(); track s) {
-                  <option [value]="s"></option>
-                }
-              </datalist>
               @if (errors().symbol; as e) {
                 <p class="field-error">{{ e }}</p>
               }

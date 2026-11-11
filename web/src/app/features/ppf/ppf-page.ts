@@ -39,6 +39,7 @@ import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { MoneyPipe } from '../../shared/ui/money.pipe';
 import { StatCard } from '../../shared/ui/stat-card';
 import { ACCOUNT_NAME_MAX, PpfForm, emptyPpfForm, ppfFormFrom, validatePpfForm } from './ppf-form';
+import { SuggestInput } from '../../shared/ui/suggest-input';
 
 export interface PpfRow {
   id: string;
@@ -72,6 +73,7 @@ const ALL = '';
 @Component({
   selector: 'app-ppf-page',
   imports: [
+    SuggestInput,
     FormsModule,
     ButtonModule,
     InputTextModule,

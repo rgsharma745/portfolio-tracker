@@ -62,6 +62,7 @@ import {
   validateSchemeForm,
   validateUnitsForm,
 } from './nps-form';
+import { SuggestInput } from '../../shared/ui/suggest-input';
 
 export interface SchemeRow {
   id: string;
@@ -109,6 +110,7 @@ const CONTRIBUTOR_LABEL: Record<NpsContributor, string> = { self: 'Self', employ
 @Component({
   selector: 'app-nps-page',
   imports: [
+    SuggestInput,
     FormsModule,
     ButtonModule,
     InputTextModule,

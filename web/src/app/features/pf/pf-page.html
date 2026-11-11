@@ -240,21 +240,15 @@
   </div>
   <div class="field">
     <label for="pf-company">Company</label>
-    <input
-      pInputText
-      id="pf-company"
-      autocomplete="off"
-      list="pf-companies"
-      [maxlength]="companyMax"
-      [ngModel]="dialog.form().company"
-      (ngModelChange)="dialog.set('company', $event)"
-      (change)="setCompany(dialog.form().company)"
+    <app-suggest-input
+      inputId="pf-company"
+      [options]="knownCompanies()"
+      dropdownLabel="Show companies"
+      [maxLength]="companyMax"
+      [value]="dialog.form().company"
+      (valueChange)="dialog.set('company', $event)"
+      (committed)="setCompany($event)"
     />
-    <datalist id="pf-companies">
-      @for (c of knownCompanies(); track c) {
-        <option [value]="c"></option>
-      }
-    </datalist>
     @if (dialog.errors().company; as e) {
       <p class="field-error">{{ e }}</p>
     }

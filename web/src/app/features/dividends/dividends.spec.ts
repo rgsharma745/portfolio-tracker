@@ -4,7 +4,6 @@ import {
   dividendFormFrom,
   emptyDividendForm,
   inrAtRate,
-  matchSymbols,
   normalizeSymbol,
   validateDividendForm,
 } from './dividend-form';
@@ -97,13 +96,6 @@ describe('Dividend form', () => {
       amount_inr: 6890.15,
       amount_usd: 82.4,
     });
-  });
-
-  it('suggests symbols starting with the query first, then containing it', () => {
-    const known = ['HDFCBANK', 'ICICIBANK', 'ITC', 'SBIN'];
-    expect(matchSymbols(known, ' i')).toEqual(['ICICIBANK', 'ITC', 'SBIN']);
-    expect(matchSymbols(known, 'bank')).toEqual(['HDFCBANK', 'ICICIBANK']);
-    expect(matchSymbols(known, '')).toEqual(known);
   });
 
   it('suggests rupees at a rate, rounded, only for a valid dollar amount', () => {

@@ -280,21 +280,15 @@
   </div>
   <div class="field">
     <label for="ppf-account">Account</label>
-    <input
-      pInputText
-      id="ppf-account"
-      autocomplete="off"
-      list="ppf-accounts"
+    <app-suggest-input
+      inputId="ppf-account"
+      [options]="knownAccounts()"
+      dropdownLabel="Show accounts"
       placeholder="e.g. SBI PPF"
-      [maxlength]="accountMax"
-      [ngModel]="dialog.form().account"
-      (ngModelChange)="dialog.set('account', $event)"
+      [maxLength]="accountMax"
+      [value]="dialog.form().account"
+      (valueChange)="dialog.set('account', $event)"
     />
-    <datalist id="ppf-accounts">
-      @for (a of knownAccounts(); track a) {
-        <option [value]="a"></option>
-      }
-    </datalist>
     @if (dialog.errors().account; as e) {
       <p class="field-error">{{ e }}</p>
     }

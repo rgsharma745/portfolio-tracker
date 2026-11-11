@@ -64,7 +64,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - By year (April to March): financial year, India, US (₹ as credited with the $ under it), Total, Entries, with a totals row; mobile cards (year and total, then India and US lines). The year is a button: it picks that year and opens By stock.
 - By stock: Symbol (India / US tag), Received (₹), In USD, Entries, Last received, largest first, with a totals row; mobile cards (symbol and total, then market, $, count and last date).
 - Entries: date (newest first, sortable), symbol (market and, in All mode, portfolio tags), Received, In USD; tap or the pencil edits; delete from the dialog with confirmation.
-- Dialog: Market (India / US), Portfolio, Symbol (PrimeNG AutoComplete with a dropdown button, free text upper-cased; suggests the market's stock holdings and past dividends, those starting with what is typed first), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
+- Dialog: Market (India / US), Portfolio, Symbol (upper-cased; suggests the market's stock holdings and past dividends), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
 - Not on Overview: no card, allocation share or history line.
 
 ### RSU
@@ -121,6 +121,7 @@ Manage portfolios (add, rename, reorder, deactivate; delete only with a strong w
 - Optimistic UI is not required; show a saving state then refresh the row.
 - Form validation messages inline; number inputs use `inputmode="decimal"`.
 - Every date field is the shared `app-date-input` (`shared/ui/date-input.ts`, PrimeNG DatePicker): shows "7 Nov 2026", stores `YYYY-MM-DD`, calendar over the page with Today and Clear, weeks start on Monday; on phones the text box is read-only so the calendar opens instead of the keyboard.
+- Every free-text field with suggestions (dividend and price-override symbols, PF company, PPF and NPS account) is the shared `app-suggest-input` (`shared/ui/suggest-input.ts`, PrimeNG AutoComplete), never a native `<datalist>`: suggestions starting with the typed text first, then those containing it; a button lists them all; any other text is still accepted. E2E finds the field by role: `getByRole('combobox', { name })`.
 - All icon-only buttons have `aria-label`.
 
 ## Visual style

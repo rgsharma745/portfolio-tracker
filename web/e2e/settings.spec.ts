@@ -175,7 +175,7 @@ sharedRowsTest('manual prices, job runs and data export', async ({ page }) => {
 
   // Manual price: validation, then a USD price for a US stock
   const prices = page.getByRole('region', { name: 'Manual prices' });
-  await prices.getByLabel('Symbol').fill('E2EMANUAL');
+  await prices.getByRole('combobox', { name: 'Symbol' }).fill('E2EMANUAL');
   await prices.getByRole('button', { name: 'Set manual price' }).click();
   await expect(prices.getByText('Enter the price.')).toBeVisible();
   await prices.getByLabel('Price ($)').fill('12.5');

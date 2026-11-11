@@ -74,7 +74,7 @@ test('NPS: schemes, contributions per financial year, XIRR, units update', async
   await scheme.getByRole('button', { name: 'Save' }).click();
   await expect(scheme.getByText('Enter the account name, e.g. Rahul PRAN.')).toBeVisible();
   await expect(scheme.getByText('Scheme codes look like SM008001.')).toBeVisible();
-  await scheme.getByLabel('Account').fill('E2E PRAN');
+  await scheme.getByRole('combobox', { name: 'Account' }).fill('E2E PRAN');
   await scheme.getByLabel('Scheme name').fill('E2E Scheme E Tier I');
   await scheme.getByLabel('Scheme code').fill(CODE.toLowerCase());
   await scheme.getByLabel('Units', { exact: true }).fill('1,000');
@@ -85,7 +85,7 @@ test('NPS: schemes, contributions per financial year, XIRR, units update', async
   // A self and an employer contribution last year
   await page.getByRole('button', { name: 'Add contribution to E2E PRAN' }).click();
   const self = page.getByRole('dialog', { name: 'Add contribution' });
-  await expect(self.getByLabel('Account')).toHaveValue('E2E PRAN');
+  await expect(self.getByRole('combobox', { name: 'Account' })).toHaveValue('E2E PRAN');
   await pickDate(page, self.getByLabel('Date', { exact: true }), JUNE);
   await expect(self.getByText(`Counts for ${fyLabel(lastFy)}.`)).toBeVisible();
   await self.getByLabel('Amount (₹)').fill('20,000');

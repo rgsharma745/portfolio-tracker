@@ -55,7 +55,7 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   await first.getByRole('button', { name: 'Save' }).click();
   await expect(first.getByText('Enter the company name.')).toBeVisible();
   await expect(first.getByText('Enter the employee amount.')).toBeVisible();
-  await first.getByLabel('Company').fill('E2E Tech');
+  await first.getByRole('combobox', { name: 'Company' }).fill('E2E Tech');
   await first.getByLabel('Employee (₹)').fill('1,800');
   await first.getByLabel('Employer (₹)').fill('550');
   await first.getByLabel('Pension, EPS (₹)').fill('1250');
@@ -68,7 +68,7 @@ test('PF: first month, next month prefilled, interest, filters, edit and delete'
   // Add next month: the following month with the same amounts, ready to save
   await page.getByRole('button', { name: 'Add next month for E2E Tech' }).click();
   const next = page.getByRole('dialog', { name: 'Add PF month' });
-  await expect(next.getByLabel('Company')).toHaveValue('E2E Tech');
+  await expect(next.getByRole('combobox', { name: 'Company' })).toHaveValue('E2E Tech');
   await expect(next.getByLabel('Employee (₹)')).toHaveValue('1800');
   await expect(next.getByLabel('Pension, EPS (₹)')).toHaveValue('1250');
   // Switching to Interest does not carry the month's amounts over (the title follows the type)

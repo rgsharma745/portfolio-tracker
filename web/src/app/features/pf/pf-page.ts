@@ -50,6 +50,7 @@ import {
   switchType,
   validatePfForm,
 } from './pf-form';
+import { SuggestInput } from '../../shared/ui/suggest-input';
 
 export interface PfRow {
   id: string;
@@ -82,6 +83,7 @@ export function rowTitle(row: Pick<PfRow, 'type' | 'wageLabel'>): string {
 @Component({
   selector: 'app-pf-page',
   imports: [
+    SuggestInput,
     FormsModule,
     ButtonModule,
     InputTextModule,

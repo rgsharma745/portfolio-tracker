@@ -61,7 +61,7 @@ test('PPF: investments and interest per financial year, limit flag, edit and del
   await first.getByRole('button', { name: 'Save' }).click();
   await expect(first.getByText('Enter the account name, e.g. SBI PPF.')).toBeVisible();
   await expect(first.getByText('Enter the amount.')).toBeVisible();
-  await first.getByLabel('Account').fill('E2E PPF');
+  await first.getByRole('combobox', { name: 'Account' }).fill('E2E PPF');
   await pickDate(page, first.getByLabel('Date', { exact: true }), JUNE);
   await expect(first.getByText(`Counts for ${fyLabel(lastFy)}.`)).toBeVisible();
   await first.getByLabel('Amount (₹)').fill('1,00,000');
@@ -72,7 +72,7 @@ test('PPF: investments and interest per financial year, limit flag, edit and del
   // A second deposit in the same year takes it over ₹1.5 lakh: flagged, not refused
   await page.getByRole('button', { name: 'Add investment to E2E PPF' }).click();
   const second = page.getByRole('dialog', { name: 'Add PPF investment' });
-  await expect(second.getByLabel('Account')).toHaveValue('E2E PPF');
+  await expect(second.getByRole('combobox', { name: 'Account' })).toHaveValue('E2E PPF');
   await pickDate(page, second.getByLabel('Date', { exact: true }), SEPTEMBER);
   await second.getByLabel('Amount (₹)').fill('60000');
   await second.getByRole('button', { name: 'Save' }).click();
