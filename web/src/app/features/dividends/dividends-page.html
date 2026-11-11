@@ -282,22 +282,19 @@
   <div class="form-row">
     <div class="field">
       <label for="dividend-symbol">Symbol</label>
-      <input
-        pInputText
-        id="dividend-symbol"
+      <p-autocomplete
+        inputId="dividend-symbol"
         autocomplete="off"
-        autocapitalize="characters"
-        list="dividend-symbols"
+        [suggestions]="symbolSuggestions()"
+        (completeMethod)="filterSymbols($event.query)"
+        [dropdown]="true"
+        dropdownAriaLabel="Show symbols"
+        [showEmptyMessage]="false"
         [placeholder]="dialog.form().market === 'US' ? 'e.g. MSFT' : 'e.g. ITC'"
-        [maxlength]="symbolMax"
         [ngModel]="dialog.form().symbol"
-        (ngModelChange)="dialog.set('symbol', $event)"
+        (ngModelChange)="dialog.set('symbol', $event ?? '')"
+        appendTo="body"
       />
-      <datalist id="dividend-symbols">
-        @for (s of knownSymbols(); track s) {
-          <option [value]="s"></option>
-        }
-      </datalist>
       @if (dialog.errors().symbol; as e) {
         <p class="field-error">{{ e }}</p>
       }

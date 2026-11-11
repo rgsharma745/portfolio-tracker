@@ -80,7 +80,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await first.getByRole('button', { name: 'Save' }).click();
   await expect(first.getByText('Enter the symbol, e.g. ITC.')).toBeVisible();
   await expect(first.getByText('Enter the amount.')).toBeVisible();
-  await first.getByLabel('Symbol').fill('e2ediva');
+  await first.getByRole('combobox', { name: 'Symbol' }).fill('e2ediva');
   await pickDate(page, first.getByLabel('Date received', { exact: true }), JUNE);
   await expect(first.getByText(`Counts for ${fyLabel(lastFy)}.`)).toBeVisible();
   await first.getByLabel('Amount (₹)').fill('1,500');
@@ -91,7 +91,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await page.getByRole('button', { name: 'Add dividend' }).click();
   const us = page.getByRole('dialog', { name: 'Add dividend' });
   await us.getByRole('button', { name: 'US' }).click();
-  await us.getByLabel('Symbol').fill('E2EDIVUS');
+  await us.getByRole('combobox', { name: 'Symbol' }).fill('E2EDIVUS');
   await pickDate(page, us.getByLabel('Date received', { exact: true }), SEPTEMBER);
   await us.getByLabel('Amount (₹)').fill('1700');
   await us.getByRole('button', { name: 'Save' }).click();
@@ -105,7 +105,10 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   const wife = page.getByRole('dialog', { name: 'Add dividend' });
   await wife.getByRole('combobox', { name: 'Me' }).click(); // named by its value
   await page.getByRole('option', { name: 'Wife' }).click();
-  await wife.getByLabel('Symbol').fill('E2EDIVA');
+  // Symbols already used come up as suggestions
+  await wife.getByRole('combobox', { name: 'Symbol' }).fill('e2edi');
+  await page.getByRole('option', { name: 'E2EDIVA', exact: true }).click();
+  await expect(wife.getByRole('combobox', { name: 'Symbol' })).toHaveValue('E2EDIVA');
   await wife.getByLabel('Amount (₹)').fill('500');
   await wife.getByRole('button', { name: 'Save' }).click();
   await expect(wife).toBeHidden();

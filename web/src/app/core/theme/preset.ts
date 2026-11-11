@@ -1,5 +1,6 @@
 import { definePreset } from '@primeuix/themes';
 import AuraBase from '@primeuix/themes/aura/base';
+import autocomplete from '@primeuix/themes/aura/autocomplete';
 import button from '@primeuix/themes/aura/button';
 import datatable from '@primeuix/themes/aura/datatable';
 import datepicker from '@primeuix/themes/aura/datepicker';
@@ -25,6 +26,7 @@ import toggleswitch from '@primeuix/themes/aura/toggleswitch';
 const Aura = {
   ...AuraBase,
   components: {
+    autocomplete,
     button,
     datatable,
     datepicker,

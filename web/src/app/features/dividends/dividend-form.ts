@@ -83,6 +83,15 @@ export function validateDividendForm(form: DividendForm): {
   };
 }
 
+/** Known symbols matching what was typed: those starting with it first, then the rest containing it. */
+export function matchSymbols(symbols: readonly string[], query: string): string[] {
+  const q = normalizeSymbol(query);
+  if (!q) return [...symbols];
+  const starts = symbols.filter((s) => s.startsWith(q));
+  const contains = symbols.filter((s) => !s.startsWith(q) && s.includes(q));
+  return [...starts, ...contains];
+}
+
 /** ₹ for a dollar amount at today's rate, as a hint (rounded to the rupee), or null. */
 export function inrAtRate(amountUsd: string, usdInr: number | null): number | null {
   const usd = parseDecimal(amountUsd);

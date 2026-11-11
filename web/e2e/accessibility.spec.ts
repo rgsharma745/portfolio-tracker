@@ -268,6 +268,10 @@ for (const theme of ['light', 'dark'] as const) {
     await dividendDialog.getByLabel('Amount ($)').fill('20');
     await expect(dividendDialog.getByRole('button', { name: 'Use it' })).toBeVisible();
     await audit(page, `${theme} /dividends dialog`);
+    await dividendDialog.getByRole('combobox', { name: 'Symbol' }).fill('E2E');
+    await expect(page.getByRole('option', { name: 'E2EDIVUS' })).toBeVisible();
+    await audit(page, `${theme} /dividends symbol suggestions`);
+    await page.keyboard.press('Escape');
     await dividendDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dividendDialog).toBeHidden();
 

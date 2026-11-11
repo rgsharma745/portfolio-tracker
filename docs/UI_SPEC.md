@@ -64,7 +64,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - By year (April to March): financial year, India, US (₹ as credited with the $ under it), Total, Entries, with a totals row; mobile cards (year and total, then India and US lines). The year is a button: it picks that year and opens By stock.
 - By stock: Symbol (India / US tag), Received (₹), In USD, Entries, Last received, largest first, with a totals row; mobile cards (symbol and total, then market, $, count and last date).
 - Entries: date (newest first, sortable), symbol (market and, in All mode, portfolio tags), Received, In USD; tap or the pencil edits; delete from the dialog with confirmation.
-- Dialog: Market (India / US), Portfolio, Symbol (upper-cased; suggests the market's stock holdings and past dividends), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
+- Dialog: Market (India / US), Portfolio, Symbol (PrimeNG AutoComplete with a dropdown button, free text upper-cased; suggests the market's stock holdings and past dividends, those starting with what is typed first), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
 - Not on Overview: no card, allocation share or history line.
 
 ### RSU
