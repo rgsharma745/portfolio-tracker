@@ -44,6 +44,13 @@ const stockRow = (page: Page, mobile: boolean, market: string, symbol: string) =
     : page
         .locator('app-data-table', { has: page.getByRole('table', { name: /by stock/ }) })
         .locator('tr', { hasText: symbol });
+/** A stock's row in the all-years per-stock table. */
+const allYearsRow = (page: Page, mobile: boolean, market: string, symbol: string) =>
+  mobile
+    ? page.getByTestId(`dividend-stock-${market}:${symbol}`)
+    : page
+        .getByRole('table', { name: 'Dividends per stock, all years' })
+        .locator('tr', { hasText: symbol });
 /** An entry's edit button: the pencil on desktop, the whole card on mobile. */
 const editButton = (page: Page, mobile: boolean, symbol: string, iso: string) =>
   mobile
@@ -121,6 +128,13 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await expect(last).toContainText('₹3,200');
   await expect(yearRow(page, mobile, currentFy)).toContainText('₹500');
 
+  // Across all years, per stock: both years of E2EDIVA added up, largest first
+  const allA = allYearsRow(page, mobile, 'IN', 'E2EDIVA');
+  await expect(allA).toContainText('₹2,000');
+  await expect(allA).toContainText(mobile ? '2 dividends' : '2');
+  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,700');
+  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('$20.00');
+
   // The newest year is shown by stock first; picking last year shows its stocks, largest first
   await expect(page.getByRole('heading', { name: `${fyLabel(currentFy)} by stock` })).toBeVisible();
   await expect(stockRow(page, mobile, 'IN', 'E2EDIVA')).toContainText('₹500');
@@ -142,6 +156,7 @@ test('Dividends: India and US per financial year, by stock, edit, delete and por
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(edit).toBeHidden();
   await expect(last).toContainText('₹3,300');
+  await expect(allYearsRow(page, mobile, 'US', 'E2EDIVUS')).toContainText('₹1,800');
 
   // Scoped to Me, the Wife dividend drops out of this year
   await choosePortfolio(page, testInfo, 'Me');

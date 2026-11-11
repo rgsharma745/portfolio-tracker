@@ -114,6 +114,56 @@
       </app-data-table>
     </section>
 
+    <section class="page-stack" aria-labelledby="stocks-title">
+      <div>
+        <h2 class="section-title" id="stocks-title">By stock, all years</h2>
+        <p class="section-hint">Everything each stock has paid you, largest first.</p>
+      </div>
+
+      <app-data-table
+        label="Dividends per stock, all years"
+        dataKey="key"
+        [rows]="allTimeSymbols()"
+        [columns]="allTimeColumns"
+        [footer]="allTimeTotals()"
+        minWidth="40rem"
+      >
+        <ng-template appCell="symbol" let-row>
+          <span class="name-cell">
+            <span>{{ row.symbol }}</span>
+            <span class="name-tags"
+              ><p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary"
+            /></span>
+          </span>
+        </ng-template>
+        <ng-template appCell="usd" let-row>
+          <span class="app-num">{{ row.usd === null ? '' : (row.usd | money: 'USD') }}</span>
+        </ng-template>
+        <ng-template appFooter="symbol" let-t>
+          <span class="name-title">Total</span>
+        </ng-template>
+        <ng-template appFooter="usd" let-t>
+          <span class="app-num">{{ t.usd === null ? '' : (t.usd | money: 'USD') }}</span>
+        </ng-template>
+        <ng-template appCard let-row>
+          <div class="app-card year-card" [attr.data-testid]="'dividend-stock-' + row.key">
+            <span class="entry-top">
+              <span class="entry-title">{{ row.symbol }}</span>
+              <span class="app-num">{{ row.inr | money }}</span>
+            </span>
+            <span class="entry-meta">
+              <p-tag [value]="row.market === 'US' ? 'US' : 'India'" severity="secondary" />
+              @if (row.usd !== null) {
+                <span class="app-num">{{ row.usd | money: 'USD' }}</span>
+              }
+              <span>{{ row.count }} {{ row.count === 1 ? 'dividend' : 'dividends' }}</span>
+              <span>Last {{ formatDate(row.lastPaid) }}</span>
+            </span>
+          </div>
+        </ng-template>
+      </app-data-table>
+    </section>
+
     <section class="page-stack" aria-labelledby="symbols-title">
       <div class="section-head">
         <h2 class="section-title" id="symbols-title">{{ selectedLabel() }} by stock</h2>

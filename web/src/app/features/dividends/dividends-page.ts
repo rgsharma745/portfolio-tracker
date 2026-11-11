@@ -60,7 +60,10 @@ export interface DividendRow {
   usd: number | null;
 }
 
-/** Dividends received: totals per financial year, and per symbol and entry for one year. */
+/**
+ * Dividends received: totals per financial year and per stock across all years, and per stock
+ * and entry for one year.
+ */
 @Component({
   selector: 'app-dividends-page',
   imports: [
@@ -94,6 +97,7 @@ export class DividendsPage {
   protected readonly symbolMax = SYMBOL_MAX;
   private readonly today = localIsoDate();
 
+  protected readonly formatDate = formatDate;
   protected readonly dialog = new DialogForm<DividendForm>();
   /** The financial year picked for the per-symbol view; null until the owner picks one. */
   private readonly chosenFy = signal<number | null>(null);
@@ -150,6 +154,15 @@ export class DividendsPage {
     };
   });
 
+  /** Every year's dividends per stock, largest first. */
+  protected readonly allTimeSymbols = computed(() =>
+    dividendsBySymbol(this.dividends.entries(), this.portfolios.scopeIds(), null),
+  );
+  protected readonly allTimeTotals = computed(() => {
+    const t = this.yearTotals();
+    return { inr: t.total, usd: t.usd > 0 ? t.usd : null, count: t.count };
+  });
+
   protected readonly rows = computed<DividendRow[]>(() => {
     const ids = new Set(this.portfolios.scopeIds());
     return this.dividends
@@ -201,6 +214,10 @@ export class DividendsPage {
     { key: 'inr', header: 'Received', type: 'money', sortable: false },
     { key: 'usd', header: 'In USD', type: 'custom', sortable: false, alignEnd: true },
     { key: 'count', header: 'Entries', type: 'units', sortable: false },
+  ];
+  protected readonly allTimeColumns: Column<DividendSymbolRow>[] = [
+    ...this.symbolColumns,
+    { key: 'lastPaid', header: 'Last received', type: 'date', sortable: false },
   ];
   protected readonly columns: Column<DividendRow>[] = [
     { key: 'date', header: 'Date', type: 'custom', sortable: true },
