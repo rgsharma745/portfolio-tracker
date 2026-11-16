@@ -90,7 +90,7 @@ def check_service_key(key: str) -> None:
             raise ValueError
         payload = json.loads(base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4)))
         role = payload.get("role") if isinstance(payload, dict) else None
-    except (ValueError, UnicodeDecodeError):
+    except ValueError:
         raise SetupError("SUPABASE_SERVICE_ROLE_KEY is not a Supabase secret key") from None
     if role != "service_role":
         raise SetupError("SUPABASE_SERVICE_ROLE_KEY is not the service role key")
