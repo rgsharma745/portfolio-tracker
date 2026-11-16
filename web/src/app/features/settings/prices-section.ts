@@ -46,8 +46,7 @@ interface OverrideRow {
           Set a price by hand when a source is wrong or missing. The daily jobs leave it alone until
           you remove it.
           @if (autoRate(); as rate) {
-            Current USD/INR: <span class="app-num">{{ rate }}</span
-            >.
+            Current USD/INR: <span class="app-num">{{ rate }}</span>.
           }
         </p>
       </div>
