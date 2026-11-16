@@ -118,14 +118,22 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(JOBS))
         return 0 if args.list else 2
 
+    # Defence-in-depth: argparse already checks choices, but validate against
+    # the allowlist explicitly so static analysers see that the value passed to
+    # subprocess.run is bounded to a known set.
+    job: str = args.job
+    if job not in JOBS:
+        print(f"run_prod: unknown job {job!r}", file=sys.stderr)
+        return 2
+
     try:
         settings = load_settings(dict(os.environ))
-        host = prepare(args.job, settings)
+        host = prepare(job, settings)
     except SetupError as e:
         print(f"run_prod: {e}", file=sys.stderr)
         return 2
 
-    print(f"Job {args.job} → {host} (production)")
+    print(f"Job {job} → {host} (production)")
     if not args.yes:
         try:
             answer = input("Run it? [y/N] ").strip().lower()
@@ -137,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
 
     env = {**os.environ, **settings}
     # The job prints its own "ok {summary}" or "failed: ..." line.
-    return subprocess.run([sys.executable, "-m", f"jobs.{args.job}"], cwd=SCRIPTS_DIR, env=env, check=False).returncode
+    return subprocess.run([sys.executable, "-m", f"jobs.{job}"], cwd=SCRIPTS_DIR, env=env, check=False).returncode
 
 
 if __name__ == "__main__":
