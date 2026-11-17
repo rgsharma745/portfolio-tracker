@@ -156,7 +156,7 @@ Set up once:
 Notes:
 - New code is the last 30 days (Administration › New Code, set 10 Nov 2026). The quality gate wants 80% coverage on it.
 - Coverage, merged by Sonar from three reports: the app's unit tests (`npm run test:sonar`, lcov of all of `src/app`; `npm run test:coverage` still gates `core/calc` at 90%), the Playwright run in Chromium (`E2E_COVERAGE=1 npm run e2e` writes `web/coverage/e2e/lcov.info`; the pages and data services are covered mostly here) and pytest (`pytest --cov --cov-report=xml` in `scripts/`). About 82% in all on 10 Nov 2026. The E2E report under-counts TypeScript class fields (the converter cannot parse TypeScript, so those lines show as uncovered unless a unit test runs them): the real figure is higher. The Worker and `web/scripts` are analysed but excluded from coverage.
-- The reliability findings and the first scan's security findings were fixed on 10 Nov 2026 (any left after the next scan: Accept with a note); keep new code clean (AGENTS.md has the E2E rule against fixed waits).
+- The reliability findings and the security findings (including plain-http Supabase URLs, restore paths, backtracking regex, and the 17 Nov 2026 `run_prod` command-argument taint finding) were fixed in code (any remaining: Accept with a note); keep new code clean (AGENTS.md has the E2E rule against fixed waits).
 - A new page or service needs tests to keep the gate green: E2E for the page (as every page has), unit tests for logic that E2E does not reach.
 - If the scan fails (Sonar outage, expired token) CI stays green and the step shows a warning; renew the token as in step 4.
 - To stop: delete the `SONAR_TOKEN` secret (the steps skip), then delete the project in SonarQube Cloud.
