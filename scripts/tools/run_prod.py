@@ -27,7 +27,18 @@ from urllib.parse import urlparse
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = SCRIPTS_DIR / ".env.prod"
-JOBS = ("fetch_nav", "fetch_nps_nav", "fetch_prices", "snapshot", "backup", "keepalive")
+# Map each allowed job name to the exact module argument for subprocess.run.
+# Using a dict lookup (instead of f"jobs.{job}") ensures the value passed to
+# the subprocess is always a hardcoded literal, satisfying taint analysis.
+JOB_MODULES: dict[str, str] = {
+    "fetch_nav": "jobs.fetch_nav",
+    "fetch_nps_nav": "jobs.fetch_nps_nav",
+    "fetch_prices": "jobs.fetch_prices",
+    "snapshot": "jobs.snapshot",
+    "backup": "jobs.backup",
+    "keepalive": "jobs.keepalive",
+}
+JOBS = tuple(JOB_MODULES.keys())
 KEYS = ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "BACKUP_AGE_RECIPIENT", "BACKUP_DIR")
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
 
@@ -143,9 +154,10 @@ def main(argv: list[str] | None = None) -> int:
             print("Not run.")
             return 1
 
+    module = JOB_MODULES[job]
     env = {**os.environ, **settings}
     # The job prints its own "ok {summary}" or "failed: ..." line.
-    return subprocess.run([sys.executable, "-m", f"jobs.{job}"], cwd=SCRIPTS_DIR, env=env, check=False).returncode
+    return subprocess.run([sys.executable, "-m", module], cwd=SCRIPTS_DIR, env=env, check=False).returncode
 
 
 if __name__ == "__main__":
