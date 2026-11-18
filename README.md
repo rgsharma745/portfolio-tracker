@@ -2,7 +2,7 @@
 
 A private, free-to-host personal finance dashboard (mutual funds, stocks India and US, RSUs, savings, credit card dues) that replaces a Google Sheet. One owner login, several portfolios (for example Me and Wife). Responsive, installable on a phone, light and dark.
 
-Live: https://portfolio-tracker.rgsharma745.workers.dev (sign-in only; not indexed by search engines)
+Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engines)
 
 ## Stack
 Angular 22 + PrimeNG (Aura) + Tailwind for layout · Supabase (Postgres, Auth, Row Level Security) · Cloudflare Workers static assets (hosting) · GitHub Actions running Python 3.15 jobs (nightly NAVs, prices, daily snapshot, weekly encrypted backup).

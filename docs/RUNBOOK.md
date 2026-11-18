@@ -5,7 +5,7 @@ How to run, fix and recover the portfolio tracker. Commands run from the repo ro
 ## Where things live
 | What | Where |
 |---|---|
-| Site | https://portfolio-tracker.rgsharma745.workers.dev, from Cloudflare › Workers & Pages › `portfolio-tracker` (deploys on every push to `main`) |
+| Site | Your Cloudflare Workers URL (Cloudflare › Workers & Pages › `portfolio-tracker`; deploys on every push to `main`) |
 | Database and sign-in | Supabase project (Authentication, Table Editor, Project Settings › API Keys) |
 | Scheduled jobs and backups | GitHub › Actions (NAV, Prices, Snapshot, Backup, Keep-alive) |
 | Job results | The app: Settings › Job runs |
@@ -148,7 +148,7 @@ Code quality, security hotspots and coverage on SonarQube Cloud (Free plan: priv
 
 Set up once:
 1. sonarcloud.io › Log in with GitHub › create an organization from your GitHub account (Free plan) › Analyze new project › `portfolio-tracker`. Install the SonarQube Cloud GitHub app on this repository only when asked (it adds the PR comments).
-2. Check the keys in Administration › Project information match `sonar-project.properties` (`sonar.organization=rgsharma745`, `sonar.projectKey=rgsharma745_portfolio-tracker`); if not, change the file.
+2. Check the keys in Administration › Project information match `sonar-project.properties` (`sonar.organization` and `sonar.projectKey`); if not, change the file.
 3. Administration › Analysis Method › turn **Automatic Analysis off** (CI does the scan; with both on, the CI scan fails).
 4. My Account › Security › generate a token (type: project analysis, for this project, with an expiry) › GitHub › Settings › Secrets and variables › Actions › New secret `SONAR_TOKEN`.
 5. Push, or re-run CI: the "SonarQube" step uploads the analysis; the dashboard fills a minute later.
