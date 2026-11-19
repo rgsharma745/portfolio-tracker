@@ -21,3 +21,4 @@ supabase/.temp/
 # Wrangler local dev state
 .wrangler/
 /data/
+.idea/

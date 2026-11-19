@@ -20,6 +20,25 @@
     "schedule": ["at any time"]
   },
   "osvVulnerabilityAlerts": true,
+  "pip-compile": {
+    "managerFilePatterns": ["/^scripts\\/requirements(-dev)?\\.txt$/"]
+  },
+  "pip_requirements": {
+    "enabled": false
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update the pinned Supabase CLI used by CI from GitHub releases.",
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/ci\\.yml$/"],
+      "matchStrings": ["SUPABASE_CLI_VERSION: (?<currentValue>\\S+)"],
+      "depNameTemplate": "supabase/cli",
+      "packageNameTemplate": "supabase/cli",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
   "packageRules": [
     {
       "description": "Small updates to build and test tools arrive as one weekly PR.",
