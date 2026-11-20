@@ -54,7 +54,7 @@ jobs:
           cache-dependency-path: scripts/requirements-dev.txt
       - name: Install Supabase CLI
         env:
-          SUPABASE_CLI_VERSION: 3.0.0
+          SUPABASE_CLI_VERSION: 3.2.0
         run: |
           release_url="https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}"
           archive_name="supabase_${SUPABASE_CLI_VERSION}_linux_amd64.tar.gz"
