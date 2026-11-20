@@ -1,5 +1,5 @@
-import { execSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { dirname, join, resolve } from 'node:path';
 
 /** E2E runs only against the local Supabase stack (`npx supabase start` at the repo root). */
 export interface LocalSupabase {
@@ -9,13 +9,14 @@ export interface LocalSupabase {
   mailpitUrl: string;
 }
 
+const npx = join(dirname(process.execPath), process.platform === 'win32' ? 'npx.cmd' : 'npx');
 let cached: LocalSupabase | undefined;
 
 export function localSupabase(): LocalSupabase {
   if (cached) return cached;
   let out: string;
   try {
-    out = execSync('npx -y supabase@3.0.0 status -o json', {
+    out = execFileSync(npx, ['-y', 'supabase@3.2.0', 'status', '-o', 'json'], {
       cwd: resolve(__dirname, '../../..'),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
