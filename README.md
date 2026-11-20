@@ -1,6 +1,6 @@
 # Portfolio Tracker
 
-A private, free-to-host personal finance dashboard (mutual funds, stocks India and US, RSUs, savings, credit card dues) that replaces a Google Sheet. One owner login, several portfolios (for example Me and Wife). Responsive, installable on a phone, light and dark.
+A private, free-to-host personal finance dashboard (mutual funds, Indian and US stocks, RSUs, savings, credit card dues, PF, PPF, NPS, fixed deposits and dividends) that replaces a Google Sheet. One owner login, several portfolios (for example Me and Wife). Responsive, installable on a phone, light and dark.
 
 Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engines)
 
@@ -8,7 +8,7 @@ Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engine
 Angular 22 + PrimeNG (Aura) + Tailwind for layout · Supabase (Postgres, Auth, Row Level Security) · Cloudflare Workers static assets (hosting) · GitHub Actions running Python 3.15 jobs (nightly NAVs, prices, daily snapshot, weekly encrypted backup).
 
 ## Status
-Phases 0 to 10 of `PLAN.md` are built; what is left is the owner's own checks (see the **Status** section at the top of `PLAN.md`). Later work the owner will define: RSU + ESOP rules.
+Phases 0 to 17 of `PLAN.md` are built and live. The remaining work is owner acceptance and data reconciliation (see the **Status** section at the top of `PLAN.md`). Recent maintenance hardened CI dependency installs, hash-locked Python dependencies with Renovate updates, and aligned SonarCloud's analysis scope with its current scanner behavior. Later work the owner will define: RSU + ESOP rules.
 
 ## Working on it with Claude Code
 Open the repo and start a new chat with, for example:
