@@ -5,6 +5,7 @@ import { SUPABASE } from './supabase.client';
 export const EXPORT_TABLES = [
   'portfolios',
   'mf_holdings',
+  'mf_transactions',
   'stock_holdings',
   'rsu_grants',
   'savings_accounts',

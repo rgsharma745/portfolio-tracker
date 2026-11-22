@@ -8,11 +8,13 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { localIsoDate, sumValuations } from '../../core/calc/common';
 import { mfTotals } from '../../core/calc/mf';
+import { MfCurrentValueInput, mfXirr, mfXirrByFolio } from '../../core/calc/mf-transactions';
 import { HoldingsService } from '../../core/data/holdings.service';
+import { MfTransactionsService } from '../../core/data/mf-transactions.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { toCsv } from '../../shared/format/csv';
 import { downloadText } from '../../shared/format/download';
-import { formatMoney } from '../../shared/format/money';
+import { formatMoney, formatPercent } from '../../shared/format/money';
 import { formatDate, formatUnits } from '../../shared/format/number';
 import { PlFilter, Sort, filterByPl, matchesSearch, sortRows } from '../../shared/format/sort';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
@@ -64,10 +66,12 @@ import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './mf-page.html',
+  styleUrl: './mf-page.scss',
 })
 export class MfPage {
   protected readonly holdings = inject(HoldingsService);
   protected readonly portfolios = inject(PortfolioService);
+  protected readonly transactionService = inject(MfTransactionsService);
   protected readonly bp = inject(BreakpointService);
   private readonly today = localIsoDate();
 
@@ -101,6 +105,38 @@ export class MfPage {
   );
   protected readonly totals = computed(() =>
     mfTotals(this.holdings.mf(), this.holdings.navQuotes(), this.portfolios.scopeIds(), this.today),
+  );
+  private readonly currentValues = computed<MfCurrentValueInput[]>(() =>
+    this.rows().map((row) => ({
+      portfolio_id: row.holding.portfolio_id,
+      folio: row.folio,
+      value: row.value,
+    })),
+  );
+  protected readonly portfolioXirr = computed(() =>
+    mfXirr(
+      this.transactionService.transactions(),
+      this.currentValues(),
+      this.portfolios.scopeIds(),
+      this.today,
+    ),
+  );
+  protected readonly folioXirrs = computed(() =>
+    mfXirrByFolio(
+      this.transactionService.transactions(),
+      this.currentValues(),
+      this.portfolios.scopeIds(),
+      this.today,
+    ).map((summary) => ({
+      ...summary,
+      portfolio: this.portfolioNames().get(summary.portfolioId) ?? '',
+    })),
+  );
+  protected readonly recentTransactions = computed(() =>
+    this.transactionService
+      .transactions()
+      .filter((transaction) => this.portfolios.scopeIds().includes(transaction.portfolio_id))
+      .slice(0, 100),
   );
   protected readonly visible = computed(() =>
     sortRows(
@@ -150,6 +186,14 @@ export class MfPage {
 
   protected date(value: string | null): string {
     return formatDate(value);
+  }
+
+  protected xirr(value: number | null): string {
+    return value === null ? '—' : formatPercent(value * 100);
+  }
+
+  protected transactionAmount(value: number | null): string {
+    return value === null ? '—' : formatMoney(Math.abs(value));
   }
 
   protected staleTitle(row: MfRow): string {

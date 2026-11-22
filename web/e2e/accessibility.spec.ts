@@ -66,8 +66,26 @@ async function seedAuditData(): Promise<void> {
       portfolio_id: ids['Me'],
       scheme_name: 'E2E Accessible Fund',
       scheme_code: 'e2e-a11y-1',
+      folio: 'e2e-a11y-folio',
       units: 100,
       invested: 4000,
+    },
+  ]);
+  await adminInsert('mf_transactions', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      source_key: 'b'.repeat(64),
+      scheme_code: 'e2e-a11y-1',
+      scheme_name: 'E2E Accessible Fund',
+      folio: 'e2e-a11y-folio',
+      transaction_date: new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10),
+      transaction_type: 'PURCHASE',
+      description: 'Purchase',
+      amount: 4000,
+      units: 100,
+      nav: 40,
+      balance: 100,
     },
   ]);
   await adminInsert('stock_holdings', [
@@ -222,6 +240,12 @@ for (const theme of ['light', 'dark'] as const) {
     for (const path of PAGES) {
       await page.goto(path);
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+      if (path === '/mutual-funds') {
+        await expect(
+          page.getByRole('list', { name: 'Recent mutual fund transactions' }),
+        ).toContainText('E2E Accessible Fund');
+        await expect(page.getByRole('heading', { name: 'XIRR by folio' })).toBeVisible();
+      }
       await audit(page, `${theme} ${path}`);
     }
   });

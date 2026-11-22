@@ -355,6 +355,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      mf_transactions: {
+        Row: {
+          amount: number | null;
+          balance: number | null;
+          created_at: string;
+          description: string;
+          folio: string;
+          id: string;
+          nav: number | null;
+          owner_id: string;
+          portfolio_id: string;
+          scheme_code: string | null;
+          scheme_name: string;
+          source_key: string;
+          transaction_date: string;
+          transaction_type: string;
+          units: number | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount?: number | null;
+          balance?: number | null;
+          created_at?: string;
+          description: string;
+          folio?: string;
+          id?: string;
+          nav?: number | null;
+          owner_id?: string;
+          portfolio_id: string;
+          scheme_code?: string | null;
+          scheme_name: string;
+          source_key: string;
+          transaction_date: string;
+          transaction_type: string;
+          units?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number | null;
+          balance?: number | null;
+          created_at?: string;
+          description?: string;
+          folio?: string;
+          id?: string;
+          nav?: number | null;
+          owner_id?: string;
+          portfolio_id?: string;
+          scheme_code?: string | null;
+          scheme_name?: string;
+          source_key?: string;
+          transaction_date?: string;
+          transaction_type?: string;
+          units?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mf_transactions_portfolio_id_fkey';
+            columns: ['portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nps_contributions: {
         Row: {
           account: string;

@@ -2,6 +2,20 @@
 
 You load your own data. Three options: the app's forms, Supabase's table editor (CSV import), or the SQL editor. Load in this order because later tables point to earlier ones.
 
+## Mutual-fund transactions from CAMS CAS
+
+Use the local CLI for an original **CAMS detailed CAS PDF**; the PDF and its password stay on your machine. Summary CAS PDFs, MF Central statements, reprinted PDFs and KFintech/NSDL/CDSL files are not supported. The importer previews positions, transaction counts and folio-to-portfolio mapping first. It writes only after `--apply` and typing `IMPORT`.
+
+Set up the Python environment once using `AGENTS.md` › Scripts setup. Put the Supabase project URL and service-role key in the git-ignored `scripts/.env.prod` (copy `.env.prod.example`, restrict it with `chmod 600`) or provide them in the process environment. Never put the key in the browser or share it. From the repository root:
+
+```sh
+cd scripts
+.venv/bin/python -m tools.import_cas /path/to/original-cams-statement.pdf
+.venv/bin/python -m tools.import_cas /path/to/original-cams-statement.pdf --folio-map 123456=Me
+```
+
+The first run is preview-only. For multiple portfolios, map each folio either with repeated `--folio-map FOLIO=PORTFOLIO_NAME` options or interactively. Then add `--apply` to preview again and confirm. Re-imports merge transactions by stable source key without deleting older rows. For each matching fund/folio in the statement, the reported closing units and cost replace manually edited holding values; manual edits remain available until the next import. Existing positions absent from the statement are not deleted or zeroed. Parser reconciliation warnings or missing cost basis stop the whole import before writing. XIRR uses purchases/SIPs as money in, redemptions and cash dividend payouts as money out, plus today's current value; switches and non-cash/uncertain rows remain in the transaction history but are excluded from external cash flows.
+
 **The app is the easiest way.** On first sign-in it asks you to create your first portfolio (more in Settings › Portfolios). Then use **Add fund**, **Add stock**, **Add grant**, **Add account**, **Add first month** (PF) and **Add card** on each page; rows created in the app get the right `owner_id` automatically. On the Cards page, **Create this month's bills** adds a bill for every card that has a statement day and due day; enter each amount when the statement arrives and use **Mark paid**. CSV or SQL (below) is quicker for loading many rows at once.
 
 On the PF page, **Add next month** opens the wage month after a company's last contribution, credited a month after it, with the same amounts, so each month is usually one tap on Save; **Add interest** records an interest credit by its transaction date (it counts for that date's financial year).
@@ -11,7 +25,7 @@ For stocks, enter either the amount invested or the average price; the app works
 **Try it locally first** if you like: `cd web && npm run db:start && npm run start:local` gives you a throwaway copy of the app and database on your machine (see AGENTS.md).
 
 1. `portfolios`
-2. `mf_holdings`, `stock_holdings`, `rsu_grants`, `savings_accounts`, `pf_entries`, `credit_cards` (each needs a `portfolio_id`)
+2. `mf_holdings`, `mf_transactions` (normally created by the CAS CLI), `stock_holdings`, `rsu_grants`, `savings_accounts`, `pf_entries`, `credit_cards` (each needs a `portfolio_id`)
 3. `card_bills` (needs a `card_id`)
 
 ## Important: owner_id

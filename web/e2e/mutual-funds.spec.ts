@@ -31,6 +31,7 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
       portfolio_id: ids['Me'],
       scheme_name: 'E2E Growth Fund',
       scheme_code: 'e2e-mf-1',
+      folio: 'e2e-folio-1',
       units: 100,
       invested: 4000,
     },
@@ -43,6 +44,23 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
       invested: 1200,
     },
   ]);
+  await adminInsert('mf_transactions', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      source_key: 'a'.repeat(64),
+      scheme_code: 'e2e-mf-1',
+      scheme_name: 'E2E Growth Fund',
+      folio: 'e2e-folio-1',
+      transaction_date: daysAgo(365),
+      transaction_type: 'PURCHASE',
+      description: 'Purchase',
+      amount: 4000,
+      units: 100,
+      nav: 40,
+      balance: 100,
+    },
+  ]);
 
   await signInWithMagicLink(page, HOLDINGS_EMAIL);
   await page.goto('/mutual-funds');
@@ -53,6 +71,7 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(stat('Invested')).toContainText('₹5,200');
   await expect(stat('Total P&L')).toContainText('+₹800');
   await expect(stat('1 Day Change')).toContainText('+₹50');
+  await expect(stat('XIRR')).not.toContainText('—');
 
   const list = mobile
     ? page.getByRole('list', { name: 'Mutual fund holdings' })
@@ -60,6 +79,10 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(list).toContainText('E2E Growth Fund');
   await expect(list).toContainText('Stale');
   await expect(list).toContainText('Wife');
+  await expect(page.getByRole('heading', { name: 'XIRR by folio' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Recent mutual fund transactions' })).toContainText(
+    'E2E Growth Fund',
+  );
   await expectNoHorizontalScroll(page);
   await screenshot(page, 'mutual-funds', testInfo.project.name);
 

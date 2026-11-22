@@ -18,7 +18,7 @@ OWNER_TABLES = [
     "portfolios", "mf_holdings", "stock_holdings", "rsu_grants", "savings_accounts",
     "credit_cards", "card_bills", "portfolio_snapshots", "settings", "pf_entries",
     "ppf_entries", "nps_holdings", "nps_contributions", "fixed_deposits",
-    "dividends",
+    "dividends", "mf_transactions",
 ]
 MARKET_TABLES = [
     "mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers", "nps_nav_latest",
@@ -85,6 +85,11 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
     ids["dividends"] = insert_ok(anon, t, "dividends", {
         "portfolio_id": p, "market": "IN", "symbol": "PYTEST", "paid_on": "2026-08-01",
         "amount_inr": 120,
+    })["id"]
+    ids["mf_transactions"] = insert_ok(anon, t, "mf_transactions", {
+        "portfolio_id": p, "source_key": "a" * 64, "scheme_name": "Fund", "folio": "pytest-folio",
+        "transaction_date": "2026-10-01", "transaction_type": "PURCHASE", "description": "pytest",
+        "amount": 10, "units": 1,
     })["id"]
     return ids
 

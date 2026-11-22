@@ -1,6 +1,6 @@
 # Google Sheet to database mapping
 
-Source: the owner's "Portfolio" Google Sheet. **This file is a reference for the owner, who loads the data personally. Claude Code must not write an import script or access the sheet.** It was written from a partial look at the sheet, so treat column positions as hints.
+Source: the owner's "Portfolio" Google Sheet. **This file is a reference for the owner, who loads the data personally. Do not write a script that reads the Google Sheet or access it.** Mutual-fund transactions are imported separately from an original CAMS CAS PDF using the local CLI in `docs/DATA_ENTRY.md`. This sheet mapping was written from a partial look at the sheet, so treat column positions as hints.
 
 ## Portfolios
 The sheets `MF`, `MF2`, `MF3` (and `Stocks`, `Stocks2`, `Stocks3`) are different people's portfolios (for example the owner and the owner's wife), not duplicates. Each becomes a row in `portfolios`. Suggested mapping: `MF` = first portfolio, `MF2` = second, `MF3` = third (the owner decides the names, and whether `Stocks`, `Stocks2`, `Stocks3` follow the same order). Sheets with no numbering (Saving, CreditCard, RSU, US-Stocks) can go to the first portfolio; holdings can be reassigned later in the UI.
@@ -8,7 +8,7 @@ The sheets `MF`, `MF2`, `MF3` (and `Stocks`, `Stocks2`, `Stocks3`) are different
 ## Sheets in v1 scope
 | Sheet | Target tables | Notes |
 |---|---|---|
-| MF, MF2, MF3 | `mf_holdings` | One portfolio each. A totals row exists below the funds (blank name); skip it |
+| MF, MF2, MF3 | `mf_holdings` | One portfolio each. A totals row exists below the funds (blank name); skip it. The local CAMS CAS importer is separate and also loads transactions. |
 | Stocks, Stocks2, Stocks3 | `stock_holdings` (market `IN`) | One portfolio each (confirm); skip any totals row |
 | US-Stocks | `stock_holdings` (market `US`, currency `USD`) | Has both USD and INR columns; store USD only, INR is derived |
 | RSU | `rsu_grants` | Grant rows only. The totals row and the label rows (Pending Vesting, Sold for Tax, Sellable Units) are used only for reconciliation |
@@ -35,7 +35,7 @@ Sheet values may be strings like `₹1,78,818.00`, `₹178,818.00` or `$1,234.50
 
 ## Out of scope for v1 (backlog)
 Details, Details Pivot, FD, US Stock Transactions, ESPP Wallet, RSU Allocation, LIC, TATA AIA Term, Dividend, Realized Profit, Loan, Tradebook-*, MF-SIP-Monthly, MF Redeem/Switch Details, Expenses, SIP, MutualFund_NAV, Stocks-History, Stocks-Stats, NPS_NAV, Stock-NAV, MF-History, Total-Value-History, NPS-History, Hisab, NAV Data.
-The app deliberately keeps no NAV or price history and no transaction ledger; do not import those sheets.
+The app deliberately keeps no NAV or price history. The sheet's transaction tabs are not imported; mutual-fund activity comes from the separate CAMS CAS importer.
 
 ## Reconciliation checklist (after loading, and in Phase 10)
 - Row counts per sheet equal row counts per portfolio in the database.

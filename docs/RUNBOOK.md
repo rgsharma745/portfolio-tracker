@@ -93,6 +93,8 @@ Schedules are set in IST in the workflow files (`timezone: Asia/Kolkata`). GitHu
 
 **Run a job from your machine against production:** once, `cp scripts/.env.prod.example scripts/.env.prod`, fill in the project URL and the secret key (plus `BACKUP_AGE_RECIPIENT` for `backup`), and `chmod 600 scripts/.env.prod` (git-ignored; never commit it). Then `cd scripts && .venv/bin/python -m tools.run_prod fetch_prices` (or any job from `--list`). It shows the project host, asks `Run it? [y/N]` (`--yes` skips that), runs the job exactly as GitHub Actions does and records it in Job runs. No 30-minute lock. It refuses a localhost URL and the publishable/anon key, and never prints the key. It runs the jobs only, never the pytest suite (the job tests write market data).
 
+**Import mutual-fund transactions:** see `docs/DATA_ENTRY.md` for the supported CAMS statement format and folio mapping. Run `cd scripts && .venv/bin/python -m tools.import_cas /path/to/statement.pdf` for a read-only preview; add `--apply` only after confirming the preview, and type `IMPORT` at the prompt. The CLI uses the same protected `.env.prod` file, but unlike `tools.run_prod`, it explicitly confirms each write and does not create a `job_runs` row. Keep the original PDF and password local. Re-running the same statement is safe; matching holdings are replaced with the statement's closing units and cost. It does not remove holdings absent from the statement.
+
 **Run now says:**
 | Message | Cause | Fix |
 |---|---|---|

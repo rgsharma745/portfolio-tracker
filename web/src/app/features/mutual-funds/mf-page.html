@@ -4,17 +4,32 @@
   } @else {
     <app-list-skeleton />
   }
-} @else if (rows().length === 0) {
-  <app-empty-state
-    icon="pi-chart-line"
-    title="No mutual funds yet"
-    message="Add a fund with its units and the amount you invested. NAVs update every night."
-    actionLabel="Add fund"
-    (action)="add()"
-  />
+} @else if (
+  rows().length === 0 &&
+  recentTransactions().length === 0 &&
+  !transactionService.loaded() &&
+  !transactionService.error()
+) {
+  <app-list-skeleton />
+} @else if (rows().length === 0 && recentTransactions().length === 0) {
+  <div class="page-stack">
+    @if (transactionService.error()) {
+      <app-error-state
+        title="Could not load your mutual fund transactions"
+        (retry)="transactionService.load()"
+      />
+    }
+    <app-empty-state
+      icon="pi-chart-line"
+      title="No mutual funds yet"
+      message="Add a fund with its units and the amount you invested. NAVs update every night."
+      actionLabel="Add fund"
+      (action)="add()"
+    />
+  </div>
 } @else {
   <div class="page-stack">
-    <div class="stat-grid">
+    <div class="stat-grid stat-grid-5">
       <app-stat-card label="Current value" [value]="totals().value" [compact]="bp.isMobile()" />
       <app-stat-card label="Invested" [value]="totals().invested" [compact]="bp.isMobile()" />
       <app-stat-card
@@ -28,6 +43,13 @@
         label="1 Day Change"
         [value]="totals().dayChange"
         [signed]="true"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
+        label="XIRR"
+        [text]="xirr(portfolioXirr())"
+        [tone]="portfolioXirr() === null ? null : portfolioXirr()! >= 0 ? 'up' : 'down'"
+        note="From imported CAS transactions and current value"
         [compact]="bp.isMobile()"
       />
     </div>
@@ -130,6 +152,71 @@
         </app-holding-card>
       </ng-template>
     </app-data-table>
+
+    @if (folioXirrs().length) {
+      <section class="app-card" aria-labelledby="mf-folio-xirr-title">
+        <div class="section-head">
+          <h2 class="section-title" id="mf-folio-xirr-title">XIRR by folio</h2>
+        </div>
+        <ul class="account-list" aria-label="Mutual fund XIRR by folio">
+          @for (summary of folioXirrs(); track summary.key) {
+            <li class="account">
+              <div class="account-main">
+                <span class="account-name">Folio {{ summary.folio }}</span>
+                <span class="account-balance app-num" [appPl]="summary.xirr">
+                  {{ xirr(summary.xirr) }}
+                </span>
+              </div>
+              @if (showPortfolio()) {
+                <div class="account-sub">{{ summary.portfolio }}</div>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="app-card" aria-labelledby="mf-transactions-title">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title" id="mf-transactions-title">Recent transactions</h2>
+          <p class="section-subtitle">Imported from your CAMS detailed CAS statements</p>
+        </div>
+      </div>
+      @if (transactionService.error()) {
+        <app-error-state title="Could not load transactions" (retry)="transactionService.load()" />
+      } @else if (transactionService.loading() && !transactionService.loaded()) {
+        <app-list-skeleton />
+      } @else if (recentTransactions().length === 0) {
+        <p class="note">No imported transactions for this portfolio yet.</p>
+      } @else {
+        <ul class="mf-transaction-list" aria-label="Recent mutual fund transactions">
+          @for (transaction of recentTransactions(); track transaction.id) {
+            <li class="mf-transaction">
+              <div class="mf-transaction-main">
+                <span class="name-title">{{ transaction.scheme_name }}</span>
+                <span class="cell-sub"
+                  >{{ date(transaction.transaction_date) }} ·
+                  {{ transaction.transaction_type.replaceAll('_', ' ') }}</span
+                >
+              </div>
+              <div class="mf-transaction-detail">
+                <span class="cell-sub">Folio {{ transaction.folio }}</span>
+                <span class="app-num">{{ transactionAmount(transaction.amount) }}</span>
+                @if (transaction.units !== null) {
+                  <span class="cell-sub app-num">{{ units(transaction.units) }} units</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+        @if (recentTransactions().length === 100) {
+          <p class="note">
+            Showing the latest 100 transactions. All imported transactions contribute to XIRR.
+          </p>
+        }
+      }
+    </section>
   </div>
 }
 

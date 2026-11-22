@@ -44,11 +44,12 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Mutual Funds
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
-- Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change.
+- Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change, XIRR (from imported transactions and current value).
 - Search box, sort (name, current value, P&L, P&L %, 1 day change), optional filter chips (Gainers, Losers).
 - Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
 - Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date.
 - Stale NAV badge when the NAV date is older than 4 days.
+- XIRR by folio, scoped to the selected portfolio(s), and the latest 100 imported transactions; transaction history is read-only in the app.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.
 - Export CSV.
 

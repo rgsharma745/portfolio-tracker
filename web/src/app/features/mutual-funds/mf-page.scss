@@ -1,0 +1,80 @@
+.account-list,
+.mf-transaction-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.account-main,
+.mf-transaction {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-name {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.account-balance {
+  flex-shrink: 0;
+  font-size: 17px;
+}
+
+.account-sub {
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.mf-transaction-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mf-transaction {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--app-hairline);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.mf-transaction-main,
+.mf-transaction-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mf-transaction-main {
+  overflow-wrap: anywhere;
+}
+
+.mf-transaction-detail {
+  flex-shrink: 0;
+  align-items: flex-end;
+  text-align: right;
+}
+
+@media (max-width: 420px) {
+  .mf-transaction {
+    gap: 8px;
+  }
+}
