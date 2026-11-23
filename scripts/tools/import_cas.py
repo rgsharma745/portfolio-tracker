@@ -88,29 +88,25 @@ def _normal_name(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
+def _normal_folio(value: str) -> str:
+    return "".join(value.split())
+
+
 def _folio_mappings(
-    folios: list[str], portfolios: list[dict[str, Any]], supplied: list[str]
+    folios: list[str], portfolios: list[dict[str, Any]], supplied: str | None
 ) -> dict[str, str]:
     by_name = {row["name"]: row for row in portfolios}
     by_id = {row["id"]: row for row in portfolios}
-    mappings: dict[str, str] = {}
-    for entry in supplied:
-        folio, separator, portfolio_name = entry.partition("=")
-        if not separator or not folio or not portfolio_name:
-            raise JobError("Each --folio-map must be FOLIO=PORTFOLIO_NAME")
-        portfolio = by_name.get(portfolio_name) or by_id.get(portfolio_name)
-        if folio not in folios or portfolio is None:
-            raise JobError("A --folio-map refers to an unknown folio or active portfolio")
-        mappings[folio] = str(portfolio["id"])
-
-    missing = [folio for folio in folios if folio not in mappings]
-    if missing and len(portfolios) == 1:
-        mappings.update({folio: str(portfolios[0]["id"]) for folio in missing})
-        missing = []
-    for folio in missing:
+    if supplied is not None:
+        portfolio = by_name.get(supplied) or by_id.get(supplied)
+        if portfolio is None:
+            raise JobError("--portfolio must match an active portfolio name or ID")
+    elif len(portfolios) == 1:
+        portfolio = portfolios[0]
+    else:
         if not sys.stdin.isatty():
-            raise JobError("Map every folio with --folio-map FOLIO=PORTFOLIO_NAME")
-        print(f"\nChoose a portfolio for folio {folio}:")
+            raise JobError("Choose a portfolio with --portfolio PORTFOLIO_NAME")
+        print("\nChoose the portfolio for this CAS statement:")
         for index, portfolio in enumerate(portfolios, 1):
             print(f"  {index}. {portfolio['name']}")
         try:
@@ -119,8 +115,8 @@ def _folio_mappings(
             raise JobError("No valid portfolio selected") from None
         if not 1 <= choice <= len(portfolios):
             raise JobError("No valid portfolio selected")
-        mappings[folio] = str(portfolios[choice - 1]["id"])
-    return mappings
+        portfolio = portfolios[choice - 1]
+    return {folio: str(portfolio["id"]) for folio in folios}
 
 
 def _transaction_row(
@@ -172,9 +168,14 @@ def prepare_import(
     data: CASData,
     portfolios: list[dict[str, Any]],
     holdings: list[dict[str, Any]],
-    supplied_maps: list[str],
+    supplied_portfolio: str | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
-    folios = sorted({folio.folio for folio in data.folios})
+    active_folios = [
+        folio
+        for folio in data.folios
+        if any(scheme.close > 0 for scheme in folio.schemes)
+    ]
+    folios = sorted({_normal_folio(folio.folio) for folio in active_folios})
     active = [p for p in portfolios if p.get("is_active", True)]
     if not active:
         raise JobError("No active portfolio exists")
@@ -182,15 +183,18 @@ def prepare_import(
     if len(owners) != 1:
         raise JobError("Expected portfolios belonging to one owner")
     portfolio_by_id = {str(p["id"]): p for p in active}
-    mapping = _folio_mappings(folios, active, supplied_maps)
+    mapping = _folio_mappings(folios, active, supplied_portfolio) if folios else {}
     transaction_rows: list[dict[str, Any]] = []
     holding_rows: list[dict[str, Any]] = []
     seen_positions: set[tuple[str, str, str]] = set()
 
-    for folio in data.folios:
-        portfolio_id = mapping[folio.folio]
+    for folio in active_folios:
+        folio_number = _normal_folio(folio.folio)
+        portfolio_id = mapping[folio_number]
         for scheme in folio.schemes:
-            identity = (portfolio_id, folio.folio, _normal_name(scheme.scheme))
+            if scheme.close <= 0:
+                continue
+            identity = (portfolio_id, folio_number, _normal_name(scheme.scheme))
             if identity in seen_positions:
                 raise JobError("The statement contains duplicate fund positions in one folio")
             seen_positions.add(identity)
@@ -215,7 +219,7 @@ def prepare_import(
                 occurrence = prior.get(fingerprint, 0)
                 prior[fingerprint] = occurrence + 1
                 transaction_rows.append(
-                    _transaction_row(folio.folio, portfolio_id, scheme, transaction, occurrence)
+                    _transaction_row(folio_number, portfolio_id, scheme, transaction, occurrence)
                 )
 
             candidates = [
@@ -223,7 +227,7 @@ def prepare_import(
                 for row in holdings
                 if str(row["portfolio_id"]) == portfolio_id
                 and (
-                    row.get("folio") == folio.folio
+                    row.get("folio") == folio_number
                     or (
                         row.get("folio") is None
                         and scheme.amfi
@@ -241,7 +245,7 @@ def prepare_import(
                 "portfolio_id": portfolio_id,
                 "scheme_code": scheme.amfi,
                 "scheme_name": scheme.scheme,
-                "folio": folio.folio,
+                "folio": folio_number,
                 "units": str(scheme.close),
                 "invested": str(scheme.valuation.cost),
             }
@@ -304,8 +308,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("pdf", type=Path, help="original CAMS detailed CAS PDF")
     parser.add_argument(
-        "--folio-map", action="append", default=[], metavar="FOLIO=PORTFOLIO_NAME",
-        help="map a CAS folio; repeat for each folio (portfolio ID is also accepted)",
+        "--portfolio",
+        metavar="PORTFOLIO_NAME",
+        help="portfolio for this entire CAS statement (portfolio ID is also accepted)",
     )
     parser.add_argument("--apply", action="store_true", help="write after preview and confirmation")
     args = parser.parse_args(argv)
@@ -316,11 +321,22 @@ def main(argv: list[str] | None = None) -> int:
         db = _database()
         portfolios = _api_rows(db, "portfolios")
         holdings = _api_rows(db, "mf_holdings")
-        transactions, holding_rows, mapping = prepare_import(data, portfolios, holdings, args.folio_map)
+        transactions, holding_rows, mapping = prepare_import(data, portfolios, holdings, args.portfolio)
         names = {str(p["id"]): str(p["name"]) for p in portfolios}
         print("\nCAMS detailed statement preview")
         print(f"Supabase target: {urlsplit(db.url).hostname or 'unknown host'}")
-        print(f"Folios: {len(mapping)} · Fund positions: {len(holding_rows)} · Transactions: {len(transactions)}")
+        excluded_folios = len({folio.folio for folio in data.folios}) - len(mapping)
+        excluded_positions = sum(
+            scheme.close <= 0 for folio in data.folios for scheme in folio.schemes
+        )
+        print(
+            f"Folios: {len(mapping)} · Fund positions: {len(holding_rows)} · "
+            f"Transactions: {len(transactions)} · Zero-unit positions skipped: {excluded_positions} "
+            f"({excluded_folios} folios with no remaining positions)"
+        )
+        if not mapping:
+            print("No folios with units found. Nothing to import.")
+            return 0
         for folio, portfolio_id in sorted(mapping.items()):
             print(f"  Folio {folio} → {names.get(portfolio_id, 'portfolio')}")
         existing = sum("id" in row for row in holding_rows)

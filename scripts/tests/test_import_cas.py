@@ -31,13 +31,14 @@ def scheme(
     name: str = "Index Fund",
     *,
     code: str | None = "12345",
+    close: str = "12",
     transactions: list[Any] | None = None,
 ) -> SimpleNamespace:
     return SimpleNamespace(
         scheme=name,
         amfi=code,
         isin=None,
-        close=Decimal("12"),
+        close=Decimal(close),
         valuation=SimpleNamespace(cost=Decimal("120")),
         transactions=transactions or [transaction()],
     )
@@ -67,7 +68,7 @@ def test_prepare_import_maps_folios_and_reconciles_matching_manual_holding() -> 
     ]
 
     transactions, positions, mapping = import_cas.prepare_import(
-        statement(("folio-1", [scheme()])), PORTFOLIOS, holdings, ["folio-1=Me"]
+        statement(("folio-1", [scheme()])), PORTFOLIOS, holdings, "Me"
     )
 
     assert mapping == {"folio-1": "p1"}
@@ -90,16 +91,68 @@ def test_prepare_import_maps_folios_and_reconciles_matching_manual_holding() -> 
 def test_repeated_identical_statement_rows_get_stable_distinct_source_keys() -> None:
     data = statement(("folio-1", [scheme(transactions=[transaction(), transaction()])]))
 
-    first, _, _ = import_cas.prepare_import(data, PORTFOLIOS, [], ["folio-1=Me"])
-    second, _, _ = import_cas.prepare_import(data, PORTFOLIOS, [], ["folio-1=Me"])
+    first, _, _ = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
+    second, _, _ = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
 
     assert [row["source_key"] for row in first] == [row["source_key"] for row in second]
     assert len({row["source_key"] for row in first}) == 2
 
 
-def test_prepare_import_requires_explicit_mapping_for_multiple_portfolios() -> None:
-    with pytest.raises(JobError, match="Map every folio"):
-        import_cas.prepare_import(statement(("folio-1", [scheme()])), PORTFOLIOS, [], [])
+def test_prepare_import_maps_all_folios_to_one_selected_portfolio() -> None:
+    data = statement(("folio-1", [scheme()]), ("folio-2", [scheme("Other Fund")]))
+
+    _, _, mapping = import_cas.prepare_import(data, PORTFOLIOS, [], "Wife")
+
+    assert mapping == {"folio-1": "p2", "folio-2": "p2"}
+
+
+def test_prepare_import_removes_whitespace_from_folio_numbers() -> None:
+    data = statement((" 12 34\t 56 ", [scheme()]))
+
+    transactions, positions, mapping = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
+
+    assert mapping == {"123456": "p1"}
+    assert transactions[0]["folio"] == "123456"
+    assert positions[0]["folio"] == "123456"
+
+
+def test_prepare_import_prompts_once_for_the_whole_statement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompts: list[str] = []
+    monkeypatch.setattr(import_cas.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: prompts.append(prompt) or "2")
+    data = statement(("folio-1", [scheme()]), ("folio-2", [scheme("Other Fund")]))
+
+    _, _, mapping = import_cas.prepare_import(data, PORTFOLIOS, [], None)
+
+    assert prompts == ["Portfolio number: "]
+    assert mapping == {"folio-1": "p2", "folio-2": "p2"}
+
+
+def test_prepare_import_requires_portfolio_for_non_interactive_multiple_portfolios(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(import_cas.sys.stdin, "isatty", lambda: False)
+    with pytest.raises(JobError, match="Choose a portfolio"):
+        import_cas.prepare_import(statement(("folio-1", [scheme()])), PORTFOLIOS, [], None)
+
+
+def test_prepare_import_skips_zero_unit_folios() -> None:
+    data = statement(
+        (
+            "open-folio",
+            [scheme(), scheme("Zero Unit Fund", close="0", transactions=[transaction(units="0")])],
+        ),
+        ("closed-folio", [scheme("Closed Fund", close="0")]),
+    )
+
+    transactions, positions, mapping = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
+
+    assert mapping == {"open-folio": "p1"}
+    assert [row["folio"] for row in transactions] == ["open-folio"]
+    assert [row["folio"] for row in positions] == ["open-folio"]
+    assert [row["scheme_name"] for row in positions] == ["Index Fund"]
 
 
 def test_prepare_import_rejects_duplicate_matching_positions() -> None:
@@ -108,7 +161,7 @@ def test_prepare_import_rejects_duplicate_matching_positions() -> None:
             statement(("folio-1", [scheme(), scheme()])),
             PORTFOLIOS,
             [],
-            ["folio-1=Me"],
+            "Me",
         )
 
 
