@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { navQuotes } from '../../core/calc/mf';
 import { HoldingsService, MfHolding } from '../../core/data/holdings.service';
+import { MfTransactionsService } from '../../core/data/mf-transactions.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { BreakpointService } from '../../shared/layout/breakpoint.service';
 import { MfPage } from './mf-page';
@@ -51,6 +52,16 @@ function render(mobile: boolean) {
           ]),
           scope: signal(null),
           scopeIds: signal(['me', 'wife']),
+        },
+      },
+      {
+        provide: MfTransactionsService,
+        useValue: {
+          transactions: signal([]),
+          loaded: signal(true),
+          loading: signal(false),
+          error: signal(null),
+          load: vi.fn(),
         },
       },
       { provide: BreakpointService, useValue: { isMobile: signal(mobile) } },
