@@ -106,11 +106,48 @@ sharedRowsTest('data check lists what cannot be valued', async ({ page }) => {
     { job: 'fetch_nav', status: 'success', message: '{"unmatched":["e2e-404"]}' },
   ]);
   await adminInsert('mf_holdings', [
-    { owner_id: ownerId, portfolio_id: me, scheme_name: 'Priced Fund', scheme_code: 'e2e-100' },
-    { owner_id: ownerId, portfolio_id: me, scheme_name: 'Codeless Fund', scheme_code: null },
-    { owner_id: ownerId, portfolio_id: me, scheme_name: 'Typo Fund', scheme_code: 'e2e-404' },
-    { owner_id: ownerId, portfolio_id: me, scheme_name: 'New Fund', scheme_code: 'e2e-200' },
-    { owner_id: ownerId, portfolio_id: ids['Old'], scheme_name: 'Ignored', scheme_code: null },
+    {
+      owner_id: ownerId,
+      portfolio_id: me,
+      scheme_name: 'Priced Fund',
+      units: 1,
+      scheme_code: 'e2e-100',
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: me,
+      scheme_name: 'Codeless Fund',
+      units: 1,
+      scheme_code: null,
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: me,
+      scheme_name: 'Typo Fund',
+      units: 1,
+      scheme_code: 'e2e-404',
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: me,
+      scheme_name: 'New Fund',
+      units: 1,
+      scheme_code: 'e2e-200',
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: me,
+      scheme_name: 'Closed Fund',
+      units: 0,
+      scheme_code: null,
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Old'],
+      scheme_name: 'Ignored',
+      units: 1,
+      scheme_code: null,
+    },
   ]);
   await adminInsert('stock_holdings', [
     { owner_id: ownerId, portfolio_id: me, symbol: 'E2EUNPRICED', market: 'IN' },
@@ -125,6 +162,7 @@ sharedRowsTest('data check lists what cannot be valued', async ({ page }) => {
   const group = (kind: string) => page.getByTestId(`check-${kind}`);
   await expect(group('mf_no_code')).toContainText('Codeless Fund');
   await expect(group('mf_no_code')).not.toContainText('Ignored');
+  await expect(group('mf_no_code')).not.toContainText('Closed Fund');
   await expect(group('mf_code_not_found')).toContainText('Typo Fund');
   await expect(group('mf_no_nav')).toContainText('New Fund');
   await expect(group('stock_no_price')).toContainText('E2EUNPRICED');
