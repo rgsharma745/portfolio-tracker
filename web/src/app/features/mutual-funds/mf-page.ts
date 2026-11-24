@@ -174,7 +174,7 @@ export class MfPage {
     { key: 'name', header: 'Fund', type: 'custom', sortable: true },
     { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
     { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
-    { key: 'xirr', header: 'Folio XIRR', type: 'custom', alignEnd: true },
+    { key: 'xirr', header: 'XIRR', type: 'custom', alignEnd: true },
     { key: 'dayChange', header: '1 Day Change', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];

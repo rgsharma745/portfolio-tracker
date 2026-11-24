@@ -77,7 +77,10 @@ describe('MfPage', () => {
       const { fixture, el, mf } = render(mobile);
       await fixture.whenStable();
       expect(el.textContent).toContain('Fund a');
-      if (!mobile) expect(el.textContent).toContain('Folio XIRR');
+      if (!mobile) {
+        const headers = Array.from(el.querySelectorAll('th'), (cell) => cell.textContent.trim());
+        expect(headers).toContain('XIRR');
+      }
       expect(el.textContent).not.toContain('XIRR by folio');
       expect(el.textContent).toContain('No NAV');
       expect(el.textContent).toContain('1 fund has no NAV yet');

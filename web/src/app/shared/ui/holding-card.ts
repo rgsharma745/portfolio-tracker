@@ -36,6 +36,7 @@ import { PlColorDirective } from './pl-color.directive';
               }}</span>
             </span>
           }
+          <ng-content select="[holding-figure]" />
         </span>
       </span>
     </button>

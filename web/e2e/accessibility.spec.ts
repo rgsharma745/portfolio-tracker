@@ -244,7 +244,7 @@ for (const theme of ['light', 'dark'] as const) {
         const list = page
           .getByRole('list', { name: 'Mutual fund holdings' })
           .or(page.getByRole('table', { name: 'Mutual fund holdings' }));
-        await expect(list).toContainText(/Folio XIRR|XIRR \+/);
+        await expect(list).toContainText('XIRR');
         await list.getByText('E2E Accessible Fund').first().click();
         const transactions = page.getByRole('dialog', { name: 'E2E Accessible Fund' });
         await expect(transactions).toBeVisible();

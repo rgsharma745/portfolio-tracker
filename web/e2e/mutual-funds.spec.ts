@@ -79,7 +79,13 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(list).toContainText('E2E Growth Fund');
   await expect(list).toContainText('Stale');
   await expect(list).toContainText('Wife');
-  await expect(list).toContainText(mobile ? 'XIRR +25.00%' : 'Folio XIRR');
+  await expect(list).not.toContainText('e2e-folio-1');
+  if (mobile) {
+    await expect(list.getByText('XIRR +25.00%', { exact: true })).toHaveCount(1);
+  } else {
+    await expect(list.getByRole('columnheader', { name: 'XIRR', exact: true })).toBeVisible();
+    await expect(list.getByRole('cell', { name: '+25.00%', exact: true })).toBeVisible();
+  }
   if (mobile) {
     await list.getByText('E2E Growth Fund').first().click();
   } else {

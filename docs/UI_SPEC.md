@@ -46,10 +46,10 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
 - Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change, XIRR (from imported transactions and current value).
 - Search box, sort (name, current value, P&L, P&L %, 1 day change), optional filter chips (Gainers, Losers).
-- Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, Folio XIRR with the folio number under it, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
-- Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date, folio and folio-XIRR tags.
+- Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, XIRR, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
+- Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date, and a signed XIRR below 1 Day Change when available.
 - Stale NAV badge when the NAV date is older than 4 days.
-- Portfolio XIRR is the header stat. Folio XIRR is shown in the main fund table/card beside absolute P&L. Clicking or keyboard-activating a fund row/card opens a fund-specific dialog containing its folio, folio XIRR, absolute P&L and read-only imported transactions. Manual-only holdings show no folio XIRR.
+- Portfolio XIRR is the header stat. Folio XIRR is shown in the main fund table/card beside absolute P&L. Clicking or keyboard-activating a fund row/card opens a fund-specific dialog containing its folio number, folio XIRR, absolute P&L and read-only imported transactions. Manual-only holdings show no folio XIRR.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.
 - Export CSV.
 
