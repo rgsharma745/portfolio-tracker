@@ -23,7 +23,8 @@
 - `AllocationBar` (one whole split into parts: segmented bar with no labels inside, plus a legend with every part's amount and share). Colours follow the `--app-series-*` order. Shares are not printed in the bar because small parts are too narrow for one and a bar showing only some of them reads as inconsistent.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, 1 day change, tap to open details/edit)
-- `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used. Pages may opt into clickable rows with `rowClickable`; the shared wrapper provides click and Enter/Space activation and a visible keyboard focus ring.
+- **Skip to main content** appears on keyboard focus and moves focus past repeated navigation and toolbar controls.
+- `DataTable` wrapper around PrimeNG Table with a responsive switch (table on >= 768px, card list below). Sorting is owned by the page (header sort buttons and the mobile sort menu share one state); PrimeNG's own sorting is not used. Pages may opt into clickable rows with `rowClickable`; the wrapper handles row clicks, and a native button inside the row handles Enter and Space with a visible focus ring. Desktop scroll areas have an accessible name and a keyboard tab stop. Column headers declare their scope, and only the active sort column exposes its direction.
 - `PortfolioSwitcher` (All, then one entry per active portfolio; segmented control or dropdown on desktop, a chip row or bottom sheet on mobile; persisted in settings; default All)
 - `PageHeader` (title, last-updated time, refresh button)
 - States: skeleton loading, empty state with a call to action, error state with retry
@@ -39,17 +40,18 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Respects the portfolio switcher; default is the **family total (All)**.
 - Stat cards: Combined (MF + Stocks) with its 1 day change first, then Mutual funds (value + 1 day change), Stocks (value + 1 day change), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + 1 day change), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
-- **View chart data** exposes the date and value for every point in the selected history series and range.
+- **View chart data** opens a keyboard-scrollable table with every date and value in the selected history series and range. The table respects **Hide amounts**.
 - History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 
 ### Mutual Funds
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
 - Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change, XIRR (from imported transactions and current value).
-- Search box, sort (name, current value, P&L, P&L %, 1 day change), optional filter chips (Gainers, Losers).
+- Search box, sort (name, current value, P&L, P&L %, 1 day change, XIRR), optional filter chips (Gainers, Losers).
 - Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, XIRR, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
 - Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date, and a signed XIRR below 1 Day Change when available.
 - Stale NAV badge when the NAV date is older than 4 days.
+- Add and edit forms associate validation messages with their fields. A failed save moves focus to the first invalid field.
 - The header shows Live XIRR for open positions and XIRR for open and closed positions. XIRR sorting uses the displayed folio return and keeps unavailable returns last. The list defaults to open positions. Include closed positions reveals zero-unit holdings. Folio XIRR is shown in the main fund table/card beside absolute P&L. Clicking or keyboard-activating a fund row/card opens a fund-specific dialog containing its folio number, folio XIRR, absolute P&L and read-only imported transactions with a Buy/Sell field. Manual-only holdings show no folio XIRR.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.
 - Export CSV.
