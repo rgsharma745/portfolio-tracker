@@ -45,7 +45,8 @@ test('cards: summary, earlier bills, create, enter amount, mark paid', async ({
       owner_id: ownerId,
       card_id: card['E2E Travel'],
       statement_month: monthStart(0),
-      due_date: daysFromNow(10),
+      // Tomorrow is always before the generated Rewards bill, due on the 3rd of next month.
+      due_date: daysFromNow(1),
       amount: 3000,
     },
   ]);
