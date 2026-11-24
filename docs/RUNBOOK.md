@@ -27,7 +27,7 @@ Secrets and where each one is set:
 
 ## Backups
 
-**What is backed up:** every row of your own data (portfolios, funds, stocks, RSU grants, savings, cards, bills, PF entries, history, settings), every Sunday 08:41 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
+**What is backed up:** every row of your own data (portfolios, mutual fund holdings and imported transactions, stocks, RSU grants, savings, cards, bills, PF and PPF entries, NPS holdings and contributions, fixed deposits, dividends, history and settings), every Sunday 08:41 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
 
 **Make the key (once):** `age-keygen -o ~/portfolio-backup-key.txt`, save the file in your password manager, and put the printed `age1…` public key in the GitHub secret `BACKUP_AGE_RECIPIENT`. Without the private key no one, including you, can read the backups.
 
@@ -81,7 +81,7 @@ Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com`
 |---|---|---|
 | NAV | 23:37 daily, retry 08:17 | mutual fund NAVs (AMFI) for the codes you hold |
 | Prices | 19:13 Mon–Fri, 04:23 Tue–Sat (after the US close) | stock prices (NSE, then Yahoo) for the symbols you hold, and USD/INR |
-| Snapshot | 08:37 daily | one history row per active portfolio (Overview chart) |
+| Snapshot | 08:37 daily | one history row per active portfolio (separate Mutual funds and Stocks views in Overview History, plus PF, PPF, NPS and FD) |
 | Backup | Sunday 08:41 | encrypted backup artifact |
 | Keep-alive | Wednesday 11:19 | one tiny query so the free project never pauses |
 

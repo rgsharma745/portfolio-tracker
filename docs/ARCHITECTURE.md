@@ -48,7 +48,7 @@ sonar-project.properties  SonarQube Cloud analysis (run by ci.yml, report only)
 2. **Market data** (latest NAV, latest stock price, USD/INR) is written by jobs through SQL functions into small "latest only" tables that any signed-in user can read (they hold no personal data and keep no history; each row stores the latest and the previous value so "today's change" works).
 3. **Valuation** is computed from holdings joined to the latest market data, via SQL views (`v_mf_holdings`, `v_stock_holdings`, `v_card_bills`) and pure TypeScript functions for totals, scoped to the selected portfolio or all portfolios.
 3a. **Portfolios** are labels under the one owner login (for example Me, Wife). There are no per-portfolio logins.
-4. **Snapshots**: a daily job stores total values in `portfolio_snapshots` for history charts.
+4. **Snapshots**: a daily job stores per-portfolio totals in `portfolio_snapshots`. Overview reads the mutual fund and stock columns independently for their History views, alongside PF, PPF, NPS and fixed deposits.
 
 ## Frontend design
 - Standalone Angular components, signals, OnPush, lazy-loaded routes per feature.

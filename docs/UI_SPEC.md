@@ -19,7 +19,7 @@
 
 ## Shared components
 - `StatCard` (label, value, optional delta with color and sign, and an optional delta label shown before it, e.g. `1 Day Change: +₹144`). The card fills its grid cell, so every card in a row has the same height whatever its notes or delta.
-- **Day change wording:** headings, table columns and sort options say "1 Day Change"; inline it reads `1 Day Change: +₹144`, the label in the line's own colour and only the amount in the P&L colour, never wrapping inside the amount. The Stocks CSV export keeps its `Today` column name so anything reading the file still finds it.
+- **Day change wording:** headings, table columns and sort options say "1 Day Change"; inline it reads `1 Day Change: +₹144`, the label in the line's own colour and only the amount in the P&L colour, never wrapping inside the amount. The Overview balance panels use a compact 1D badge. The Stocks CSV export keeps its `Today` column name so anything reading the file still finds it.
 - `AllocationBar` (one whole split into parts: segmented bar with no labels inside, plus a legend with every part's amount and share). Colours follow the `--app-series-*` order. Shares are not printed in the bar because small parts are too narrow for one and a bar showing only some of them reads as inconsistent.
 - `MoneyText` (INR/USD, optional compact mode on mobile for lakhs/crores, e.g. ₹56.7L; full value on tap or on desktop)
 - `HoldingCard` (mobile list item: name, current value, P&L and %, 1 day change, tap to open details/edit)
@@ -38,16 +38,16 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- **Balances** groups Investments and Savings and dues into two panels with right-aligned amounts. The panels stack on mobile and sit side by side from 1024px. Mutual funds, stocks and NPS show their signed daily change in a compact 1D pill below the balance. Card dues are flagged when greater than zero.
+- **Investments** and **Savings and dues** are the two balance panel headings on Overview. The panels begin directly below the portfolio switcher. The panels stack on mobile and sit side by side from 1024px. Balances are right-aligned. Mutual funds, stocks and NPS show daily changes beneath their balances in compact badges such as `+₹120 1D`. Screen readers get the full label “1 Day Change”. Card dues are flagged when greater than zero.
 - **History**, **Allocation** and **By portfolio** start closed and can be expanded using their labels.
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - **View chart data** opens a keyboard-scrollable table with every date and value in the selected history series and range. The table respects **Hide amounts**.
-- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and separate mutual fund and stock series, plus the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
+- History displays one line chart at a time from `portfolio_snapshots`. Choose Mutual funds, Stocks, PF, PPF, NPS or FD and a range of 1M, 6M, 1Y or All. It defaults to Mutual funds over 6M. A chart appears once there are at least two points in the selected range. PF, PPF, NPS and FD series start at their first day above zero.
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 
 ### Mutual Funds
 - Uses the portfolio switcher. In All mode each holding shows a small portfolio tag, and the same fund held in two portfolios appears as two rows (a "merge by fund" toggle is optional).
-- Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change, XIRR (from imported transactions and current value).
+- Header stats: Current value, Invested, Total P&L (value and %), 1 Day Change, Live XIRR and XIRR.
 - Search box, sort (name, current value, P&L, P&L %, 1 day change, XIRR), optional filter chips (Gainers, Losers).
 - Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, XIRR, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
 - Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date, and a signed XIRR below 1 Day Change when available.

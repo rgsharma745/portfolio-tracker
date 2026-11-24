@@ -8,7 +8,7 @@ Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engine
 Angular 22 + PrimeNG (Aura) + Tailwind for layout · Supabase (Postgres, Auth, Row Level Security) · Cloudflare Workers static assets (hosting) · GitHub Actions running Python 3.15 jobs (nightly NAVs, prices, daily snapshot, weekly encrypted backup).
 
 ## Status
-Phases 0 to 17 of `PLAN.md` are built and live. The remaining work is owner acceptance and data reconciliation (see the **Status** section at the top of `PLAN.md`). Recent maintenance hardened CI dependency installs, hash-locked Python dependencies with Renovate updates, and aligned SonarCloud's analysis scope with its current scanner behavior. Later work the owner will define: RSU + ESOP rules.
+Phases 0 to 18 of [the implementation plan](PLAN.md) are built and live. Phase 18 adds CAMS transaction imports, closed mutual fund positions and XIRR. The Overview includes separate Investments and Savings and dues panels, with expandable History, Allocation and By portfolio sections. The remaining work is owner acceptance and data reconciliation (see the **Status** section at the top of `PLAN.md`). Recent maintenance hardened CI dependency installs, hash-locked Python dependencies with Renovate updates, and aligned SonarCloud's analysis scope with its current scanner behavior. Later work the owner will define: RSU + ESOP rules.
 
 ## Working on it with Claude Code
 Open the repo and start a new chat with, for example:
