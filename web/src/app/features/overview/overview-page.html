@@ -6,38 +6,36 @@
   }
 } @else {
   <div class="page-stack">
-    <section class="balances" aria-labelledby="balances-title">
-      <h2 class="section-title" id="balances-title">Balances</h2>
-      <div class="balance-groups">
-        @for (group of balanceGroups(); track group.title) {
-          <article class="app-card balance-panel">
-            <h3>
-              <i [class]="'pi ' + group.icon" aria-hidden="true"></i>
-              {{ group.title }}
-            </h3>
-            <dl class="balance-list">
-              @for (row of group.rows; track row.label) {
-                <div class="balance-row">
-                  <dt>{{ row.label }}</dt>
-                  <dd>
-                    <span class="app-num balance-amount" [class.app-down]="row.warning">
-                      {{ row.value | money }}
+    <section class="balance-groups" aria-label="Balances">
+      @for (group of balanceGroups(); track group.title) {
+        <article class="app-card balance-panel">
+          <h2>
+            <i [class]="'pi ' + group.icon" aria-hidden="true"></i>
+            {{ group.title }}
+          </h2>
+          <dl class="balance-list">
+            @for (row of group.rows; track row.label) {
+              <div class="balance-row">
+                <dt>{{ row.label }}</dt>
+                <dd>
+                  <span class="app-num balance-amount" [class.app-down]="row.warning">
+                    {{ row.value | money }}
+                  </span>
+                  @if (row.dayChange !== undefined) {
+                    <span class="balance-change">
+                      <span class="visually-hidden">1 Day Change</span>
+                      <span class="app-num" [appPl]="row.dayChange">{{
+                        row.dayChange | money: 'INR' : { sign: true }
+                      }}</span>
+                      <span aria-hidden="true">1D</span>
                     </span>
-                    @if (row.dayChange !== undefined) {
-                      <span class="balance-change">
-                        <span>1 Day Change</span>
-                        <span class="app-num" [appPl]="row.dayChange">{{
-                          row.dayChange | money: 'INR' : { sign: true }
-                        }}</span>
-                      </span>
-                    }
-                  </dd>
-                </div>
-              }
-            </dl>
-          </article>
-        }
-      </div>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        </article>
+      }
     </section>
     @if (unpriced()) {
       <p class="note">
