@@ -60,17 +60,24 @@ describe('historySeries', () => {
     snap('old', '2026-11-03', 999),
   ];
 
-  it('sums portfolios per day, oldest first', () => {
+  it('sums only mutual fund values across portfolios per day, oldest first', () => {
     expect(historySeries(snapshots, ['me', 'wife'], 'All', '2026-11-04')).toEqual([
       { date: '2025-01-01', value: 10 },
       { date: '2026-09-01', value: 90 },
-      { date: '2026-11-03', value: 170 },
+      { date: '2026-11-03', value: 120 },
+    ]);
+  });
+
+  it('plots stock values separately, including dates with zero value', () => {
+    expect(historySeries(snapshots, ['me', 'wife'], '6M', '2026-11-04', 'stocks')).toEqual([
+      { date: '2026-09-01', value: 0 },
+      { date: '2026-11-03', value: 50 },
     ]);
   });
 
   it('limits to the range', () => {
     expect(historySeries(snapshots, ['me'], '1M', '2026-11-04')).toEqual([
-      { date: '2026-11-03', value: 150 },
+      { date: '2026-11-03', value: 100 },
     ]);
     expect(historySeries(snapshots, ['me'], '6M', '2026-11-04')).toHaveLength(2);
     expect(historySeries(snapshots, ['me'], '1Y', '2026-11-04')).toHaveLength(2);

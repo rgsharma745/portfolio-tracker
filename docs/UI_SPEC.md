@@ -42,7 +42,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - **History**, **Allocation** and **By portfolio** start closed and can be expanded using their labels.
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - **View chart data** opens a keyboard-scrollable table with every date and value in the selected history series and range. The table respects **Hide amounts**.
-- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
+- History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and separate mutual fund and stock series, plus the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 
 ### Mutual Funds

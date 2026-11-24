@@ -100,16 +100,18 @@ export class OverviewPage {
   );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
-  protected readonly series = signal<HistorySeries>('combined');
+  protected readonly series = signal<HistorySeries>('mf');
   protected readonly seriesOptions = [
-    { label: 'MF + stocks', value: 'combined' },
+    { label: 'Mutual funds', value: 'mf' },
+    { label: 'Stocks', value: 'stocks' },
     { label: 'PF', value: 'pf' },
     { label: 'PPF', value: 'ppf' },
     { label: 'NPS', value: 'nps' },
     { label: 'FD', value: 'fd' },
   ];
   protected readonly historyTitles: Record<HistorySeries, string> = {
-    combined: 'Combined value',
+    mf: 'Mutual funds',
+    stocks: 'Stocks',
     pf: 'PF balance',
     ppf: 'PPF balance',
     nps: 'NPS value',

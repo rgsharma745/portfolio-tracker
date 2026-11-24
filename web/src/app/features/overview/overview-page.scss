@@ -84,6 +84,11 @@
   gap: 8px;
 }
 
+.chart-head p-selectbutton {
+  flex-wrap: wrap;
+  max-inline-size: 100%;
+}
+
 .summary-card {
   display: flex;
   flex-direction: column;

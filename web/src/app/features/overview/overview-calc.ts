@@ -82,8 +82,8 @@ export interface HistoryPoint {
   value: number;
 }
 
-/** What the history chart plots: MF + stocks, the PF or PPF balance, or the NPS or FD value. */
-export type HistorySeries = 'combined' | 'pf' | 'ppf' | 'nps' | 'fd';
+/** What the history chart plots: mutual funds, stocks, the PF or PPF balance, or the NPS or FD value. */
+export type HistorySeries = 'mf' | 'stocks' | 'pf' | 'ppf' | 'nps' | 'fd';
 
 function seriesValue(
   s: {
@@ -105,17 +105,16 @@ function seriesValue(
       return s.nps_value ?? 0;
     case 'fd':
       return s.fd_value ?? 0;
-    default:
-      return s.mf_value + s.stocks_value;
+    case 'mf':
+      return s.mf_value;
+    case 'stocks':
+      return s.stocks_value;
   }
 }
 
 /**
- * Value per day for the given portfolios, oldest first, limited to the range: MF + stocks
- * (`combined`), the PF balance (`pf`), the PPF balance (`ppf`), the NPS value (`nps`) or the
- * FD value (`fd`). Days are summed across portfolios. Days recorded before PF, PPF, NPS or FD
- * existed hold 0;
- * those series start at the first day above 0.
+ * Values summed across the selected portfolios per day, oldest first and limited to the range.
+ * PF, PPF, NPS and FD start on their first positive day.
  */
 export function historySeries(
   snapshots: readonly {
@@ -131,7 +130,7 @@ export function historySeries(
   portfolioIds: readonly string[],
   range: HistoryRange,
   today: string,
-  series: HistorySeries = 'combined',
+  series: HistorySeries = 'mf',
 ): HistoryPoint[] {
   const ids = new Set(portfolioIds);
   const days = HISTORY_RANGE_DAYS[range];
@@ -145,7 +144,7 @@ export function historySeries(
   const points = [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, value]) => ({ date, value }));
-  if (series === 'combined') return points;
+  if (series === 'mf' || series === 'stocks') return points;
   const first = points.findIndex((p) => p.value > 0);
   return first === -1 ? [] : points.slice(first);
 }

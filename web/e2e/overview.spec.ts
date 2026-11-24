@@ -127,6 +127,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         portfolio_id: ids['Me'],
         snap_date: daysAgo(n),
         mf_value: 4800 + n,
+        stocks_value: 700 + n,
         pf_balance: pfOn(n),
         ppf_balance: 0,
         nps_value: 0,
@@ -137,6 +138,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
         portfolio_id: ids['Wife'],
         snap_date: daysAgo(n),
         mf_value: 950,
+        stocks_value: 200,
         pf_balance: 0,
         ppf_balance: 2000 - n * 10,
         nps_value: 2000 - n * 5,
@@ -202,16 +204,28 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   );
   await expect(allocation).toContainText('Savings');
   await historyToggle.press('Enter');
-  const history = page.getByRole('region', { name: 'Combined value over time' });
-  await expect(history.getByRole('img', { name: /Combined value from/ })).toBeVisible();
+  const history = page.getByRole('region', { name: 'Mutual funds over time' });
+  await expect(history.getByRole('img', { name: /Mutual funds from/ })).toBeVisible();
   const chartData = history.getByText('View chart data', { exact: true });
   await chartData.press('Enter');
-  const dataTable = history.getByRole('table', { name: 'Combined value by date' });
+  const dataTable = history.getByRole('table', { name: 'Mutual funds by date' });
   await expect(dataTable.getByRole('row')).toHaveCount(4);
+  await expect(dataTable).toContainText('₹5,753');
   await chartData.press('Enter');
   await expect(dataTable).toBeHidden();
   // Switch the chart to the PF balance and back
   const show = page.getByRole('group', { name: 'Show' });
+  await show.getByRole('button', { name: 'Stocks', exact: true }).click();
+  const stockHistory = page.getByRole('region', { name: 'Stocks over time' });
+  await stockHistory.getByText('View chart data', { exact: true }).press('Enter');
+  await expect(stockHistory.getByRole('table', { name: 'Stocks by date' })).toContainText('₹903');
+  await stockHistory.getByText('View chart data', { exact: true }).press('Enter');
+  if (mobile) {
+    const viewport = page.viewportSize()!;
+    await page.setViewportSize({ width: 360, height: viewport.height });
+    await expectNoHorizontalScroll(page);
+    await page.setViewportSize(viewport);
+  }
   await show.getByRole('button', { name: 'PF', exact: true }).click();
   const pfHistory = page.getByRole('region', { name: 'PF balance over time' });
   await expect(pfHistory.getByRole('img', { name: /PF balance from/ })).toBeVisible();
@@ -224,7 +238,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await show.getByRole('button', { name: 'FD', exact: true }).click();
   const fdHistory = page.getByRole('region', { name: 'FD value over time' });
   await expect(fdHistory.getByRole('img', { name: /FD value from/ })).toBeVisible();
-  await show.getByRole('button', { name: 'MF + stocks' }).click();
+  await show.getByRole('button', { name: 'Mutual funds', exact: true }).click();
   await expect(history).toBeVisible();
 
   await summaryToggle.press('Enter');
