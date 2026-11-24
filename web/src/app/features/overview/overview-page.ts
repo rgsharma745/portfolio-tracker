@@ -42,7 +42,6 @@ interface BalanceRow {
   label: string;
   value: number | null;
   dayChange?: number;
-  subtotal?: boolean;
   warning?: boolean;
 }
 
@@ -148,17 +147,12 @@ export class OverviewPage {
     ),
   );
   protected readonly fdTotal = computed(() => fdValue(this.fd.deposits(), this.ids(), this.today));
-  protected readonly combined = computed(() => ({
-    value: this.mf().value + this.stocks().value,
-    dayChange: this.mf().dayChange + this.stocks().dayChange,
-  }));
   protected readonly balanceGroups = computed<
     readonly { title: string; rows: readonly BalanceRow[] }[]
   >(() => [
     {
       title: 'Investments',
       rows: [
-        { label: 'MF + stocks', ...this.combined(), subtotal: true },
         { label: 'Mutual funds', value: this.mf().value, dayChange: this.mf().dayChange },
         { label: 'Stocks', value: this.stocks().value, dayChange: this.stocks().dayChange },
         { label: 'Vested RSUs', value: this.rsu().vestedInr },

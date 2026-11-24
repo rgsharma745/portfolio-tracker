@@ -151,14 +151,15 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await skipLink.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
 
-  // All portfolios: 100 x 50 + 20 x 50 = 6,000; today +100 +20
+  // Mutual funds across both portfolios: 120 units × ₹50, with ₹120 day change.
   const balances = page.getByRole('region', { name: 'Balances' });
   const balanceRow = (name: string) =>
     balances.locator('.balance-row').filter({ has: page.getByText(name, { exact: true }) });
-  const combined = balanceRow('MF + stocks');
-  await expect(combined).toContainText('₹6,000');
-  await expect(combined).toContainText('+₹120');
-  await expect(combined).toBeInViewport();
+  const mutualFunds = balanceRow('Mutual funds');
+  await expect(balanceRow('MF + stocks')).toHaveCount(0);
+  await expect(mutualFunds).toContainText('₹6,000');
+  await expect(mutualFunds).toContainText('+₹120');
+  await expect(mutualFunds).toBeInViewport();
   await expect(balanceRow('Savings')).toContainText('₹4,000');
   await expect(balanceRow('Card dues')).toContainText('₹2,500');
   await expect(balanceRow('Card dues').locator('.balance-amount')).toHaveClass(/app-down/);
@@ -168,7 +169,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(balanceRow('NPS')).toContainText('+₹40');
   await expect(balanceRow('Fixed deposits')).toContainText('₹2,000');
 
-  for (const name of ['Mutual funds', 'Stocks', 'Vested RSUs']) {
+  for (const name of ['Stocks', 'Vested RSUs']) {
     await expect(balanceRow(name)).toBeVisible();
   }
   const summaryToggle = page.getByText('By portfolio', { exact: true });
@@ -188,10 +189,10 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
 
   const privacy = page.getByRole('button', { name: 'Hide amounts' });
   await privacy.click();
-  await expect(combined).toContainText('••••');
+  await expect(mutualFunds).toContainText('••••');
   await expect(balances).not.toContainText('₹');
   await privacy.click();
-  await expect(combined).toContainText('₹6,000');
+  await expect(mutualFunds).toContainText('₹6,000');
 
   await allocationToggle.press('Enter');
   const allocation = page.getByRole('region', { name: 'Allocation' });
@@ -244,7 +245,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
     await page.getByRole('combobox', { name: 'Portfolio' }).click();
     await page.getByRole('option', { name: 'Wife' }).click();
   }
-  await expect(combined).toContainText('₹1,000');
+  await expect(mutualFunds).toContainText('₹1,000');
   await expect(balanceRow('Card dues')).toContainText('₹0');
   await expect(balanceRow('PF')).toContainText('₹0');
   await expect(balanceRow('PPF')).toContainText('₹2,000');

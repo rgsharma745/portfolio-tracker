@@ -14,7 +14,7 @@
             <h3>{{ group.title }}</h3>
             <dl class="balance-list">
               @for (row of group.rows; track row.label) {
-                <div class="balance-row" [class.subtotal]="row.subtotal">
+                <div class="balance-row">
                   <dt>{{ row.label }}</dt>
                   <dd>
                     <span class="app-num balance-amount" [class.app-down]="row.warning">
