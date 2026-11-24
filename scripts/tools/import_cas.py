@@ -386,11 +386,11 @@ def main(argv: list[str] | None = None) -> int:
         write_rows(db, owner_id, transactions, holding_rows)
         print(f"Imported {len(transactions)} transaction rows and reconciled {len(holding_rows)} positions.")
         return 0
-    except (JobError, OSError, SetupError) as exc:
-        print(f"import_cas: {exc}", file=sys.stderr)
-        return 1
     except RequestException:
         print("import_cas: Supabase request failed; check connectivity and retry", file=sys.stderr)
+        return 1
+    except (JobError, OSError, SetupError) as exc:
+        print(f"import_cas: {exc}", file=sys.stderr)
         return 1
 
 

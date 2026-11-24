@@ -367,3 +367,21 @@ def test_cli_is_preview_only_by_default_and_requires_typed_confirmation(
         "/rest/v1/mf_transactions",
         "/rest/v1/mf_holdings",
     ]
+
+
+def test_cli_reports_request_failure_without_exposing_exception_details(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    pdf = tmp_path / "statement.pdf"
+    pdf.write_bytes(b"%PDF")
+    monkeypatch.setattr(import_cas, "getpass", lambda _prompt: "")
+    monkeypatch.setattr(import_cas, "parse_statement", lambda *_args: statement())
+    monkeypatch.setattr(import_cas, "_database", FakeDatabase)
+
+    def fail_request(*_args: object) -> None:
+        raise import_cas.RequestException("private request details")
+
+    monkeypatch.setattr(import_cas, "_api_rows", fail_request)
+
+    assert import_cas.main([str(pdf)]) == 1
+    assert capsys.readouterr().err == "import_cas: Supabase request failed; check connectivity and retry\n"
