@@ -5,19 +5,42 @@
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
   }
 }
 
-.balance-groups h3 {
-  margin: 0;
-  color: var(--app-text-muted);
-  font-size: 14px;
-  font-weight: 600;
+.balance-panel {
+  min-inline-size: 0;
+  overflow: hidden;
+  padding: 0;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 12px 16px;
+    border-block-end: 1px solid var(--app-hairline);
+    background: var(--app-bg-soft);
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  i {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid var(--app-hairline);
+    border-radius: 9px;
+    background: var(--app-bg);
+    color: var(--p-primary-color);
+    font-size: 14px;
+  }
 }
 
 .balance-list {
   margin: 0;
+  padding-inline: 16px;
 }
 
 .balance-row {
@@ -25,7 +48,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 6px 12px;
-  padding-block: 7px;
+  padding-block: 10px;
   border-block-end: 1px solid var(--app-hairline);
 
   &:last-child {
@@ -43,7 +66,8 @@
 }
 
 .balance-amount {
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 650;
 }
 
 .balance-change {

@@ -6,12 +6,15 @@
   }
 } @else {
   <div class="page-stack">
-    <section class="app-card balances" aria-labelledby="balances-title">
+    <section class="balances" aria-labelledby="balances-title">
       <h2 class="section-title" id="balances-title">Balances</h2>
       <div class="balance-groups">
         @for (group of balanceGroups(); track group.title) {
-          <div>
-            <h3>{{ group.title }}</h3>
+          <article class="app-card balance-panel">
+            <h3>
+              <i [class]="'pi ' + group.icon" aria-hidden="true"></i>
+              {{ group.title }}
+            </h3>
             <dl class="balance-list">
               @for (row of group.rows; track row.label) {
                 <div class="balance-row">
@@ -32,7 +35,7 @@
                 </div>
               }
             </dl>
-          </div>
+          </article>
         }
       </div>
     </section>

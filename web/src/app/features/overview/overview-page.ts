@@ -150,10 +150,11 @@ export class OverviewPage {
   );
   protected readonly fdTotal = computed(() => fdValue(this.fd.deposits(), this.ids(), this.today));
   protected readonly balanceGroups = computed<
-    readonly { title: string; rows: readonly BalanceRow[] }[]
+    readonly { title: string; icon: string; rows: readonly BalanceRow[] }[]
   >(() => [
     {
       title: 'Investments',
+      icon: 'pi-chart-line',
       rows: [
         { label: 'Mutual funds', value: this.mf().value, dayChange: this.mf().dayChange },
         { label: 'Stocks', value: this.stocks().value, dayChange: this.stocks().dayChange },
@@ -163,6 +164,7 @@ export class OverviewPage {
     },
     {
       title: 'Savings and dues',
+      icon: 'pi-wallet',
       rows: [
         { label: 'Savings', value: this.savings() },
         { label: 'PF', value: this.pfTotal() },

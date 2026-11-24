@@ -38,7 +38,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 
 ### Overview
 - Respects the portfolio switcher; default is the **family total (All)**.
-- **Balances** lists investments and savings/dues in compact rows, one column on mobile and two from 1024px. Mutual funds, stocks and NPS show 1 Day Change below their amounts in the same row. Card dues are flagged when greater than zero.
+- **Balances** groups Investments and Savings and dues into two panels with right-aligned amounts. The panels stack on mobile and sit side by side from 1024px. Mutual funds, stocks and NPS show 1 Day Change below their amounts in the same row. Card dues are flagged when greater than zero.
 - **History**, **Allocation** and **By portfolio** start closed and can be expanded using their labels.
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - **View chart data** opens a keyboard-scrollable table with every date and value in the selected history series and range. The table respects **Hide amounts**.
