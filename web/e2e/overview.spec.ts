@@ -9,7 +9,6 @@ import {
   screenshot,
   seedPortfolios,
   signInWithMagicLink,
-  statCard,
   isMobile,
 } from './support/fixtures';
 
@@ -153,25 +152,55 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(page.getByRole('main')).toBeFocused();
 
   // All portfolios: 100 x 50 + 20 x 50 = 6,000; today +100 +20
-  const combined = statCard(page, 'Combined (MF + stocks)');
+  const balances = page.getByRole('region', { name: 'Balances' });
+  const balanceRow = (name: string) =>
+    balances.locator('.balance-row').filter({ has: page.getByText(name, { exact: true }) });
+  const combined = balanceRow('MF + stocks');
   await expect(combined).toContainText('₹6,000');
   await expect(combined).toContainText('+₹120');
   await expect(combined).toBeInViewport();
-  await expect(statCard(page, 'Savings')).toContainText('₹4,000');
-  await expect(statCard(page, 'Card dues')).toContainText('₹2,500');
-  await expect(statCard(page, 'Card dues').locator('.stat-value')).toHaveClass(/app-down/);
-  await expect(statCard(page, 'PF')).toContainText('₹2,350');
-  await expect(statCard(page, 'PPF')).toContainText('₹2,000');
-  await expect(statCard(page, 'NPS')).toContainText('₹2,000');
-  await expect(statCard(page, 'NPS')).toContainText('+₹40');
-  await expect(statCard(page, 'FD')).toContainText('₹2,000');
+  await expect(balanceRow('Savings')).toContainText('₹4,000');
+  await expect(balanceRow('Card dues')).toContainText('₹2,500');
+  await expect(balanceRow('Card dues').locator('.balance-amount')).toHaveClass(/app-down/);
+  await expect(balanceRow('PF')).toContainText('₹2,350');
+  await expect(balanceRow('PPF')).toContainText('₹2,000');
+  await expect(balanceRow('NPS')).toContainText('₹2,000');
+  await expect(balanceRow('NPS')).toContainText('+₹40');
+  await expect(balanceRow('Fixed deposits')).toContainText('₹2,000');
 
+  for (const name of ['Mutual funds', 'Stocks', 'Vested RSUs']) {
+    await expect(balanceRow(name)).toBeVisible();
+  }
+  const summaryToggle = page.getByText('By portfolio', { exact: true });
+  const allocationToggle = page.getByText('Allocation', { exact: true });
+  const historyToggle = page.getByText('History', { exact: true });
+  for (const toggle of [historyToggle, allocationToggle, summaryToggle]) {
+    await expect(page.locator('details').filter({ has: toggle })).not.toHaveAttribute('open');
+  }
+
+  if (mobile) {
+    const viewport = page.viewportSize()!;
+    await page.setViewportSize({ width: 360, height: viewport.height });
+    await expectNoHorizontalScroll(page);
+    await page.setViewportSize(viewport);
+  }
+  await screenshot(page, 'overview', testInfo.project.name);
+
+  const privacy = page.getByRole('button', { name: 'Hide amounts' });
+  await privacy.click();
+  await expect(combined).toContainText('••••');
+  await expect(balances).not.toContainText('₹');
+  await privacy.click();
+  await expect(combined).toContainText('₹6,000');
+
+  await allocationToggle.press('Enter');
   const allocation = page.getByRole('region', { name: 'Allocation' });
   await expect(allocation.getByRole('img')).toHaveAttribute(
     'aria-label',
     /Mutual funds ₹6,000 \(33%\).*PF ₹2,350 \(13%\).*PPF ₹2,000 \(11%\).*NPS ₹2,000 \(11%\), Fixed deposits ₹2,000 \(11%\)/,
   );
   await expect(allocation).toContainText('Savings');
+  await historyToggle.press('Enter');
   const history = page.getByRole('region', { name: 'Combined value over time' });
   await expect(history.getByRole('img', { name: /Combined value from/ })).toBeVisible();
   const chartData = history.getByText('View chart data', { exact: true });
@@ -197,13 +226,13 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await show.getByRole('button', { name: 'MF + stocks' }).click();
   await expect(history).toBeVisible();
 
+  await summaryToggle.press('Enter');
   const summary = mobile
     ? page.getByRole('region', { name: 'By portfolio' })
     : page.getByRole('table', { name: 'Summary by portfolio' });
   await expect(summary).toContainText('Wife');
   await expect(summary).toContainText('Family total');
   await expectNoHorizontalScroll(page);
-  await screenshot(page, 'overview', testInfo.project.name);
 
   // One portfolio: totals follow the switcher
   if (mobile) {
@@ -216,10 +245,10 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
     await page.getByRole('option', { name: 'Wife' }).click();
   }
   await expect(combined).toContainText('₹1,000');
-  await expect(statCard(page, 'Card dues')).toContainText('₹0');
-  await expect(statCard(page, 'PF')).toContainText('₹0');
-  await expect(statCard(page, 'PPF')).toContainText('₹2,000');
-  await expect(statCard(page, 'NPS')).toContainText('₹2,000');
-  await expect(statCard(page, 'FD')).toContainText('₹2,000');
+  await expect(balanceRow('Card dues')).toContainText('₹0');
+  await expect(balanceRow('PF')).toContainText('₹0');
+  await expect(balanceRow('PPF')).toContainText('₹2,000');
+  await expect(balanceRow('NPS')).toContainText('₹2,000');
+  await expect(balanceRow('Fixed deposits')).toContainText('₹2,000');
   await expect(summary).not.toContainText('Family total');
 });

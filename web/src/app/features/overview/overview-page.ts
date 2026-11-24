@@ -28,7 +28,6 @@ import { LineChart } from '../../shared/ui/line-chart';
 import { ListSkeleton } from '../../shared/ui/list-skeleton';
 import { MoneyPipe, PercentPipe } from '../../shared/ui/money.pipe';
 import { PlColorDirective } from '../../shared/ui/pl-color.directive';
-import { StatCard } from '../../shared/ui/stat-card';
 import {
   HistoryRange,
   HistorySeries,
@@ -38,6 +37,14 @@ import {
   summaryRow,
   totalRow,
 } from './overview-calc';
+
+interface BalanceRow {
+  label: string;
+  value: number | null;
+  dayChange?: number;
+  subtotal?: boolean;
+  warning?: boolean;
+}
 
 const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps', 'fd'];
 
@@ -57,7 +64,6 @@ const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps', 
     MoneyPipe,
     PercentPipe,
     PlColorDirective,
-    StatCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './overview-page.html',
@@ -146,6 +152,30 @@ export class OverviewPage {
     value: this.mf().value + this.stocks().value,
     dayChange: this.mf().dayChange + this.stocks().dayChange,
   }));
+  protected readonly balanceGroups = computed<
+    readonly { title: string; rows: readonly BalanceRow[] }[]
+  >(() => [
+    {
+      title: 'Investments',
+      rows: [
+        { label: 'MF + stocks', ...this.combined(), subtotal: true },
+        { label: 'Mutual funds', value: this.mf().value, dayChange: this.mf().dayChange },
+        { label: 'Stocks', value: this.stocks().value, dayChange: this.stocks().dayChange },
+        { label: 'Vested RSUs', value: this.rsu().vestedInr },
+        { label: 'NPS', value: this.npsTotal().value, dayChange: this.npsTotal().dayChange },
+      ],
+    },
+    {
+      title: 'Savings and dues',
+      rows: [
+        { label: 'Savings', value: this.savings() },
+        { label: 'PF', value: this.pfTotal() },
+        { label: 'PPF', value: this.ppfTotal() },
+        { label: 'Fixed deposits', value: this.fdTotal() },
+        { label: 'Card dues', value: this.dues(), warning: this.dues() > 0 },
+      ],
+    },
+  ]);
   protected readonly unpriced = computed(
     () => this.mf().unpriced + this.stocks().unpriced + this.npsTotal().unpriced,
   );

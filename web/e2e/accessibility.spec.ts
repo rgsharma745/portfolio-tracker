@@ -240,6 +240,12 @@ for (const theme of ['light', 'dark'] as const) {
     for (const path of PAGES) {
       await page.goto(path);
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+      if (path === '/overview') {
+        await audit(page, `${theme} ${path} collapsed`);
+        for (const title of ['History', 'Allocation', 'By portfolio']) {
+          await page.getByText(title, { exact: true }).press('Enter');
+        }
+      }
       if (path === '/mutual-funds') {
         const list = page
           .getByRole('list', { name: 'Mutual fund holdings' })

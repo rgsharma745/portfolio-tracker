@@ -6,48 +6,36 @@
   }
 } @else {
   <div class="page-stack">
-    <div class="stat-grid overview-stats">
-      <app-stat-card
-        class="hero"
-        label="Combined (MF + stocks)"
-        [value]="combined().value"
-        [delta]="combined().dayChange"
-        deltaLabel="1 Day Change"
-      />
-      <app-stat-card
-        label="Mutual funds"
-        [value]="mf().value"
-        [delta]="mf().dayChange"
-        deltaLabel="1 Day Change"
-        [compact]="bp.isMobile()"
-      />
-      <app-stat-card
-        label="Stocks"
-        [value]="stocks().value"
-        [delta]="stocks().dayChange"
-        deltaLabel="1 Day Change"
-        [compact]="bp.isMobile()"
-      />
-      <app-stat-card label="RSU (vested)" [value]="rsu().vestedInr" [compact]="bp.isMobile()" />
-      <app-stat-card label="Savings" [value]="savings()" [compact]="bp.isMobile()" />
-      <app-stat-card label="PF" [value]="pfTotal()" [compact]="bp.isMobile()" />
-      <app-stat-card label="PPF" [value]="ppfTotal()" [compact]="bp.isMobile()" />
-      <app-stat-card
-        label="NPS"
-        [value]="npsTotal().value"
-        [delta]="npsTotal().dayChange"
-        deltaLabel="1 Day Change"
-        [compact]="bp.isMobile()"
-      />
-      <app-stat-card label="FD" [value]="fdTotal()" [compact]="bp.isMobile()" />
-      <app-stat-card
-        class="dues"
-        label="Card dues"
-        [value]="dues()"
-        [danger]="true"
-        [compact]="bp.isMobile()"
-      />
-    </div>
+    <section class="app-card balances" aria-labelledby="balances-title">
+      <h2 class="section-title" id="balances-title">Balances</h2>
+      <div class="balance-groups">
+        @for (group of balanceGroups(); track group.title) {
+          <div>
+            <h3>{{ group.title }}</h3>
+            <dl class="balance-list">
+              @for (row of group.rows; track row.label) {
+                <div class="balance-row" [class.subtotal]="row.subtotal">
+                  <dt>{{ row.label }}</dt>
+                  <dd>
+                    <span class="app-num balance-amount" [class.app-down]="row.warning">
+                      {{ row.value | money }}
+                    </span>
+                    @if (row.dayChange !== undefined) {
+                      <span class="balance-change">
+                        <span>1 Day Change</span>
+                        <span class="app-num" [appPl]="row.dayChange">{{
+                          row.dayChange | money: 'INR' : { sign: true }
+                        }}</span>
+                      </span>
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+          </div>
+        }
+      </div>
+    </section>
     @if (unpriced()) {
       <p class="note">
         {{ unpriced() }} {{ unpriced() === 1 ? 'holding has' : 'holdings have' }} no price yet and
@@ -56,17 +44,9 @@
       </p>
     }
 
-    <div class="charts">
-      <section class="app-card chart-card" aria-labelledby="alloc-title">
-        <h2 class="section-title" id="alloc-title">Allocation</h2>
-        @if (allocation().length) {
-          <app-allocation-bar [parts]="allocation()" [order]="allocationOrder" />
-        } @else {
-          <p class="section-hint">Nothing to show yet: add holdings or savings.</p>
-        }
-      </section>
-
-      <section class="app-card chart-card" aria-labelledby="history-title">
+    <details class="app-card overview-disclosure">
+      <summary>History</summary>
+      <section class="chart-card" aria-labelledby="history-title">
         <div class="chart-head">
           <h2 class="section-title" id="history-title">{{ historyTitles[series()] }} over time</h2>
           <span id="series-label" class="visually-hidden">Show</span>
@@ -101,67 +81,82 @@
           <app-line-chart [points]="history()" [label]="historyTitles[series()]" />
         }
       </section>
-    </div>
+    </details>
 
-    <section class="page-stack" aria-labelledby="summary-title">
-      <h2 class="section-title" id="summary-title">By portfolio</h2>
-      <app-data-table
-        label="Summary by portfolio"
-        [rows]="summaryRows()"
-        [columns]="summaryColumns"
-        [footer]="summaryFooter()"
-        minWidth="44rem"
-      >
-        <ng-template appCard let-row>
-          <article class="app-card summary-card" [attr.aria-label]="row.name">
+    <details class="app-card overview-disclosure">
+      <summary>Allocation</summary>
+      <section class="chart-card" aria-label="Allocation">
+        @if (allocation().length) {
+          <app-allocation-bar [parts]="allocation()" [order]="allocationOrder" />
+        } @else {
+          <p class="section-hint">Nothing to show yet: add holdings or savings.</p>
+        }
+      </section>
+    </details>
+
+    <details class="app-card overview-disclosure">
+      <summary>By portfolio</summary>
+      <section class="page-stack" aria-label="By portfolio">
+        <app-data-table
+          label="Summary by portfolio"
+          [rows]="summaryRows()"
+          [columns]="summaryColumns"
+          [footer]="summaryFooter()"
+          minWidth="44rem"
+        >
+          <ng-template appCard let-row>
+            <article class="app-card summary-card" [attr.aria-label]="row.name">
+              <div class="summary-top">
+                <span class="summary-name">{{ row.name }}</span>
+                <span class="app-num">{{ row.value | money }}</span>
+              </div>
+              <div class="summary-meta">
+                <span
+                  >{{ row.holdings }} {{ row.holdings === 1 ? 'holding' : 'holdings' }} ·
+                  {{ row.invested | money }} invested</span
+                >
+                <span class="app-num" [appPl]="row.pl"
+                  >{{ row.pl | money: 'INR' : { sign: true } }} ({{
+                    row.plPercent | percent2
+                  }})</span
+                >
+                <span class="app-num"
+                  >1 Day Change:
+                  <span class="whitespace-nowrap" [appPl]="row.dayChange">{{
+                    row.dayChange | money: 'INR' : { sign: true }
+                  }}</span></span
+                >
+              </div>
+            </article>
+          </ng-template>
+        </app-data-table>
+        @if (bp.isMobile() && summaryRows().length > 1) {
+          <article class="app-card summary-card total" aria-label="Family total">
             <div class="summary-top">
-              <span class="summary-name">{{ row.name }}</span>
-              <span class="app-num">{{ row.value | money }}</span>
+              <span class="summary-name">Family total</span>
+              <span class="app-num">{{ familyTotal().value | money }}</span>
             </div>
             <div class="summary-meta">
               <span
-                >{{ row.holdings }} {{ row.holdings === 1 ? 'holding' : 'holdings' }} ·
-                {{ row.invested | money }} invested</span
+                >{{ familyTotal().holdings }}
+                {{ familyTotal().holdings === 1 ? 'holding' : 'holdings' }} ·
+                {{ familyTotal().invested | money }} invested</span
               >
-              <span class="app-num" [appPl]="row.pl"
-                >{{ row.pl | money: 'INR' : { sign: true } }} ({{ row.plPercent | percent2 }})</span
+              <span class="app-num" [appPl]="familyTotal().pl"
+                >{{ familyTotal().pl | money: 'INR' : { sign: true } }} ({{
+                  familyTotal().plPercent | percent2
+                }})</span
               >
               <span class="app-num"
                 >1 Day Change:
-                <span class="whitespace-nowrap" [appPl]="row.dayChange">{{
-                  row.dayChange | money: 'INR' : { sign: true }
+                <span class="whitespace-nowrap" [appPl]="familyTotal().dayChange">{{
+                  familyTotal().dayChange | money: 'INR' : { sign: true }
                 }}</span></span
               >
             </div>
           </article>
-        </ng-template>
-      </app-data-table>
-      @if (bp.isMobile() && summaryRows().length > 1) {
-        <article class="app-card summary-card total" aria-label="Family total">
-          <div class="summary-top">
-            <span class="summary-name">Family total</span>
-            <span class="app-num">{{ familyTotal().value | money }}</span>
-          </div>
-          <div class="summary-meta">
-            <span
-              >{{ familyTotal().holdings }}
-              {{ familyTotal().holdings === 1 ? 'holding' : 'holdings' }} ·
-              {{ familyTotal().invested | money }} invested</span
-            >
-            <span class="app-num" [appPl]="familyTotal().pl"
-              >{{ familyTotal().pl | money: 'INR' : { sign: true } }} ({{
-                familyTotal().plPercent | percent2
-              }})</span
-            >
-            <span class="app-num"
-              >1 Day Change:
-              <span class="whitespace-nowrap" [appPl]="familyTotal().dayChange">{{
-                familyTotal().dayChange | money: 'INR' : { sign: true }
-              }}</span></span
-            >
-          </div>
-        </article>
-      }
-    </section>
+        }
+      </section>
+    </details>
   </div>
 }
