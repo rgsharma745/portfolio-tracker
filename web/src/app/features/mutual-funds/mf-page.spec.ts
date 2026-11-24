@@ -77,6 +77,8 @@ describe('MfPage', () => {
       const { fixture, el, mf } = render(mobile);
       await fixture.whenStable();
       expect(el.textContent).toContain('Fund a');
+      if (!mobile) expect(el.textContent).toContain('Folio XIRR');
+      expect(el.textContent).not.toContain('XIRR by folio');
       expect(el.textContent).toContain('No NAV');
       expect(el.textContent).toContain('1 fund has no NAV yet');
       mf.update((rows) => [...rows, holding('c', 'me', '100')]);

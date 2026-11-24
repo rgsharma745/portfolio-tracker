@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
@@ -10,7 +11,7 @@ import { localIsoDate, sumValuations } from '../../core/calc/common';
 import { mfTotals } from '../../core/calc/mf';
 import { MfCurrentValueInput, mfXirr, mfXirrByFolio } from '../../core/calc/mf-transactions';
 import { HoldingsService } from '../../core/data/holdings.service';
-import { MfTransactionsService } from '../../core/data/mf-transactions.service';
+import { MfTransaction, MfTransactionsService } from '../../core/data/mf-transactions.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
 import { toCsv } from '../../shared/format/csv';
 import { downloadText } from '../../shared/format/download';
@@ -46,6 +47,7 @@ import { MF_CSV_COLUMNS, MfRow, buildMfRows } from './mf-rows';
     FormsModule,
     RouterLink,
     ButtonModule,
+    DialogModule,
     InputTextModule,
     SelectModule,
     TagModule,
@@ -87,6 +89,7 @@ export class MfPage {
   ];
 
   protected readonly dialog = new DialogForm<MfForm>();
+  protected readonly transactionDialog = signal<MfRow | null>(null);
 
   private readonly portfolioNames = computed(
     () => new Map(this.portfolios.portfolios().map((p) => [p.id, p.name])),
@@ -121,23 +124,29 @@ export class MfPage {
       this.today,
     ),
   );
-  protected readonly folioXirrs = computed(() =>
-    mfXirrByFolio(
-      this.transactionService.transactions(),
-      this.currentValues(),
-      this.portfolios.scopeIds(),
-      this.today,
-    ).map((summary) => ({
-      ...summary,
-      portfolio: this.portfolioNames().get(summary.portfolioId) ?? '',
-    })),
+  private readonly folioXirrMap = computed(
+    () =>
+      new Map(
+        mfXirrByFolio(
+          this.transactionService.transactions(),
+          this.currentValues(),
+          this.portfolios.scopeIds(),
+          this.today,
+        ).map((summary) => [summary.key, summary.xirr]),
+      ),
   );
-  protected readonly recentTransactions = computed(() =>
-    this.transactionService
+  protected readonly selectedTransactions = computed<readonly MfTransaction[]>(() => {
+    const row = this.transactionDialog();
+    if (!row?.folio) return [];
+    return this.transactionService
       .transactions()
-      .filter((transaction) => this.portfolios.scopeIds().includes(transaction.portfolio_id))
-      .slice(0, 100),
-  );
+      .filter(
+        (transaction) =>
+          transaction.portfolio_id === row.holding.portfolio_id &&
+          transaction.folio === row.folio &&
+          transaction.scheme_name === row.name,
+      );
+  });
   protected readonly visible = computed(() =>
     sortRows(
       filterByPl(
@@ -147,7 +156,7 @@ export class MfPage {
       this.sort(),
     ),
   );
-  protected readonly footer = computed(() => {
+  protected readonly tableFooter = computed(() => {
     const t = sumValuations(this.visible().map((r) => r.valuation));
     return {
       invested: t.invested,
@@ -162,6 +171,7 @@ export class MfPage {
     { key: 'name', header: 'Fund', type: 'custom', sortable: true },
     { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
     { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
+    { key: 'xirr', header: 'Folio XIRR', type: 'custom', alignEnd: true },
     { key: 'dayChange', header: '1 Day Change', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
@@ -192,6 +202,11 @@ export class MfPage {
     return value === null ? '—' : formatPercent(value * 100);
   }
 
+  protected folioXirr(row: MfRow): number | null {
+    if (row.folio === null) return null;
+    return this.folioXirrMap().get(`${row.holding.portfolio_id}\u0000${row.folio}`) ?? null;
+  }
+
   protected transactionAmount(value: number | null): string {
     return value === null ? '—' : formatMoney(Math.abs(value));
   }
@@ -206,6 +221,14 @@ export class MfPage {
 
   protected edit(row: MfRow): void {
     this.dialog.show(mfFormFrom(row.holding), row.id);
+  }
+
+  protected showTransactions(row: MfRow): void {
+    this.transactionDialog.set(row);
+  }
+
+  protected closeTransactions(): void {
+    this.transactionDialog.set(null);
   }
 
   protected save(): void {

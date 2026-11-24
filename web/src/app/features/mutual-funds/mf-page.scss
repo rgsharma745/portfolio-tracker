@@ -73,6 +73,31 @@
   text-align: right;
 }
 
+.transaction-dialog-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid var(--app-hairline);
+  border-radius: 12px;
+}
+
+.transaction-dialog-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
 @media (max-width: 420px) {
   .mf-transaction {
     gap: 8px;

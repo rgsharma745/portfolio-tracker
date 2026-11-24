@@ -4,14 +4,7 @@
   } @else {
     <app-list-skeleton />
   }
-} @else if (
-  rows().length === 0 &&
-  recentTransactions().length === 0 &&
-  !transactionService.loaded() &&
-  !transactionService.error()
-) {
-  <app-list-skeleton />
-} @else if (rows().length === 0 && recentTransactions().length === 0) {
+} @else if (rows().length === 0) {
   <div class="page-stack">
     @if (transactionService.error()) {
       <app-error-state
@@ -77,11 +70,13 @@
       label="Mutual fund holdings"
       [rows]="visible()"
       [columns]="columns"
-      [footer]="footer()"
+      [footer]="tableFooter()"
       [sort]="sort()"
       (sortChange)="sort.set($event)"
       emptyMessage="No funds match."
-      minWidth="46rem"
+      minWidth="52rem"
+      [rowClickable]="true"
+      (rowOpen)="showTransactions($event)"
     >
       <ng-template appCell="name" let-row>
         <div class="name-cell">
@@ -108,6 +103,14 @@
         <span class="app-num" [appPl]="row.pl">{{ row.pl | money: 'INR' : { sign: true } }}</span>
         <span class="cell-sub app-num" [appPl]="row.plPercent">{{ row.plPercent | percent2 }}</span>
       </ng-template>
+      <ng-template appCell="xirr" let-row>
+        <span class="app-num" [appPl]="folioXirr(row)">
+          {{ xirr(folioXirr(row)) }}
+        </span>
+        @if (row.folio) {
+          <span class="cell-sub">Folio {{ row.folio }}</span>
+        }
+      </ng-template>
       <ng-template appFooter="name" let-t>
         <span class="name-title">Total</span>
         <span class="cell-sub"
@@ -122,6 +125,10 @@
         <span class="app-num" [appPl]="t.pl">{{ t.pl | money: 'INR' : { sign: true } }}</span>
         <span class="cell-sub app-num" [appPl]="t.plPercent">{{ t.plPercent | percent2 }}</span>
       </ng-template>
+      <ng-template appFooter="xirr" let-t>
+        <span class="app-num" [appPl]="portfolioXirr()">{{ xirr(portfolioXirr()) }}</span>
+        <span class="cell-sub">Portfolio XIRR</span>
+      </ng-template>
       <ng-template appCell="actions" let-row>
         <div class="row-actions">
           <button
@@ -132,7 +139,7 @@
             text
             severity="secondary"
             [attr.aria-label]="'Edit ' + row.name"
-            (click)="edit(row)"
+            (click)="edit(row); $event.stopPropagation()"
           >
             <i class="pi pi-pencil" aria-hidden="true"></i>
           </button>
@@ -146,82 +153,21 @@
           [plPercent]="row.plPercent"
           [dayChange]="row.dayChange"
           [meta]="row.navDate ? 'NAV ' + date(row.navDate) : ''"
-          (open)="edit(row)"
+          (open)="showTransactions(row)"
         >
           <ng-container *ngTemplateOutlet="tags; context: { $implicit: row }" />
         </app-holding-card>
       </ng-template>
     </app-data-table>
-
-    @if (folioXirrs().length) {
-      <section class="app-card" aria-labelledby="mf-folio-xirr-title">
-        <div class="section-head">
-          <h2 class="section-title" id="mf-folio-xirr-title">XIRR by folio</h2>
-        </div>
-        <ul class="account-list" aria-label="Mutual fund XIRR by folio">
-          @for (summary of folioXirrs(); track summary.key) {
-            <li class="account">
-              <div class="account-main">
-                <span class="account-name">Folio {{ summary.folio }}</span>
-                <span class="account-balance app-num" [appPl]="summary.xirr">
-                  {{ xirr(summary.xirr) }}
-                </span>
-              </div>
-              @if (showPortfolio()) {
-                <div class="account-sub">{{ summary.portfolio }}</div>
-              }
-            </li>
-          }
-        </ul>
-      </section>
-    }
-
-    <section class="app-card" aria-labelledby="mf-transactions-title">
-      <div class="section-head">
-        <div>
-          <h2 class="section-title" id="mf-transactions-title">Recent transactions</h2>
-          <p class="section-subtitle">Imported from your CAMS detailed CAS statements</p>
-        </div>
-      </div>
-      @if (transactionService.error()) {
-        <app-error-state title="Could not load transactions" (retry)="transactionService.load()" />
-      } @else if (transactionService.loading() && !transactionService.loaded()) {
-        <app-list-skeleton />
-      } @else if (recentTransactions().length === 0) {
-        <p class="note">No imported transactions for this portfolio yet.</p>
-      } @else {
-        <ul class="mf-transaction-list" aria-label="Recent mutual fund transactions">
-          @for (transaction of recentTransactions(); track transaction.id) {
-            <li class="mf-transaction">
-              <div class="mf-transaction-main">
-                <span class="name-title">{{ transaction.scheme_name }}</span>
-                <span class="cell-sub"
-                  >{{ date(transaction.transaction_date) }} ·
-                  {{ transaction.transaction_type.replaceAll('_', ' ') }}</span
-                >
-              </div>
-              <div class="mf-transaction-detail">
-                <span class="cell-sub">Folio {{ transaction.folio }}</span>
-                <span class="app-num">{{ transactionAmount(transaction.amount) }}</span>
-                @if (transaction.units !== null) {
-                  <span class="cell-sub app-num">{{ units(transaction.units) }} units</span>
-                }
-              </div>
-            </li>
-          }
-        </ul>
-        @if (recentTransactions().length === 100) {
-          <p class="note">
-            Showing the latest 100 transactions. All imported transactions contribute to XIRR.
-          </p>
-        }
-      }
-    </section>
   </div>
 }
 
 <ng-template #tags let-row>
   <span class="name-tags inline-tags">
+    @if (row.folio) {
+      <p-tag [value]="'Folio ' + row.folio" severity="secondary" />
+      <p-tag [value]="'XIRR ' + xirr(folioXirr(row))" severity="secondary" />
+    }
     @if (showPortfolio()) {
       <p-tag [value]="row.portfolio" severity="secondary" />
     }
@@ -232,6 +178,72 @@
     }
   </span>
 </ng-template>
+
+<p-dialog
+  [visible]="transactionDialog() !== null"
+  (visibleChange)="!$event && closeTransactions()"
+  [modal]="true"
+  [draggable]="false"
+  [header]="transactionDialog()?.name ?? 'Fund transactions'"
+  closeAriaLabel="Close"
+  styleClass="app-dialog"
+>
+  @if (transactionDialog(); as row) {
+    <div class="transaction-dialog-summary">
+      <div>
+        <span class="cell-sub">Folio</span>
+        <span class="name-title">{{ row.folio ?? '—' }}</span>
+      </div>
+      <div>
+        <span class="cell-sub">Folio XIRR</span>
+        <span class="name-title" [appPl]="folioXirr(row)">{{ xirr(folioXirr(row)) }}</span>
+      </div>
+      <div>
+        <span class="cell-sub">Absolute P&amp;L</span>
+        <span class="name-title" [appPl]="row.pl">
+          {{ row.pl | money: 'INR' : { sign: true } }}
+        </span>
+      </div>
+    </div>
+
+    @if (transactionService.error()) {
+      <app-error-state title="Could not load transactions" (retry)="transactionService.load()" />
+    } @else if (transactionService.loading() && !transactionService.loaded()) {
+      <app-list-skeleton />
+    } @else if (selectedTransactions().length === 0) {
+      <p class="note">No imported transactions for this folio and fund.</p>
+    } @else {
+      <ul class="mf-transaction-list" aria-label="Mutual fund transactions">
+        @for (transaction of selectedTransactions(); track transaction.id) {
+          <li class="mf-transaction">
+            <div class="mf-transaction-main">
+              <span class="name-title">{{
+                transaction.transaction_type.replaceAll('_', ' ')
+              }}</span>
+              <span class="cell-sub">{{ date(transaction.transaction_date) }}</span>
+            </div>
+            <div class="mf-transaction-detail">
+              <span class="app-num">{{ transactionAmount(transaction.amount) }}</span>
+              @if (transaction.units !== null) {
+                <span class="cell-sub app-num">{{ units(transaction.units) }} units</span>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+  <ng-template #footer>
+    <div class="dialog-actions">
+      <button pButton type="button" severity="secondary" (click)="closeTransactions()">
+        Close
+      </button>
+      @if (transactionDialog(); as row) {
+        <button pButton type="button" (click)="closeTransactions(); edit(row)">Edit fund</button>
+      }
+    </div>
+  </ng-template>
+</p-dialog>
 
 <app-edit-dialog
   [visible]="dialog.open()"

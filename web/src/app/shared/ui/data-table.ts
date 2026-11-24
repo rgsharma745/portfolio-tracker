@@ -110,7 +110,14 @@ export class CardTemplate {
             </tr>
           </ng-template>
           <ng-template #body let-row>
-            <tr>
+            <tr
+              [class.row-clickable]="rowClickable()"
+              [attr.tabindex]="rowClickable() ? 0 : null"
+              [attr.role]="rowClickable() ? 'button' : null"
+              (click)="rowClickable() && rowOpen.emit(row)"
+              (keydown.enter)="rowClickable() && rowOpen.emit(row)"
+              (keydown.space)="rowClickable() && $event.preventDefault() && rowOpen.emit(row)"
+            >
               @for (col of columns(); track col.key) {
                 <td [class.num]="isNumeric(col)">
                   <ng-container
@@ -230,6 +237,13 @@ export class CardTemplate {
     td {
       white-space: nowrap;
     }
+    .row-clickable {
+      cursor: pointer;
+    }
+    .row-clickable:focus-visible {
+      outline: 2px solid var(--p-primary-color);
+      outline-offset: -2px;
+    }
     th {
       font-size: 12px;
       font-weight: 600;
@@ -320,7 +334,9 @@ export class DataTable<T extends object> {
   readonly sort = input<Sort | null>(null);
   readonly emptyMessage = input('Nothing matches.');
   readonly minWidth = input('48rem');
+  readonly rowClickable = input(false);
   readonly sortChange = output<Sort>();
+  readonly rowOpen = output<T>();
 
   protected readonly cardTemplate = contentChild(CardTemplate);
   private readonly cellDirectives = contentChildren(CellTemplate);
