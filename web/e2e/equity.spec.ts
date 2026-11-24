@@ -4,6 +4,7 @@ import {
   expect,
   expectNoHorizontalScroll,
   HOLDINGS_EMAIL,
+  pickDate,
   screenshot,
   seedPortfolios,
   signInWithMagicLink,
@@ -66,8 +67,26 @@ test('employee equity records vesting, exercise and a multi-lot cashless sale', 
   await vest.getByLabel('Grant', { exact: false }).selectOption(award);
   await vest.getByLabel('Vested quantity').fill('10');
   await vest.getByLabel('FMV per share').fill('40');
-  await vest.getByLabel('Shares withheld or sold for tax').fill('2');
-  await vest.getByRole('button', { name: 'Save' }).click();
+  const withheld = vest.getByLabel('Shares withheld or sold for tax');
+  const saveVesting = vest.getByRole('button', { name: 'Save' });
+  await withheld.fill('11');
+  await saveVesting.click();
+  await expect(withheld).toHaveAccessibleDescription(
+    'Shares withheld for tax cannot exceed the quantity before tax.',
+  );
+  await expect(withheld).toBeFocused();
+
+  await withheld.fill('2');
+  const allotment = vest.getByLabel('Allotment date');
+  await pickDate(page, allotment, '2025-01-01');
+  await saveVesting.click();
+  await expect(allotment).toHaveAccessibleDescription(
+    'Allotment date must be on or after the vesting date.',
+  );
+
+  await allotment.click();
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
+  await saveVesting.click();
   await expect(vest).toBeHidden();
   await expect(statCard(page, 'Current value')).toContainText('₹800');
 

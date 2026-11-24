@@ -247,6 +247,7 @@ The owner asked for a separate page to record dividends received (market, symbol
 - [x] Add company, grant and grant-type filters, lot-level FMV-based P&L, Indian holding-period classification, and market-qualified listed quotes with optional private marks.
 - [x] Use shares held for Overview and daily history. Integrate Settings, JSON export, encrypted backup and restore.
 - [x] Verify the local migrations and generated types, lint, build and bundle scan, 349 app tests, 17 Worker tests, 319 Python tests, and 99 browser checks across the full run and iPhone keyboard rerun (3 intentional skips).
+- [x] Show field errors for tax withholding above the gross vested quantity or allotment before vesting. Verify correction and save on desktop Chrome, mobile Chrome and iPhone WebKit.
 - [ ] **Human:** back up production, clear the legacy RSU snapshot amounts, apply migrations `0014` through `0017`, deploy, enter grants, and verify the first price, snapshot and backup runs.
 - [ ] Consider financial-year filtering in a later release.
 

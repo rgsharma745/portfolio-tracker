@@ -250,7 +250,14 @@ export class EquityEditor {
         const fields: FormField[] = [
           grantField,
           { ...date, label: exercise ? 'Exercise date' : 'Vesting date' },
-          { ...quantity, label: exercise ? 'Exercised quantity' : 'Vested quantity' },
+          {
+            ...quantity,
+            label: exercise
+              ? 'Exercised quantity before tax'
+              : grant?.kind === 'RSU'
+                ? 'Vested quantity before tax'
+                : 'Vested quantity',
+          },
         ];
         if (!exercise && tranches.length) {
           fields.push({
@@ -268,7 +275,9 @@ export class EquityEditor {
             {
               ...date,
               key: 'allotment',
-              label: exercise ? 'Allotment date (when issued)' : 'Allotment date (if different)',
+              label: exercise
+                ? 'Allotment date (when issued)'
+                : 'Allotment date (defaults to vesting date)',
               required: false,
             },
             currencyField,
@@ -345,7 +354,12 @@ export class EquityEditor {
       }
       return { ...draft, fields, allocations };
     });
-    this.fieldErrors.update((errors) => ({ ...errors, [key]: undefined }));
+    this.fieldErrors.update((errors) => {
+      const remaining = { ...errors, [key]: undefined };
+      if (key === 'date') delete remaining.allotment;
+      if (key === 'quantity') delete remaining.taxUnits;
+      return remaining;
+    });
     this.error.set(null);
   }
 

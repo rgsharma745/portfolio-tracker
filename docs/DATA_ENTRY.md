@@ -32,7 +32,7 @@ For stocks, enter either the amount invested or the average price; the app works
 
 1. Add a company in Employee equity. Choose US listed (USD), India listed (INR) or Private (USD or INR). Enter a date with any private value per share.
 2. Add the company's award to a portfolio. Add dated tranches and link each recorded vest to its tranche when available.
-3. Record RSU vesting with FMV and shares withheld or sold for tax. For ESOPs, record option vesting, then exercise and share allotment. Enter the historical FX from the statement. If you record actual INR tax on the lot, include any amount paid from sale proceeds.
+3. Record the total RSU shares vested before tax, the FMV per share, and the number of shares withheld or sold for tax. Leave the allotment date blank if it matches the vesting date, or enter a later date. For ESOPs, record option vesting, then exercise and share allotment. Enter the historical FX from the statement. If you record actual INR tax on the lot, include any amount paid from sale proceeds.
 4. Record the sale with quantities for each lot and any cashless exercise or tax deductions in the sale currency. Edit the sale to add the INR bank credit and date when available.
 5. Reconcile held shares against the broker statement and actual receipts against the bank. Enter shares managed by this ledger once under Employee equity so they contribute once to Overview.
 

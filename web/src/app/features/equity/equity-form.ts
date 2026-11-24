@@ -210,6 +210,18 @@ export function validateFields(
     if (draft.fields.bank) errors.bankDate = 'Enter the bank credit date.';
     else errors.bank = 'Enter the INR credited.';
   }
+  if (definitions.some((field) => field.key === 'allotment')) {
+    const { allotment, date, quantity, taxUnits } = draft.fields;
+    if (allotment && date && allotment < date) {
+      const event = draft.kind === 'exercise' ? 'exercise' : 'vesting';
+      errors.allotment ??= `Allotment date must be on or after the ${event} date.`;
+    }
+    const gross = parseDecimal(quantity);
+    const withheld = parseDecimal(taxUnits);
+    if (!errors.quantity && gross !== null && withheld !== null && withheld > gross) {
+      errors.taxUnits ??= 'Shares withheld for tax cannot exceed the quantity before tax.';
+    }
+  }
   return errors;
 }
 
