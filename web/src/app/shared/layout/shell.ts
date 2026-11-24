@@ -60,6 +60,11 @@ export class Shell {
     root: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'More' },
   };
 
+  protected skipToContent(event: MouseEvent, target: HTMLElement): void {
+    event.preventDefault();
+    target.focus();
+  }
+
   protected togglePrivacy(): void {
     setAmountsHidden(!amountsHidden());
   }

@@ -39,6 +39,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Respects the portfolio switcher; default is the **family total (All)**.
 - Stat cards: Combined (MF + Stocks) with its 1 day change first, then Mutual funds (value + 1 day change), Stocks (value + 1 day change), RSU (vested value), Savings, PF (balance), PPF (balance), NPS (value + 1 day change), FD (value today), Card dues (red if > 0). Every row is full: mobile 2 columns with Combined and Card dues full width; from 1024px 4 columns with Combined three wide (three rows of four).
 - Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- **View chart data** exposes the date and value for every point in the selected history series and range.
 - History line chart from `portfolio_snapshots` with range chips: 1M, 6M, 1Y, All, and a switch between MF + stocks, the PF balance, the PPF balance, the NPS value and the FD value (PF, PPF, NPS and FD lines start at their first day above zero).
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
 

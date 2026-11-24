@@ -179,7 +179,10 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await dialog.getByLabel('Fund name').fill('E2E New Fund');
   await dialog.getByLabel('Units').fill('-5');
   await dialog.getByRole('button', { name: 'Save' }).click();
-  await expect(dialog.getByText('Must be zero or more.')).toBeVisible();
+  const unitsField = dialog.getByLabel('Units');
+  await expect(unitsField).toBeFocused();
+  await expect(unitsField).toHaveAttribute('aria-invalid', 'true');
+  await expect(unitsField).toHaveAccessibleDescription('Must be zero or more.');
   await expect(dialog.getByText('Enter the amount invested.')).toBeVisible();
   if (mobile) await screenshot(page, 'mutual-funds-dialog', testInfo.project.name);
   await dialog.getByLabel('Folio (optional)').fill(' 123 / 45 ');

@@ -349,3 +349,22 @@ $bottom-nav-height: 64px;
     outline-offset: 2px;
   }
 }
+
+.skip-link {
+  position: fixed;
+  inset-block-start: 8px;
+  inset-inline-start: 8px;
+  z-index: 21;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.skip-link:not(:focus) {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+}

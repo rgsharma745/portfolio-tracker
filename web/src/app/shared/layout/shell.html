@@ -1,4 +1,7 @@
 <div class="shell">
+  <a class="skip-link" href="#main-content" (click)="skipToContent($event, mainContent)">
+    Skip to main content
+  </a>
   <nav class="sidebar" aria-label="Main">
     <a routerLink="/overview" class="brand">
       <span class="brand-mark" aria-hidden="true">₹</span>
@@ -81,7 +84,7 @@
       </div>
     </header>
 
-    <main class="app-page content">
+    <main #mainContent id="main-content" class="app-page content" tabindex="-1">
       @if (!portfolios.loaded()) {
         @if (portfolios.error()) {
           <app-error-state title="Could not load your portfolios" (retry)="portfolios.load()" />

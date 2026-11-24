@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   input,
+  signal,
   viewChild,
 } from '@angular/core';
 import {
@@ -23,6 +24,7 @@ import { ThemeService } from '../../core/theme/theme.service';
 import { Currency, formatMoney } from '../format/money';
 import { amountsHidden } from '../format/privacy';
 import { formatDate } from '../format/number';
+import { MoneyPipe } from './money.pipe';
 
 // Register only what the line chart uses, so the bundle stays small.
 Chart.register(
@@ -47,16 +49,74 @@ export interface ChartPoint {
  */
 @Component({
   selector: 'app-line-chart',
+  imports: [MoneyPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="box" [style.height]="height()">
       <canvas #canvas role="img" [attr.aria-label]="summary()"></canvas>
     </div>
+    <details #data (toggle)="showData.set(data.open)">
+      <summary>View chart data</summary>
+      @if (showData()) {
+        <div class="chart-data" tabindex="0" role="region" [attr.aria-label]="label() + ' data'">
+          <table>
+            <caption class="visually-hidden">
+              {{
+                label()
+              }}
+              by date
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (point of points(); track point.date) {
+                <tr>
+                  <td>{{ date(point.date) }}</td>
+                  <td class="app-num">{{ point.value | money: currency() }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </details>
   `,
   styles: `
     .box {
       position: relative;
       width: 100%;
+    }
+    summary {
+      align-content: center;
+      min-block-size: 44px;
+      cursor: pointer;
+    }
+    .chart-data {
+      max-block-size: 18rem;
+      overflow: auto;
+    }
+    table {
+      inline-size: 100%;
+      border-collapse: collapse;
+    }
+    th,
+    td {
+      padding: 8px;
+      border-block-end: 1px solid var(--app-hairline);
+      text-align: start;
+    }
+    th {
+      position: sticky;
+      inset-block-start: 0;
+      background: var(--app-bg);
+    }
+    th:last-child,
+    td:last-child {
+      text-align: end;
     }
   `,
 })
@@ -66,6 +126,8 @@ export class LineChart {
   readonly label = input.required<string>();
   readonly currency = input<Currency>('INR');
   readonly height = input('260px');
+  protected readonly showData = signal(false);
+  protected readonly date = formatDate;
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly theme = inject(ThemeService);

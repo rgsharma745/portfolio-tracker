@@ -289,9 +289,16 @@
   (closed)="dialog.close()"
 >
   <div class="field">
-    <label for="mf-portfolio">Portfolio</label>
+    <label id="mf-portfolio-label" for="mf-portfolio">Portfolio</label>
     <p-select
       inputId="mf-portfolio"
+      ariaLabelledBy="mf-portfolio-label"
+      [pt]="{
+        label: {
+          'aria-invalid': !!dialog.errors().portfolioId,
+          'aria-describedby': dialog.errors().portfolioId ? 'mf-portfolio-error' : null,
+        },
+      }"
       [options]="portfolioOptions()"
       optionLabel="label"
       optionValue="value"
@@ -300,7 +307,7 @@
       appendTo="body"
     />
     @if (dialog.errors().portfolioId; as e) {
-      <p class="field-error">{{ e }}</p>
+      <p class="field-error" id="mf-portfolio-error">{{ e }}</p>
     }
   </div>
   <div class="field">
@@ -308,12 +315,14 @@
     <input
       pInputText
       id="mf-name"
+      [attr.aria-invalid]="!!dialog.errors().schemeName"
+      [attr.aria-describedby]="dialog.errors().schemeName ? 'mf-name-error' : null"
       autocomplete="off"
       [ngModel]="dialog.form().schemeName"
       (ngModelChange)="dialog.set('schemeName', $event)"
     />
     @if (dialog.errors().schemeName; as e) {
-      <p class="field-error">{{ e }}</p>
+      <p class="field-error" id="mf-name-error">{{ e }}</p>
     }
   </div>
   <div class="field">
@@ -323,7 +332,10 @@
       id="mf-code"
       inputmode="numeric"
       autocomplete="off"
-      aria-describedby="mf-code-help"
+      [attr.aria-invalid]="!!dialog.errors().schemeCode"
+      [attr.aria-describedby]="
+        dialog.errors().schemeCode ? 'mf-code-help mf-code-error' : 'mf-code-help'
+      "
       [ngModel]="dialog.form().schemeCode"
       (ngModelChange)="dialog.set('schemeCode', $event)"
     />
@@ -332,7 +344,7 @@
       NAV, or on mfapi.in. NAVs update nightly once it is set.
     </p>
     @if (dialog.errors().schemeCode; as e) {
-      <p class="field-error">{{ e }}</p>
+      <p class="field-error" id="mf-code-error">{{ e }}</p>
     }
   </div>
   <div class="form-row">
@@ -353,13 +365,15 @@
       <input
         pInputText
         id="mf-units"
+        [attr.aria-invalid]="!!dialog.errors().units"
+        [attr.aria-describedby]="dialog.errors().units ? 'mf-units-error' : null"
         inputmode="decimal"
         autocomplete="off"
         [ngModel]="dialog.form().units"
         (ngModelChange)="dialog.set('units', $event)"
       />
       @if (dialog.errors().units; as e) {
-        <p class="field-error">{{ e }}</p>
+        <p class="field-error" id="mf-units-error">{{ e }}</p>
       }
     </div>
     <div class="field">
@@ -367,13 +381,15 @@
       <input
         pInputText
         id="mf-invested"
+        [attr.aria-invalid]="!!dialog.errors().invested"
+        [attr.aria-describedby]="dialog.errors().invested ? 'mf-invested-error' : null"
         inputmode="decimal"
         autocomplete="off"
         [ngModel]="dialog.form().invested"
         (ngModelChange)="dialog.set('invested', $event)"
       />
       @if (dialog.errors().invested; as e) {
-        <p class="field-error">{{ e }}</p>
+        <p class="field-error" id="mf-invested-error">{{ e }}</p>
       }
     </div>
   </div>

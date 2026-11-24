@@ -80,12 +80,19 @@ describe('DataTable', () => {
     const header = (name: string) =>
       [...el.querySelectorAll('th')].find((th) => th.textContent?.includes(name))!;
     expect(header('Value').getAttribute('aria-sort')).toBe('descending');
+    expect(header('Value').getAttribute('scope')).toBe('col');
+    expect(header('Name').hasAttribute('aria-sort')).toBe(false);
+    expect(el.querySelector('[aria-label="Things scroll area"]')?.getAttribute('tabindex')).toBe(
+      '0',
+    );
     header('Value').querySelector('button')!.click();
     await fixture.whenStable();
     expect(fixture.componentInstance.sort()).toEqual({ key: 'value', order: 1 });
     expect(header('Value').getAttribute('aria-sort')).toBe('ascending');
     header('Name').querySelector('button')!.click();
     expect(fixture.componentInstance.sort()).toEqual({ key: 'name', order: 1 });
+    await fixture.whenStable();
+    expect(header('Value').hasAttribute('aria-sort')).toBe(false);
   });
 
   it('renders cards on mobile', async () => {

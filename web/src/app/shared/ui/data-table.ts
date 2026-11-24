@@ -95,14 +95,14 @@ export class CardTemplate {
             <tr>
               @for (col of columns(); track col.key) {
                 @if (isSortable(col)) {
-                  <th [class.num]="isNumeric(col)" [attr.aria-sort]="ariaSort(col)">
+                  <th scope="col" [class.num]="isNumeric(col)" [attr.aria-sort]="ariaSort(col)">
                     <button type="button" class="sort-button" (click)="toggleSort(col)">
                       {{ col.header }}
                       <i [class]="'pi ' + sortIcon(col)" aria-hidden="true"></i>
                     </button>
                   </th>
                 } @else {
-                  <th [class.num]="isNumeric(col)">
+                  <th scope="col" [class.num]="isNumeric(col)">
                     <span [class.visually-hidden]="col.hiddenHeader">{{ col.header }}</span>
                   </th>
                 }
@@ -217,6 +217,10 @@ export class CardTemplate {
     :host ::ng-deep .p-datatable-table-container {
       max-height: max(20rem, calc(100dvh - 9rem));
       overscroll-behavior: contain;
+    }
+    :host ::ng-deep .p-datatable-table-container:focus-visible {
+      outline: 2px solid var(--p-primary-color);
+      outline-offset: -2px;
     }
     /* PrimeNG makes thead and tfoot sticky, and a sticky element is its own stacking context,
        so the rows themselves (not their cells) are pinned and layered above the body, its
@@ -342,7 +346,10 @@ export class DataTable<T extends object> {
   /** p-table takes a mutable array; hand it a copy so the page's array stays untouched. */
   protected readonly tableRows = computed(() => [...this.rows()]);
   /** The accessible name belongs on the <table> element itself. */
-  protected readonly tablePt = computed(() => ({ table: { 'aria-label': this.label() } }));
+  protected readonly tablePt = computed(() => ({
+    table: { 'aria-label': this.label() },
+    tableContainer: { tabindex: '0', role: 'region', 'aria-label': this.label() + ' scroll area' },
+  }));
 
   protected trackKey(row: T): unknown {
     return (row as Record<string, unknown>)[this.dataKey()];
@@ -386,9 +393,9 @@ export class DataTable<T extends object> {
     return formatDate(value as string | null);
   }
 
-  protected ariaSort(col: Column<T>): 'ascending' | 'descending' | 'none' {
+  protected ariaSort(col: Column<T>): 'ascending' | 'descending' | null {
     const sort = this.sort();
-    if (sort?.key !== col.key) return 'none';
+    if (sort?.key !== col.key) return null;
     return sort.order === 1 ? 'ascending' : 'descending';
   }
 

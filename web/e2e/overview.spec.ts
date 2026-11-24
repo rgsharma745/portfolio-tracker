@@ -148,6 +148,9 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
 
   await signInWithMagicLink(page, HOLDINGS_EMAIL);
   await page.goto('/overview');
+  const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+  await skipLink.press('Enter');
+  await expect(page.getByRole('main')).toBeFocused();
 
   // All portfolios: 100 x 50 + 20 x 50 = 6,000; today +100 +20
   const combined = statCard(page, 'Combined (MF + stocks)');
@@ -171,6 +174,12 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(allocation).toContainText('Savings');
   const history = page.getByRole('region', { name: 'Combined value over time' });
   await expect(history.getByRole('img', { name: /Combined value from/ })).toBeVisible();
+  const chartData = history.getByText('View chart data', { exact: true });
+  await chartData.press('Enter');
+  const dataTable = history.getByRole('table', { name: 'Combined value by date' });
+  await expect(dataTable.getByRole('row')).toHaveCount(4);
+  await chartData.press('Enter');
+  await expect(dataTable).toBeHidden();
   // Switch the chart to the PF balance and back
   const show = page.getByRole('group', { name: 'Show' });
   await show.getByRole('button', { name: 'PF', exact: true }).click();

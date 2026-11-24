@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -252,10 +261,21 @@ export class MfPage {
     this.transactionDialog.set(null);
   }
 
+  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+
   protected save(): void {
     void this.dialog.submit(validateMfForm, (value, id) =>
       this.holdings.saveMf(value, id ?? undefined),
     );
+    if (Object.values(this.dialog.errors()).some(Boolean)) {
+      afterNextRender(
+        () => {
+          this.element.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+        },
+        { injector: this.injector },
+      );
+    }
   }
 
   protected remove(): void {

@@ -60,7 +60,7 @@ test('cards: summary, earlier bills, create, enter amount, mark paid', async ({
   await expect(nextDue).toContainText('2 days overdue');
   await expect(nextDue.locator('.stat-value')).toHaveClass(/app-down/);
 
-  const earlier = page.getByRole('region', { name: 'Earlier unpaid bills' });
+  const earlier = page.getByRole('region', { name: 'Earlier unpaid bills', exact: true });
   await expect(earlier).toContainText('E2E Rewards');
   await expect(earlier).toContainText('Overdue');
   await expectNoHorizontalScroll(page);
@@ -69,7 +69,7 @@ test('cards: summary, earlier bills, create, enter amount, mark paid', async ({
   await page.getByRole('button', { name: "Create this month's bills" }).click();
   await expect(page.getByText(/Created 1 bill .* Skipped E2E Dayless/)).toBeVisible();
   await expect(page.getByRole('button', { name: "Create this month's bills" })).toBeHidden();
-  const month = page.getByRole('region', { name: /^Bills for / });
+  const month = page.getByRole('region', { name: /^Bills for / }).and(page.locator('section'));
   await expect(month).toContainText('Awaiting statement');
   await screenshot(page, 'cards', testInfo.project.name);
 
@@ -91,7 +91,7 @@ test('cards: summary, earlier bills, create, enter amount, mark paid', async ({
 
   // Last month shows the paid bill
   await page.getByRole('button', { name: 'Previous month' }).click();
-  await expect(page.getByRole('region', { name: /^Bills for / })).toContainText('Paid');
+  await expect(month).toContainText('Paid');
   await page.getByRole('button', { name: 'This month' }).click();
 
   // Give Dayless its days, then its bill can be created
