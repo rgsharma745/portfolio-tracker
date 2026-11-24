@@ -12,6 +12,7 @@ import { Database } from '../db.types';
 export interface AppSupabaseClient {
   auth: GoTrueClient;
   from: PostgrestClient<Database>['from'];
+  rpc: PostgrestClient<Database>['rpc'];
 }
 
 /**
@@ -58,5 +59,5 @@ export function createAppClient(url: string, key: string): AppSupabaseClient {
     fetch: fetchWithAuth,
   });
 
-  return { auth, from: rest.from.bind(rest) };
+  return { auth, from: rest.from.bind(rest), rpc: rest.rpc.bind(rest) };
 }

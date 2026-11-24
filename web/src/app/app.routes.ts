@@ -38,10 +38,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dividends/dividends-page').then((m) => m.DividendsPage),
       },
+      { path: 'rsu', pathMatch: 'full', redirectTo: 'employee-equity' },
       {
-        path: 'rsu',
-        title: 'RSU',
-        loadComponent: () => import('./features/rsu/rsu-page').then((m) => m.RsuPage),
+        path: 'employee-equity',
+        title: 'Employee equity',
+        loadComponent: () => import('./features/equity/equity-page').then((m) => m.EquityPage),
       },
       {
         path: 'savings',

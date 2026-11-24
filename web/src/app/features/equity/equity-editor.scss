@@ -1,0 +1,43 @@
+.equity-fields {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .equity-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.field,
+fieldset {
+  min-width: 0;
+}
+
+select,
+textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--p-inputtext-border-radius);
+  background: var(--p-inputtext-background);
+  color: var(--p-inputtext-color);
+  border: 1px solid var(--p-inputtext-border-color);
+  font: inherit;
+}
+
+.allocations,
+.allocation {
+  border: 1px solid var(--app-hairline);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.allocation {
+  margin-block: 8px;
+}
+
+legend {
+  font-weight: 600;
+}

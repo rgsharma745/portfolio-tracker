@@ -4,9 +4,9 @@ const TODAY = '2026-11-04';
 const RATE = 85;
 
 const prices = priceQuotes([
-  { symbol: 'INFY', close: 1500, price_date: '2026-11-04', prev_close: 1480 },
-  { symbol: 'CIEN', close: 60, price_date: '2026-11-03', prev_close: 62 },
-  { symbol: 'TCS', close: 4000, price_date: '2026-10-25', prev_close: null },
+  { market: 'IN', symbol: 'INFY', close: 1500, price_date: '2026-11-04', prev_close: 1480 },
+  { market: 'US', symbol: 'CIEN', close: 60, price_date: '2026-11-03', prev_close: 62 },
+  { market: 'IN', symbol: 'TCS', close: 4000, price_date: '2026-10-25', prev_close: null },
 ]);
 
 const indian = (portfolio_id: string, symbol: string, quantity: number, invested: number) => ({

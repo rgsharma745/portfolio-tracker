@@ -171,7 +171,7 @@ test('overview: totals, allocation, history and summary by portfolio', async ({
   await expect(balanceRow('NPS')).toContainText('+₹40');
   await expect(balanceRow('Fixed deposits')).toContainText('₹2,000');
 
-  for (const name of ['Stocks', 'Vested RSUs']) {
+  for (const name of ['Stocks', 'Employee equity']) {
     await expect(balanceRow(name)).toBeVisible();
   }
   const summaryToggle = page.getByText('By portfolio', { exact: true });

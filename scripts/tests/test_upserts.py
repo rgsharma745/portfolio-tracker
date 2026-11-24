@@ -29,7 +29,10 @@ class Upsert:
     has_manual: bool
 
     def args(self, key: str, value: str, day: str) -> dict[str, Any]:
-        return dict(zip(self.arg_names, (key, value, day)))
+        args = dict(zip(self.arg_names, (key, value, day)))
+        if self.table == "stock_price_latest":
+            args["p_market"] = "US"
+        return args
 
 
 MF = Upsert("upsert_mf_nav", "mf_nav_latest", "scheme_code", "nav", "nav_date",
@@ -101,6 +104,8 @@ def test_older_date_is_ignored(service: SupabaseRest, u: Upsert, key: str) -> No
 @pytest.mark.parametrize("u", MANUAL)
 def test_manual_override_is_not_overwritten(service: SupabaseRest, u: Upsert, key: str) -> None:
     manual = {u.key_col: key, u.value_col: "100", u.date_col: D1, "is_manual": True}
+    if u == STOCK:
+        manual["market"] = "US"
     assert service.insert(u.table, manual).status_code == 201
     call(service, u, key, "200", D2)
     r = row(service, u, key)

@@ -25,7 +25,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: 'pi-money-bill',
     primary: false,
   },
-  { path: '/rsu', label: 'RSU', shortLabel: 'RSU', icon: 'pi-briefcase', primary: false },
+  {
+    path: '/employee-equity',
+    label: 'Employee equity',
+    shortLabel: 'Equity',
+    icon: 'pi-briefcase',
+    primary: false,
+  },
   { path: '/savings', label: 'Savings', shortLabel: 'Savings', icon: 'pi-wallet', primary: false },
   {
     path: '/pf',

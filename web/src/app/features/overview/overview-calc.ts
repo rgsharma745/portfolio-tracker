@@ -1,6 +1,6 @@
 import { Totals, daysBetween, plPercent } from '../../core/calc/common';
 
-/** One row of the Overview summary table: MF + stocks (INR) for one portfolio. */
+/** One row of the Overview summary table: MF, stocks and employee equity (INR) for one portfolio. */
 export interface PortfolioSummaryRow {
   id: string;
   name: string;
@@ -12,19 +12,20 @@ export interface PortfolioSummaryRow {
   dayChange: number;
 }
 
-/** Combines MF and stock totals (both INR) into one summary row. */
+/** Combines investment totals in INR into one summary row. */
 export function summaryRow(
   id: string,
   name: string,
   mf: Totals,
   stocks: Totals,
+  equity = { count: 0, basis: 0, value: 0 },
 ): PortfolioSummaryRow {
-  const invested = mf.invested + stocks.invested;
-  const value = mf.value + stocks.value;
+  const invested = mf.invested + stocks.invested + equity.basis;
+  const value = mf.value + stocks.value + equity.value;
   return {
     id,
     name,
-    holdings: mf.count + stocks.count,
+    holdings: mf.count + stocks.count + equity.count,
     invested,
     value,
     pl: value - invested,
@@ -83,12 +84,13 @@ export interface HistoryPoint {
 }
 
 /** What the history chart plots: mutual funds, stocks, the PF or PPF balance, or the NPS or FD value. */
-export type HistorySeries = 'mf' | 'stocks' | 'pf' | 'ppf' | 'nps' | 'fd';
+export type HistorySeries = 'mf' | 'stocks' | 'equity' | 'pf' | 'ppf' | 'nps' | 'fd';
 
 function seriesValue(
   s: {
     mf_value: number;
     stocks_value: number;
+    employee_equity_value?: number;
     pf_balance?: number;
     ppf_balance?: number;
     nps_value?: number;
@@ -109,6 +111,8 @@ function seriesValue(
       return s.mf_value;
     case 'stocks':
       return s.stocks_value;
+    case 'equity':
+      return s.employee_equity_value ?? 0;
   }
 }
 
@@ -122,6 +126,7 @@ export function historySeries(
     snap_date: string;
     mf_value: number;
     stocks_value: number;
+    employee_equity_value?: number;
     pf_balance?: number;
     ppf_balance?: number;
     nps_value?: number;

@@ -86,10 +86,6 @@ export class StocksPage {
     { label: 'India', value: 'IN' },
     { label: 'US', value: 'US' },
   ];
-  /** Market switch labels with the number of holdings in each. */
-  protected readonly marketTabs = computed(() =>
-    this.markets.map((m) => ({ ...m, label: `${m.label} (${this.counts()[m.value]})` })),
-  );
   protected readonly sortOptions = [
     { label: 'Current value', value: 'value' },
     { label: 'Symbol', value: 'name' },

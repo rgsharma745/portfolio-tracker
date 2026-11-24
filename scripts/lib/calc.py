@@ -5,7 +5,7 @@ Kept in step with the TypeScript by a shared fixture
 Money uses Decimal; amounts are rounded to paise only when stored.
 
 Rules (docs/DATA_MODEL.md): a holding without a price, or a USD holding without a USDINR
-rate, is left out of value; RSU value is vested units x price x USDINR; savings are summed;
+rate, is left out of value; employee equity takes the value of shares still held from the database view; savings are summed;
 card dues are the sum of max(amount - paid, 0) over bills with an amount; the PF balance is
 employee + employer amounts over all PF rows (monthly and interest), pension left out; the
 PPF balance is the sum of all PPF amounts (investments and interest); the NPS value is
@@ -34,7 +34,7 @@ def dec(value: Any) -> Decimal:
 @dataclass(frozen=True)
 class MarketData:
     navs: dict[str, Decimal]
-    prices: dict[str, Decimal]
+    prices: dict[tuple[str, str], Decimal]
     usd_inr: Decimal | None
     nps_navs: dict[str, Decimal] = field(default_factory=dict)
 
@@ -49,7 +49,7 @@ class MarketData:
         rate = next((dec(r["rate"]) for r in fx if r["pair"] == "USDINR"), None)
         return cls(
             navs={str(r["scheme_code"]): dec(r["nav"]) for r in navs},
-            prices={str(r["symbol"]): dec(r["close"]) for r in prices},
+            prices={(str(r["market"]), str(r["symbol"])): dec(r["close"]) for r in prices},
             usd_inr=rate,
             nps_navs={str(r["scheme_code"]): dec(r["nav"]) for r in nps_navs},
         )
@@ -59,7 +59,7 @@ class MarketData:
 class SnapshotValues:
     mf_value: Decimal
     stocks_value: Decimal
-    rsu_vested_value: Decimal
+    employee_equity_value: Decimal
     savings: Decimal
     card_dues: Decimal
     pf_balance: Decimal
@@ -100,7 +100,7 @@ def nps_value(holdings: Iterable[Row], market: MarketData) -> Decimal:
 def stocks_value_inr(holdings: Iterable[Row], market: MarketData) -> Decimal:
     total = ZERO
     for h in holdings:
-        price = market.prices.get(h["symbol"])
+        price = market.prices.get((h["market"], h["symbol"]))
         if price is None:
             continue
         value = dec(h["quantity"]) * price
@@ -109,17 +109,6 @@ def stocks_value_inr(holdings: Iterable[Row], market: MarketData) -> Decimal:
                 continue
             value *= market.usd_inr
         total += value
-    return total
-
-
-def rsu_vested_inr(grants: Iterable[Row], market: MarketData) -> Decimal:
-    if market.usd_inr is None:
-        return ZERO
-    total = ZERO
-    for g in grants:
-        price = market.prices.get(g["symbol"])
-        if price is not None:
-            total += dec(g["units_vested"]) * price * market.usd_inr
     return total
 
 
@@ -170,13 +159,13 @@ def snapshot_values(
 ) -> SnapshotValues:
     """
     Totals for one portfolio on `today` (`YYYY-MM-DD`). `data` holds the owner tables:
-    mf_holdings, stock_holdings, rsu_grants, savings_accounts, card_bills (each bill carrying
+    mf_holdings, stock_holdings, equity_lots, savings_accounts, card_bills (each bill carrying
     its card's portfolio_id), pf_entries, ppf_entries, nps_holdings and fixed_deposits.
     """
     return SnapshotValues(
         mf_value=mf_value(_in(data["mf_holdings"], portfolio_id), market),
         stocks_value=stocks_value_inr(_in(data["stock_holdings"], portfolio_id), market),
-        rsu_vested_value=rsu_vested_inr(_in(data["rsu_grants"], portfolio_id), market),
+        employee_equity_value=sum((dec(lot["value_inr"]) for lot in _in(data["equity_lots"], portfolio_id)), ZERO),
         savings=sum((dec(a["balance"]) for a in _in(data["savings_accounts"], portfolio_id)), ZERO),
         card_dues=card_dues(_in(data["card_bills"], portfolio_id)),
         pf_balance=pf_balance(_in(data["pf_entries"], portfolio_id)),

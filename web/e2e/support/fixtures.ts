@@ -136,6 +136,7 @@ export async function seedPortfolios(
   const api = await admin();
   await api.delete('/rest/v1/settings', { params: { owner_id: `eq.${ownerId}` } });
   await api.delete('/rest/v1/portfolios', { params: { owner_id: `eq.${ownerId}` } });
+  await api.delete('/rest/v1/equity_securities', { params: { owner_id: `eq.${ownerId}` } });
   if (!names.length) return {};
   const rows = await adminInsert(
     'portfolios',

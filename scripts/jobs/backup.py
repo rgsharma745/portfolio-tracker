@@ -30,7 +30,12 @@ TABLES = (
     "mf_holdings",
     "mf_transactions",
     "stock_holdings",
-    "rsu_grants",
+    "equity_securities",
+    "equity_grants",
+    "equity_schedule",
+    "equity_events",
+    "equity_sales",
+    "equity_sale_lots",
     "savings_accounts",
     "pf_entries",
     "ppf_entries",
@@ -46,10 +51,23 @@ TABLES = (
 
 
 def export(db: SupabaseRest) -> dict[str, Any]:
-    return {
-        "exported_at": datetime.now(UTC).isoformat(),
-        "tables": {table: fetch_all(db, table) for table in TABLES},
+    # Read all ledger tables from the same database transaction.
+    response = db.rpc("export_equity_ledger", {})
+    if response.status_code != 200:
+        raise JobError(f"Could not export employee equity (HTTP {response.status_code})")
+    equity = response.json()
+    tables = {
+        table: equity[table] if table in equity else fetch_all(db, table, page_by="id")
+        for table in TABLES
     }
+    portfolios = {(row["owner_id"], row["id"]) for row in tables["portfolios"]}
+    if any(
+        (row["owner_id"], row["portfolio_id"]) not in portfolios
+        for table in ("equity_grants", "equity_sales")
+        for row in tables[table]
+    ):
+        raise JobError("A portfolio changed during backup. Run the backup again.")
+    return {"exported_at": datetime.now(UTC).isoformat(), "tables": tables}
 
 
 def encrypt(plaintext: bytes, recipient: str, out: Path) -> None:

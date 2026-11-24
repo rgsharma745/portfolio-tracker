@@ -11,14 +11,14 @@ The sheets `MF`, `MF2`, `MF3` (and `Stocks`, `Stocks2`, `Stocks3`) are different
 | MF, MF2, MF3 | `mf_holdings` | One portfolio each. A totals row exists below the funds (blank name); skip it. The local CAMS CAS importer is separate and also loads transactions. |
 | Stocks, Stocks2, Stocks3 | `stock_holdings` (market `IN`) | One portfolio each (confirm); skip any totals row |
 | US-Stocks | `stock_holdings` (market `US`, currency `USD`) | Has both USD and INR columns; store USD only, INR is derived |
-| RSU | `rsu_grants` | Grant rows only. The totals row and the label rows (Pending Vesting, Sold for Tax, Sellable Units) are used only for reconciliation |
+| RSU | Employee equity | Record grants, vesting and sales from company and broker statements. Use spreadsheet unit totals for reconciliation. |
 | Saving | `savings_accounts` | Column A bank, column B amount |
 | CreditCard | `credit_cards` + one `card_bills` row per card | Columns: Bank, Pending Bills, Bill Date, Due Date |
 
 ## Known column positions (0-based; verify)
 - **MF sheets:** 0 fund name, 3 current units, 4 invested amount, 7 current value, 8 P&L, 10 day change. Current value, P&L and day change are formulas: do not import them, recompute them.
 - **Stocks sheets:** 0 instrument, 1 quantity, 3 invested, 5 current value, 6 P&L, 8 day change. Import quantity and invested; derive average price as `invested / quantity` if the sheet has no average price column.
-- **RSU:** column 1 units granted, 4 units vested, 7 current price, 8 total value USD, 9 value after tax USD, 10 value after tax INR, 12 vested value INR. The sheet's totals row currently shows 619 granted, 332 vested, 227 sellable, 287 pending vesting and 105 sold for tax: use these as a reconciliation check, and derive `tax_rate` so the after-tax figures match.
+- **RSU:** reconcile granted, vested, withheld and sellable units against the sheet. Use transaction lots for valuation and returns.
 - **Saving:** cell A1 holds the text "Kotak" in the header row. Treat row 1 as a header and ask the owner whether it is a real account.
 - **PF:** one row per company, wage month and type → `pf_entries` (Company → `company`, Wage Month → `wage_month` as `Jan`…`Dec` plus `wage_year`, the credit date → `transaction_date`, Contribution Type → `monthly` or `interest`, Employee / Employer / Pension Contribution Amount → `employee_amount` / `employer_amount` / `pension_amount`). Interest rows have no wage month and pension 0; their transaction date decides the financial year. The owner loads these (docs/DATA_ENTRY.md); never read the sheet from code.
 - **PPF:** dated deposits and yearly interest per account → `ppf_entries` (`account`, `entry_date`, `entry_type` `investment` or `interest`, `amount`). The owner loads these (docs/DATA_ENTRY.md); never read the sheet from code.

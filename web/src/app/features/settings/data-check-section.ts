@@ -43,9 +43,9 @@ const GROUPS: Record<DataProblemKind, { title: string; hint: string }> = {
     title: 'Stocks without a price',
     hint: 'Check the symbol (NSE symbol such as RELIANCE, or a US ticker such as CIEN), or set a manual price in Settings.',
   },
-  rsu_no_price: {
-    title: 'RSU grants without a price',
-    hint: 'The grant symbol has no stock price yet. Check the ticker, or set a manual price.',
+  equity_no_price: {
+    title: 'Employee equity lots without a value',
+    hint: 'Check the listed ticker, private valuation or USD/INR rate.',
   },
   card_missing_days: {
     title: 'Cards missing a bill day or due day',

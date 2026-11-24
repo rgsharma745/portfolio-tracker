@@ -1,0 +1,134 @@
+.equity-filters,
+.equity-counts,
+.equity-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.equity-filters .field:first-child {
+  grid-column: 1 / -1;
+}
+
+.equity-filters select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--p-inputtext-border-radius);
+  background: var(--p-inputtext-background);
+  color: var(--p-inputtext-color);
+  border: 1px solid var(--p-inputtext-border-color);
+  font: inherit;
+}
+
+.equity-counts {
+  margin: 0;
+}
+
+.equity-counts dt,
+.entry-details dt {
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.equity-counts dd,
+.entry-details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.equity-heading,
+.equity-switch,
+.equity-actions,
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.equity-heading,
+.entry-meta {
+  justify-content: space-between;
+}
+
+.equity-actions,
+.equity-switch {
+  button {
+    min-height: 44px;
+  }
+}
+
+.vesting-preview ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vesting-preview li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--app-hairline);
+}
+
+.entry-card {
+  overflow-wrap: anywhere;
+}
+
+.entry-button {
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 650;
+  text-align: start;
+  cursor: pointer;
+}
+
+.entry-button:focus-visible,
+.entry-details summary:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.entry-details summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+
+.entry-details dl {
+  margin: 0 0 8px;
+  display: grid;
+  gap: 6px;
+}
+
+.entry-meta {
+  margin-top: 6px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+@media (min-width: 768px) {
+  .equity-filters,
+  .equity-counts,
+  .equity-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .equity-filters .field:first-child {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .equity-counts {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}

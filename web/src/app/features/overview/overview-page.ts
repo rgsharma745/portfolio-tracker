@@ -9,10 +9,11 @@ import { mfTotals, navQuotes } from '../../core/calc/mf';
 import { npsTotals } from '../../core/calc/nps';
 import { pfBalance } from '../../core/calc/pf';
 import { ppfBalance } from '../../core/calc/ppf';
-import { rsuTotals } from '../../core/calc/rsu';
+import { equityValue } from '../../core/calc/equity';
 import { savingsTotal } from '../../core/calc/savings';
 import { stockTotals } from '../../core/calc/stocks';
 import { CardsService } from '../../core/data/cards.service';
+import { EquityService } from '../../core/data/equity.service';
 import { FdService } from '../../core/data/fd.service';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { NpsService } from '../../core/data/nps.service';
@@ -45,7 +46,7 @@ interface BalanceRow {
   warning?: boolean;
 }
 
-const ALLOCATION_ORDER = ['mf', 'stocks', 'rsu', 'savings', 'pf', 'ppf', 'nps', 'fd'];
+const ALLOCATION_ORDER = ['mf', 'stocks', 'equity', 'savings', 'pf', 'ppf', 'nps', 'fd'];
 
 /** Overview: headline totals, allocation, history and a per-portfolio summary. */
 @Component({
@@ -74,6 +75,7 @@ export class OverviewPage {
   protected readonly pf = inject(PfService);
   protected readonly ppf = inject(PpfService);
   protected readonly nps = inject(NpsService);
+  protected readonly equity = inject(EquityService);
   protected readonly fd = inject(FdService);
   protected readonly snapshots = inject(SnapshotsService);
   protected readonly portfolios = inject(PortfolioService);
@@ -87,7 +89,8 @@ export class OverviewPage {
       this.pf.loaded() &&
       this.ppf.loaded() &&
       this.nps.loaded() &&
-      this.fd.loaded(),
+      this.fd.loaded() &&
+      this.equity.lotsLoaded(),
   );
   protected readonly error = computed(
     () =>
@@ -96,7 +99,8 @@ export class OverviewPage {
       this.pf.error() ??
       this.ppf.error() ??
       this.nps.error() ??
-      this.fd.error(),
+      this.fd.error() ??
+      this.equity.lotsError(),
   );
   protected readonly range = signal<HistoryRange>('6M');
   protected readonly ranges: HistoryRange[] = ['1M', '6M', '1Y', 'All'];
@@ -104,6 +108,7 @@ export class OverviewPage {
   protected readonly seriesOptions = [
     { label: 'Mutual funds', value: 'mf' },
     { label: 'Stocks', value: 'stocks' },
+    { label: 'Employee equity', value: 'equity' },
     { label: 'PF', value: 'pf' },
     { label: 'PPF', value: 'ppf' },
     { label: 'NPS', value: 'nps' },
@@ -112,6 +117,7 @@ export class OverviewPage {
   protected readonly historyTitles: Record<HistorySeries, string> = {
     mf: 'Mutual funds',
     stocks: 'Stocks',
+    equity: 'Employee equity',
     pf: 'PF balance',
     ppf: 'PPF balance',
     nps: 'NPS value',
@@ -132,9 +138,7 @@ export class OverviewPage {
       this.today,
     ),
   );
-  protected readonly rsu = computed(() =>
-    rsuTotals(this.holdings.rsu(), this.holdings.priceQuotes(), this.holdings.usdInr(), this.ids()),
-  );
+  protected readonly equityTotal = computed(() => equityValue(this.equity.lots(), this.ids()));
   protected readonly savings = computed(() => savingsTotal(this.holdings.savings(), this.ids()));
   protected readonly dues = computed(() => cardDues(this.cards.bills(), this.ids()));
   protected readonly pfTotal = computed(() => pfBalance(this.pf.entries(), this.ids()));
@@ -158,7 +162,13 @@ export class OverviewPage {
       rows: [
         { label: 'Mutual funds', value: this.mf().value, dayChange: this.mf().dayChange },
         { label: 'Stocks', value: this.stocks().value, dayChange: this.stocks().dayChange },
-        { label: 'Vested RSUs', value: this.rsu().vestedInr },
+        {
+          label: 'Employee equity',
+          value:
+            this.equityTotal().unpriced && !this.equityTotal().priced
+              ? null
+              : this.equityTotal().value,
+        },
         { label: 'NPS', value: this.npsTotal().value, dayChange: this.npsTotal().dayChange },
       ],
     },
@@ -175,14 +185,18 @@ export class OverviewPage {
     },
   ]);
   protected readonly unpriced = computed(
-    () => this.mf().unpriced + this.stocks().unpriced + this.npsTotal().unpriced,
+    () =>
+      this.mf().unpriced +
+      this.stocks().unpriced +
+      this.npsTotal().unpriced +
+      this.equityTotal().unpriced,
   );
 
   protected readonly allocation = computed(() =>
     allocation([
       { key: 'mf', label: 'Mutual funds', value: this.mf().value },
       { key: 'stocks', label: 'Stocks', value: this.stocks().value },
-      { key: 'rsu', label: 'RSU (vested)', value: this.rsu().vestedInr ?? 0 },
+      { key: 'equity', label: 'Employee equity', value: this.equityTotal().value },
       { key: 'savings', label: 'Savings', value: this.savings() },
       { key: 'pf', label: 'PF', value: this.pfTotal() },
       { key: 'ppf', label: 'PPF', value: this.ppfTotal() },
@@ -195,7 +209,7 @@ export class OverviewPage {
     historySeries(this.snapshots.snapshots(), this.ids(), this.range(), this.today, this.series()),
   );
 
-  /** One row per portfolio in scope (MF + stocks), and a family total when there are several. */
+  /** One row per portfolio in scope, and a family total when there are several. */
   protected readonly summaryRows = computed(() => {
     const h = this.holdings;
     return this.portfolios
@@ -207,6 +221,7 @@ export class OverviewPage {
           p.name,
           mfTotals(h.mf(), h.navQuotes(), [p.id], this.today),
           stockTotals(h.stocks(), h.priceQuotes(), h.usdInr(), [p.id], this.today),
+          equityValue(this.equity.lots(), [p.id]),
         ),
       );
   });
@@ -230,6 +245,7 @@ export class OverviewPage {
 
   protected retry(): void {
     void this.holdings.load();
+    void this.equity.loadLots();
     void this.cards.load();
     void this.pf.load();
     void this.ppf.load();

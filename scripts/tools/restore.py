@@ -76,6 +76,14 @@ def load_backup(path: Path, identity: Path | None = None) -> Backup:
         tables = json.loads(raw)["tables"]
     except (ValueError, KeyError, TypeError) as exc:
         raise JobError("Not a backup file: expected JSON with a `tables` object") from exc
+    if not isinstance(tables, dict) or not all(isinstance(rows, list) for rows in tables.values()):
+        raise JobError("Not a backup file: expected a list of rows for each table")
+    # A pre-Employee Equity backup can still restore all the other assets.
+    tables.pop("rsu_grants", None)
+    for row in tables.get("portfolio_snapshots", []):
+        if not isinstance(row, dict):
+            raise JobError("Not a backup file: expected snapshot rows")
+        row.pop("rsu_vested_value", None)
     unknown = set(tables) - set(TABLES)
     if unknown:
         raise JobError(f"Unknown tables in the backup: {', '.join(sorted(unknown))}")
@@ -107,7 +115,7 @@ def plan(db: SupabaseRest, backup: Backup) -> list[tuple[str, int, int]]:
         )
     in_list = f"in.({','.join(sorted(owners))})" if owners else "in.()"
     return [
-        (t, len(backup[t]), len(fetch_all(db, t, "id", owner_id=in_list)) if owners else 0)
+        (t, len(backup[t]), len(fetch_all(db, t, "id", page_by="id", owner_id=in_list)) if owners else 0)
         for t in TABLES
     ]
 
@@ -123,7 +131,7 @@ def restore(db: SupabaseRest, backup: Backup, *, replace: bool = False) -> dict[
         )
     owners = f"in.({','.join(sorted(backup_owners(backup)))})"
     # Kept in memory so a failed restore can put the owner's rows back as they were.
-    before: Backup = {t: fetch_all(db, t, owner_id=owners) for t in TABLES} if replace else {}
+    before: Backup = {t: fetch_all(db, t, page_by="id", owner_id=owners) for t in TABLES} if replace else {}
     try:
         _write(db, backup, owners, wipe=replace)
     except JobError as failure:
@@ -132,7 +140,7 @@ def restore(db: SupabaseRest, backup: Backup, *, replace: bool = False) -> dict[
             raise JobError(f"{failure}. Nothing changed: the previous rows were put back.") from failure
         _wipe(db, owners)
         raise
-    after = {t: len(fetch_all(db, t, "id", owner_id=owners)) for t in TABLES}
+    after = {t: len(fetch_all(db, t, "id", page_by="id", owner_id=owners)) for t in TABLES}
     wrong = [t for t in TABLES if after[t] != len(backup[t])]
     if wrong:
         raise JobError(f"Row counts differ after the restore: {', '.join(wrong)}")

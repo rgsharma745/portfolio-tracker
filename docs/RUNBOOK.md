@@ -27,7 +27,7 @@ Secrets and where each one is set:
 
 ## Backups
 
-**What is backed up:** every row of your own data (portfolios, mutual fund holdings and imported transactions, stocks, RSU grants, savings, cards, bills, PF and PPF entries, NPS holdings and contributions, fixed deposits, dividends, history and settings), every Sunday 08:41 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
+**What is backed up:** every row of your own data (portfolios, mutual fund holdings and imported transactions, stocks, the employee equity ledger, savings, cards, bills, PF and PPF entries, NPS holdings and contributions, fixed deposits, dividends, history and settings), every Sunday 08:41 IST. Market data (NAVs, prices, USD/INR) is not: the jobs fetch it again. Backups are encrypted before they are written and kept 90 days as GitHub artifacts.
 
 **Make the key (once):** `age-keygen -o ~/portfolio-backup-key.txt`, save the file in your password manager, and put the printed `age1…` public key in the GitHub secret `BACKUP_AGE_RECIPIENT`. Without the private key no one, including you, can read the backups.
 
@@ -74,6 +74,14 @@ export SUPABASE_SERVICE_ROLE_KEY=$(cd .. && npx -y supabase@3.0.0 status -o json
   --identity ~/portfolio-backup-key.txt --owner-email test@portfolio-tracker.com --replace
 ```
 Then `cd ../web && npm run start:local`, sign in as `test@portfolio-tracker.com` (link in Mailpit, http://127.0.0.1:54324) and compare with the live site. Afterwards `npm run db:reset` wipes the local copy.
+
+## Employee equity cutover
+
+1. Keep the latest encrypted backup and a local record of any manual prices you may need to re-enter. Choose a window between scheduled jobs.
+2. To clear the old RSU balances while keeping other historical values, run `update public.portfolio_snapshots set rsu_vested_value = 0 where rsu_vested_value <> 0;` before applying the migrations.
+3. Apply migrations `0014` through `0017` and deploy the new app and jobs together. The migrations drop the old grant table and rename the snapshot column. Review any manual price marked “choose market”, re-enter it under the intended market, then remove the old entry.
+4. Enter grants in Employee equity and confirm Overview reflects shares held. Run prices, snapshot and backup once. Refresh any installed app copies after deployment.
+5. A backup taken before the cutover can restore the other assets. Its legacy RSU table and snapshot amounts are skipped. Use a local throwaway project on the older schema to recover legacy RSU rows themselves.
 
 ## Jobs
 

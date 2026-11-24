@@ -30,4 +30,4 @@ def test_usd_values_are_left_out_without_a_rate() -> None:
     market = MarketData.from_rows(CASE["mf_nav_latest"], CASE["stock_price_latest"], [])
     values = snapshot_values(CASE, market, "p-me", CASE["today"])
     assert values.stocks_value == Decimal(15000)  # INFY only; SMPL is USD
-    assert values.rsu_vested_value == 0
+    assert values.employee_equity_value == Decimal("142800")

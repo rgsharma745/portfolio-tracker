@@ -1,6 +1,6 @@
 """Latest stock prices and USD/INR, for what the owner holds only.
 
-Symbols come from `stock_holdings` (India or US) and `rsu_grants` (US). Rows marked
+Symbols come from stocks and listed employee equity grants in India and the US. Rows marked
 `is_manual` are skipped (the owner set them by hand). India: NSE bhavcopy, and Yahoo for any
 symbol the bhavcopy lacks or has only an older day for (so a run during market hours stores
 the live price, and the evening run replaces it with the official close). US: Yahoo. USD/INR is fetched only when something is priced
@@ -30,19 +30,24 @@ JOB = "fetch_prices"
 def held_symbols(db: SupabaseRest) -> tuple[set[str], set[str], bool]:
     """(India symbols, US symbols, whether anything is priced in USD)."""
     stocks = fetch_all(db, "stock_holdings", "symbol,market,currency")
-    grants = fetch_all(db, "rsu_grants", "symbol")
+    security_ids = {g["security_id"] for g in fetch_all(db, "equity_grants", "security_id")}
+    securities = [
+        s for s in fetch_all(db, "equity_securities", "id,market,symbol,currency")
+        if s["id"] in security_ids
+    ]
     india = {str(s["symbol"]).strip().upper() for s in stocks if s["market"] == "IN"}
     us = {str(s["symbol"]).strip().upper() for s in stocks if s["market"] == "US"}
-    us |= {str(g["symbol"]).strip().upper() for g in grants}
-    needs_fx = bool(grants) or any(s["currency"] == "USD" for s in stocks)
+    india |= {str(s["symbol"]) for s in securities if s["market"] == "IN"}
+    us |= {str(s["symbol"]) for s in securities if s["market"] == "US"}
+    needs_fx = any(s["currency"] == "USD" for s in stocks + securities)
     return india - {""}, us - {""}, needs_fx
 
 
-def manual_overrides(db: SupabaseRest) -> tuple[set[str], bool]:
+def manual_overrides(db: SupabaseRest) -> tuple[set[tuple[str, str]], bool]:
     """(symbols with a manual price, whether USD/INR is set by hand)."""
-    prices = fetch_all(db, "stock_price_latest", "symbol", is_manual="is.true")
+    prices = fetch_all(db, "stock_price_latest", "market,symbol", is_manual="is.true")
     fx = fetch_all(db, "fx_latest", "pair", is_manual="is.true", pair="eq.USDINR")
-    return {str(p["symbol"]) for p in prices}, bool(fx)
+    return {(str(p["market"]), str(p["symbol"])) for p in prices}, bool(fx)
 
 
 def price_india(symbols: set[str], today: date, nse: PriceProvider, yahoo: PriceProvider) -> dict[str, Quote]:
@@ -81,19 +86,25 @@ def work(
     day = today or today_ist()
     india, us, needs_fx = held_symbols(db)
     manual, fx_manual = manual_overrides(db)
-    india -= manual
-    us -= manual
+    india = {symbol for symbol in india if ("IN", symbol) not in manual}
+    us = {symbol for symbol in us if ("US", symbol) not in manual}
 
     session = http.session()
-    quotes = price_india(
+    indian_quotes = price_india(
         india, day, nse or NseBhavcopy(session), yahoo_india or YahooChart(".NS", session)
     )
-    quotes.update((yahoo_us or YahooChart("", session)).fetch(us, day))
+    us_quotes = (yahoo_us or YahooChart("", session)).fetch(us, day)
+    quotes = {
+        (market, symbol): quote
+        for market, market_quotes in (("IN", indian_quotes), ("US", us_quotes))
+        for symbol, quote in market_quotes.items()
+    }
 
-    for symbol, q in sorted(quotes.items()):
+    for (market, symbol), q in sorted(quotes.items()):
         resp = db.rpc(
             "upsert_stock_price",
             {
+                "p_market": market,
                 "p_symbol": symbol,
                 "p_close": str(q.price),
                 "p_date": q.price_date.isoformat(),
@@ -103,8 +114,8 @@ def work(
         if resp.status_code not in (200, 204):
             raise JobError(f"Could not store the price for {symbol} (HTTP {resp.status_code})")
 
-    wanted = india | us
-    missing = sorted(wanted - quotes.keys())
+    wanted = {("IN", symbol) for symbol in india} | {("US", symbol) for symbol in us}
+    missing = [f"{market}:{symbol}" for market, symbol in sorted(wanted - quotes.keys())]
     summary: dict[str, Any] = {
         "updated": len(quotes),
         "missing": missing,

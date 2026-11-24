@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DataProblem, findDataProblems, parseUnmatchedCodes } from '../calc/data-check';
+import { quoteKey } from '../calc/stocks';
 import { SUPABASE } from './supabase.client';
 
 /** Loads what the Data check needs; the rules live in core/calc/data-check.ts. */
@@ -28,8 +29,13 @@ export class DataCheckService {
       db.from('mf_holdings').select('id, scheme_name, scheme_code, portfolio_id').gt('units', 0),
       db.from('mf_nav_latest').select('scheme_code'),
       db.from('stock_holdings').select('id, symbol, market, portfolio_id'),
-      db.from('stock_price_latest').select('symbol'),
-      db.from('rsu_grants').select('id, symbol, grant_label, portfolio_id'),
+      db.from('stock_price_latest').select('market, symbol'),
+      db
+        .from('v_equity_lots')
+        .select('id, portfolio_id, grant_id, current_price')
+        .gt('held_units', 0)
+        .is('value_inr', null),
+      db.from('equity_grants').select('id, label'),
       db.from('credit_cards').select('id, name, bill_day, due_day, portfolio_id, is_active'),
       lastRun('fetch_nav'),
       db.from('nps_holdings').select('id, account, scheme_name, scheme_code, units, portfolio_id'),
@@ -38,8 +44,20 @@ export class DataCheckService {
     ] as const);
     this.loading.set(false);
 
-    const [portfolios, funds, navs, stocks, prices, grants, cards, navJob, nps, npsNavs, npsJob] =
-      results;
+    const [
+      portfolios,
+      funds,
+      navs,
+      stocks,
+      prices,
+      lots,
+      grants,
+      cards,
+      navJob,
+      nps,
+      npsNavs,
+      npsJob,
+    ] = results;
     if (results.some((r) => r.error)) {
       this.error.set('Could not run the data check.');
       return;
@@ -54,8 +72,11 @@ export class DataCheckService {
         npsNavCodes: (npsNavs.data ?? []).map((n) => n.scheme_code),
         npsUnmatchedCodes: parseUnmatchedCodes(npsJob.data?.message),
         stockHoldings: stocks.data ?? [],
-        pricedSymbols: (prices.data ?? []).map((p) => p.symbol),
-        rsuGrants: grants.data ?? [],
+        pricedSymbols: (prices.data ?? []).map((p) => quoteKey(p.market, p.symbol)),
+        equityLots: (lots.data ?? []).map((lot) => ({
+          ...lot,
+          label: grants.data?.find((g) => g.id === lot.grant_id)?.label ?? 'Employee equity lot',
+        })),
         creditCards: cards.data ?? [],
       }),
     );

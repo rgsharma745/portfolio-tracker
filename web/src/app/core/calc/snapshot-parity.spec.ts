@@ -4,7 +4,7 @@ import { mfTotals, navQuotes } from './mf';
 import { npsValue } from './nps';
 import { pfBalance } from './pf';
 import { ppfBalance } from './ppf';
-import { rsuTotals } from './rsu';
+import { equityValue } from './equity';
 import { savingsTotal } from './savings';
 import { priceQuotes, stockTotals, usdInrRate } from './stocks';
 import data from './fixtures/snapshot-case.json';
@@ -30,8 +30,8 @@ describe('snapshot parity with the Python job', () => {
         expected.stocks_value,
         2,
       );
-      expect(rsuTotals(data.rsu_grants, prices, rate, ids).vestedInr ?? 0).toBeCloseTo(
-        expected.rsu_vested_value,
+      expect(equityValue(data.equity_lots, ids).value).toBeCloseTo(
+        expected.employee_equity_value,
         2,
       );
       expect(savingsTotal(data.savings_accounts, ids)).toBeCloseTo(expected.savings, 2);

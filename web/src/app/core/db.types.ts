@@ -150,6 +150,338 @@ export type Database = {
           },
         ];
       };
+      equity_events: {
+        Row: {
+          allotted_on: string | null;
+          currency: string | null;
+          fees: number;
+          fmv: number | null;
+          fx: number | null;
+          grant_id: string;
+          id: string;
+          kind: string;
+          occurred_on: string;
+          owner_id: string;
+          portfolio_id: string;
+          purchase_price: number | null;
+          quantity: number;
+          schedule_id: string | null;
+          tax_paid_inr: number | null;
+          tax_units: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          allotted_on?: string | null;
+          currency?: string | null;
+          fees?: number;
+          fmv?: number | null;
+          fx?: number | null;
+          grant_id: string;
+          id?: string;
+          kind: string;
+          occurred_on: string;
+          owner_id?: string;
+          portfolio_id: string;
+          purchase_price?: number | null;
+          quantity: number;
+          schedule_id?: string | null;
+          tax_paid_inr?: number | null;
+          tax_units?: number;
+        };
+        Update: {
+          allotted_on?: string | null;
+          currency?: string | null;
+          fees?: number;
+          fmv?: number | null;
+          fx?: number | null;
+          grant_id?: string;
+          id?: string;
+          kind?: string;
+          occurred_on?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          purchase_price?: number | null;
+          quantity?: number;
+          schedule_id?: string | null;
+          tax_paid_inr?: number | null;
+          tax_units?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_grant_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_grants';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_grant_id_schedule_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'grant_id', 'schedule_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_schedule';
+            referencedColumns: ['owner_id', 'portfolio_id', 'grant_id', 'id'];
+          },
+        ];
+      };
+      equity_grants: {
+        Row: {
+          expires_on: string | null;
+          grant_price: number | null;
+          granted_on: string;
+          id: string;
+          kind: string;
+          label: string;
+          owner_id: string;
+          portfolio_id: string;
+          quantity: number;
+          security_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          expires_on?: string | null;
+          grant_price?: number | null;
+          granted_on: string;
+          id?: string;
+          kind: string;
+          label: string;
+          owner_id?: string;
+          portfolio_id: string;
+          quantity: number;
+          security_id: string;
+        };
+        Update: {
+          expires_on?: string | null;
+          grant_price?: number | null;
+          granted_on?: string;
+          id?: string;
+          kind?: string;
+          label?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          quantity?: number;
+          security_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'equity_grants_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_grants_owner_id_security_id_fkey';
+            columns: ['owner_id', 'security_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_securities';
+            referencedColumns: ['owner_id', 'id'];
+          },
+        ];
+      };
+      equity_sale_lots: {
+        Row: {
+          event_id: string;
+          exercise_deduction: number;
+          id: string;
+          owner_id: string;
+          portfolio_id: string;
+          quantity: number;
+          sale_id: string;
+          tax_deduction: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          event_id: string;
+          exercise_deduction?: number;
+          id?: string;
+          owner_id?: string;
+          portfolio_id: string;
+          quantity: number;
+          sale_id: string;
+          tax_deduction?: number;
+        };
+        Update: {
+          event_id?: string;
+          exercise_deduction?: number;
+          id?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          quantity?: number;
+          sale_id?: string;
+          tax_deduction?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_event_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'event_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_events';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_event_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'event_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_equity_lots';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_sale_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'sale_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_sales';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+        ];
+      };
+      equity_sales: {
+        Row: {
+          bank_inr: number | null;
+          bank_on: string | null;
+          brokerage: number;
+          currency: string;
+          fx: number;
+          id: string;
+          notes: string | null;
+          other_fees: number;
+          owner_id: string;
+          portfolio_id: string;
+          price: number;
+          security_id: string;
+          sold_on: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bank_inr?: number | null;
+          bank_on?: string | null;
+          brokerage?: number;
+          currency: string;
+          fx: number;
+          id?: string;
+          notes?: string | null;
+          other_fees?: number;
+          owner_id?: string;
+          portfolio_id: string;
+          price: number;
+          security_id: string;
+          sold_on: string;
+        };
+        Update: {
+          bank_inr?: number | null;
+          bank_on?: string | null;
+          brokerage?: number;
+          currency?: string;
+          fx?: number;
+          id?: string;
+          notes?: string | null;
+          other_fees?: number;
+          owner_id?: string;
+          portfolio_id?: string;
+          price?: number;
+          security_id?: string;
+          sold_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'equity_sales_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_sales_owner_id_security_id_fkey';
+            columns: ['owner_id', 'security_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_securities';
+            referencedColumns: ['owner_id', 'id'];
+          },
+        ];
+      };
+      equity_schedule: {
+        Row: {
+          grant_id: string;
+          id: string;
+          owner_id: string;
+          portfolio_id: string;
+          quantity: number;
+          scheduled_on: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          grant_id: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id: string;
+          quantity: number;
+          scheduled_on: string;
+        };
+        Update: {
+          grant_id?: string;
+          id?: string;
+          owner_id?: string;
+          portfolio_id?: string;
+          quantity?: number;
+          scheduled_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'equity_schedule_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_schedule_owner_id_portfolio_id_grant_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_grants';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+        ];
+      };
+      equity_securities: {
+        Row: {
+          currency: string;
+          id: string;
+          market: string;
+          name: string;
+          owner_id: string;
+          private_price: number | null;
+          private_price_date: string | null;
+          symbol: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          currency?: string;
+          id?: string;
+          market?: string;
+          name: string;
+          owner_id?: string;
+          private_price?: number | null;
+          private_price_date?: string | null;
+          symbol?: string | null;
+        };
+        Update: {
+          currency?: string;
+          id?: string;
+          market?: string;
+          name?: string;
+          owner_id?: string;
+          private_price?: number | null;
+          private_price_date?: string | null;
+          symbol?: string | null;
+        };
+        Relationships: [];
+      };
       fixed_deposits: {
         Row: {
           bank: string;
@@ -611,6 +943,7 @@ export type Database = {
       portfolio_snapshots: {
         Row: {
           card_dues: number;
+          employee_equity_value: number;
           fd_value: number;
           id: string;
           mf_value: number;
@@ -619,7 +952,6 @@ export type Database = {
           pf_balance: number;
           portfolio_id: string;
           ppf_balance: number;
-          rsu_vested_value: number;
           savings: number;
           snap_date: string;
           stocks_value: number;
@@ -627,6 +959,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           card_dues?: number;
+          employee_equity_value?: number;
           fd_value?: number;
           id?: string;
           mf_value?: number;
@@ -635,13 +968,13 @@ export type Database = {
           pf_balance?: number;
           portfolio_id: string;
           ppf_balance?: number;
-          rsu_vested_value?: number;
           savings?: number;
           snap_date: string;
           stocks_value?: number;
         };
         Update: {
           card_dues?: number;
+          employee_equity_value?: number;
           fd_value?: number;
           id?: string;
           mf_value?: number;
@@ -650,7 +983,6 @@ export type Database = {
           pf_balance?: number;
           portfolio_id?: string;
           ppf_balance?: number;
-          rsu_vested_value?: number;
           savings?: number;
           snap_date?: string;
           stocks_value?: number;
@@ -731,60 +1063,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'ppf_entries_portfolio_id_fkey';
-            columns: ['portfolio_id'];
-            isOneToOne: false;
-            referencedRelation: 'portfolios';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      rsu_grants: {
-        Row: {
-          created_at: string;
-          grant_date: string | null;
-          grant_label: string;
-          id: string;
-          owner_id: string;
-          portfolio_id: string;
-          symbol: string;
-          tax_rate: number;
-          units_granted: number;
-          units_sold_for_tax: number;
-          units_vested: number;
-          updated_at: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          grant_date?: string | null;
-          grant_label: string;
-          id?: string;
-          owner_id?: string;
-          portfolio_id: string;
-          symbol: string;
-          tax_rate?: number;
-          units_granted?: number;
-          units_sold_for_tax?: number;
-          units_vested?: number;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          grant_date?: string | null;
-          grant_label?: string;
-          id?: string;
-          owner_id?: string;
-          portfolio_id?: string;
-          symbol?: string;
-          tax_rate?: number;
-          units_granted?: number;
-          units_sold_for_tax?: number;
-          units_vested?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'rsu_grants_portfolio_id_fkey';
             columns: ['portfolio_id'];
             isOneToOne: false;
             referencedRelation: 'portfolios';
@@ -908,6 +1186,7 @@ export type Database = {
         Row: {
           close: number;
           is_manual: boolean;
+          market: string;
           prev_close: number | null;
           prev_price_date: string | null;
           price_date: string;
@@ -919,6 +1198,7 @@ export type Database = {
         Insert: {
           close: number;
           is_manual?: boolean;
+          market: string;
           prev_close?: number | null;
           prev_price_date?: string | null;
           price_date: string;
@@ -929,6 +1209,7 @@ export type Database = {
         Update: {
           close?: number;
           is_manual?: boolean;
+          market?: string;
           prev_close?: number | null;
           prev_price_date?: string | null;
           price_date?: string;
@@ -973,6 +1254,141 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'portfolios';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      v_equity_lots: {
+        Row: {
+          acquisition_expenses_inr: number | null;
+          allotted_on: string | null;
+          basis_per_share_inr: number | null;
+          currency: string | null;
+          current_fx: number | null;
+          current_price: number | null;
+          fees: number;
+          fmv: number | null;
+          fx: number | null;
+          grant_id: string;
+          grant_kind: string;
+          gross_fmv: number | null;
+          held_basis_inr: number | null;
+          held_units: number | null;
+          id: string;
+          kind: string;
+          occurred_on: string;
+          owner_id: string;
+          perquisite: number | null;
+          portfolio_id: string;
+          price_date: string | null;
+          purchase_cost_inr: number | null;
+          purchase_price: number | null;
+          quantity: number;
+          schedule_id: string | null;
+          security_id: string;
+          sold_units: number | null;
+          tax_paid_inr: number | null;
+          tax_units: number;
+          unrealized_inr: number | null;
+          unrealized_return: number | null;
+          value_inr: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_grant_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_grants';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_grant_id_schedule_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'grant_id', 'schedule_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_schedule';
+            referencedColumns: ['owner_id', 'portfolio_id', 'grant_id', 'id'];
+          },
+        ];
+      };
+      v_equity_portfolio_values: {
+        Row: {
+          owner_id: string;
+          portfolio_id: string;
+          value_inr: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'equity_events_owner_id_portfolio_id_fkey';
+            columns: ['owner_id', 'portfolio_id'];
+            isOneToOne: false;
+            referencedRelation: 'portfolios';
+            referencedColumns: ['owner_id', 'id'];
+          },
+        ];
+      };
+      v_equity_sale_details: {
+        Row: {
+          allotted_on: string | null;
+          bank_inr: number | null;
+          bank_on: string | null;
+          basis_inr: number | null;
+          classification: string | null;
+          currency: string;
+          deductions: number | null;
+          effective_fx: number | null;
+          event_id: string;
+          exercise_deduction: number;
+          fx: number;
+          grant_id: string;
+          gross: number | null;
+          holding_days: number | null;
+          id: string;
+          net: number | null;
+          owner_id: string;
+          payout: number | null;
+          portfolio_id: string;
+          quantity: number;
+          realized_inr: number | null;
+          return_percent: number | null;
+          sale_bank_inr: number | null;
+          sale_id: string;
+          sale_net: number | null;
+          sale_payout: number | null;
+          security_id: string;
+          sold_on: string;
+          tax_deduction: number;
+          total_quantity: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_event_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'event_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_events';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_event_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'event_id'];
+            isOneToOne: false;
+            referencedRelation: 'v_equity_lots';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
+          },
+          {
+            foreignKeyName: 'equity_sale_lots_owner_id_portfolio_id_sale_id_fkey';
+            columns: ['owner_id', 'portfolio_id', 'sale_id'];
+            isOneToOne: false;
+            referencedRelation: 'equity_sales';
+            referencedColumns: ['owner_id', 'portfolio_id', 'id'];
           },
         ];
       };
@@ -1048,7 +1464,28 @@ export type Database = {
           next_allowed_at: string;
         }[];
       };
+      delete_equity_sale: { Args: { p_id: string; p_portfolio: string }; Returns: undefined };
+      export_equity_ledger: { Args: Record<PropertyKey, never>; Returns: Json };
+      lock_equity_portfolio: { Args: { p_owner: string; p_portfolio: string }; Returns: undefined };
       release_job_trigger: { Args: { p_at: string; p_job: string }; Returns: undefined };
+      save_equity_sale: {
+        Args: {
+          p_bank_inr?: number;
+          p_bank_on?: string;
+          p_brokerage: number;
+          p_currency: string;
+          p_fx: number;
+          p_id: string;
+          p_lots: Json;
+          p_notes?: string;
+          p_other_fees: number;
+          p_portfolio: string;
+          p_price: number;
+          p_security: string;
+          p_sold_on: string;
+        };
+        Returns: undefined;
+      };
       upsert_fx_rate: {
         Args: { p_date: string; p_pair: string; p_rate: number };
         Returns: undefined;
@@ -1062,7 +1499,17 @@ export type Database = {
         Returns: undefined;
       };
       upsert_stock_price: {
-        Args: { p_close: number; p_date: string; p_source?: string; p_symbol: string };
+        Args: {
+          p_close: number;
+          p_date: string;
+          p_market: string;
+          p_source?: string;
+          p_symbol: string;
+        };
+        Returns: undefined;
+      };
+      validate_equity_grant: {
+        Args: { p_grant: string; p_owner: string; p_portfolio: string };
         Returns: undefined;
       };
     };

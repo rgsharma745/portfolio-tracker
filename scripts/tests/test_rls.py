@@ -7,6 +7,7 @@ of it, through tables or views. Anonymous callers get nothing at all.
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from requests import Response
@@ -16,7 +17,8 @@ from lib.supabase_rest import SupabaseRest
 from .conftest import AuthUser
 
 OWNER_TABLES = [
-    "portfolios", "mf_holdings", "stock_holdings", "rsu_grants", "savings_accounts",
+    "portfolios", "mf_holdings", "stock_holdings", "savings_accounts",
+    "equity_securities", "equity_grants", "equity_schedule", "equity_events", "equity_sales", "equity_sale_lots",
     "credit_cards", "card_bills", "portfolio_snapshots", "settings", "pf_entries",
     "ppf_entries", "nps_holdings", "nps_contributions", "fixed_deposits",
     "dividends", "mf_transactions",
@@ -24,7 +26,8 @@ OWNER_TABLES = [
 MARKET_TABLES = [
     "mf_nav_latest", "stock_price_latest", "fx_latest", "job_runs", "job_triggers", "nps_nav_latest",
 ]
-VIEWS = ["v_mf_holdings", "v_stock_holdings", "v_card_bills"]
+VIEWS = ["v_mf_holdings", "v_stock_holdings", "v_card_bills",
+         "v_equity_lots", "v_equity_sale_details", "v_equity_portfolio_values"]
 
 
 def insert_ok(api: SupabaseRest, token: str, table: str, values: dict[str, Any]) -> dict[str, Any]:
@@ -45,9 +48,31 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
     ids["stock_holdings"] = insert_ok(anon, t, "stock_holdings", {
         "portfolio_id": p, "symbol": "PYTEST", "quantity": 1, "invested": 10,
     })["id"]
-    ids["rsu_grants"] = insert_ok(anon, t, "rsu_grants", {
-        "portfolio_id": p, "symbol": "PYTEST", "grant_label": "G1", "units_granted": 10,
+    ids["equity_securities"] = insert_ok(anon, t, "equity_securities", {
+        "name": "Employer", "symbol": "PYTEST",
     })["id"]
+    ids["equity_grants"] = insert_ok(anon, t, "equity_grants", {
+        "portfolio_id": p, "security_id": ids["equity_securities"], "kind": "RSU",
+        "label": "G1", "granted_on": "2024-01-01", "quantity": 10,
+    })["id"]
+    ids["equity_schedule"] = insert_ok(anon, t, "equity_schedule", {
+        "portfolio_id": p, "grant_id": ids["equity_grants"], "scheduled_on": "2024-06-01", "quantity": 10,
+    })["id"]
+    ids["equity_events"] = insert_ok(anon, t, "equity_events", {
+        "portfolio_id": p, "grant_id": ids["equity_grants"], "schedule_id": ids["equity_schedule"],
+        "kind": "vest", "occurred_on": "2024-06-01", "allotted_on": "2024-06-01",
+        "quantity": 8, "fmv": 10, "currency": "USD", "fx": 85,
+    })["id"]
+    ids["equity_sales"] = str(uuid4())
+    sale = anon.rpc("save_equity_sale", {
+        "p_id": ids["equity_sales"], "p_portfolio": p, "p_security": ids["equity_securities"],
+        "p_sold_on": "2025-06-01", "p_price": 15, "p_brokerage": 0, "p_other_fees": 0,
+        "p_currency": "USD", "p_fx": 85, "p_lots": [{"event_id": ids["equity_events"], "quantity": 1}],
+    }, token=t)
+    assert sale.status_code in (200, 204), sale.text
+    allocations = anon.select("equity_sale_lots", sale_id=f"eq.{ids['equity_sales']}", token=t)
+    allocations.raise_for_status()
+    ids["equity_sale_lots"] = allocations.json()[0]["id"]
     ids["savings_accounts"] = insert_ok(anon, t, "savings_accounts", {
         "portfolio_id": p, "bank": "Bank", "balance": 100,
     })["id"]
@@ -164,9 +189,15 @@ def test_other_user_cannot_update_or_delete(
 ) -> None:
     row_filter = {"id": f"eq.{seeded[table]}"}
     updated = anon.update(table, {"owner_id": user_b.id}, token=user_b.token, **row_filter)
-    assert updated.status_code == 200 and updated.json() == []
+    if table in ("equity_sales", "equity_sale_lots"):
+        assert updated.status_code == 403
+    else:
+        assert updated.status_code == 200 and updated.json() == []
     deleted = anon.delete(table, token=user_b.token, **row_filter)
-    assert deleted.status_code == 200 and deleted.json() == []
+    if table in ("equity_sales", "equity_sale_lots"):
+        assert deleted.status_code == 403
+    else:
+        assert deleted.status_code == 200 and deleted.json() == []
     still_there = anon.select(table, token=user_a.token, **row_filter)
     assert len(still_there.json()) == 1
 

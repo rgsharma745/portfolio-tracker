@@ -9,7 +9,7 @@
 ## Breakpoints and layout
 | Viewport | Navigation | Holdings display | Dialogs |
 |---|---|---|---|
-| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: RSU, Savings, PF, Cards, Settings as icon tiles in three columns, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
+| < 768px (mobile) | Bottom tab bar: Overview, MF, Stocks, More (a bottom sheet sized to its content: Equity, Savings, PF, Cards, Settings as icon tiles in three columns, the current page highlighted, then Sign out on its own row) | Card list (one card per holding) | Full-screen sheet |
 | 768-1023px (tablet) | Collapsible left rail (icons) | Table with sticky first column | Centered dialog |
 | >= 1024px (desktop) | Left sidebar with labels | Full PrimeNG table: sort, filter, totals footer | Centered dialog |
 - Content fills the full width beside the navigation (no max width). Page padding 16px mobile, 32px desktop.
@@ -40,7 +40,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Respects the portfolio switcher; default is the **family total (All)**.
 - **Investments** and **Savings and dues** are the two balance panel headings on Overview. The panels begin directly below the portfolio switcher. The panels stack on mobile and sit side by side from 1024px. Balances are right-aligned. Mutual funds, stocks and NPS show daily changes beneath their balances in compact badges such as `+₹120 1D`. Screen readers get the full label “1 Day Change”. Card dues are flagged when greater than zero.
 - **History**, **Allocation** and **By portfolio** start closed and can be expanded using their labels.
-- Allocation (MF, Stocks, RSU vested, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
+- Allocation (MF, Stocks, Employee equity, Savings, PF, PPF, NPS, Fixed deposits) as a segmented bar (no labels inside), plus a legend listing every part's amount and share (which doubles as the table view). A bar reads more accurately than a donut for one whole split into a few parts.
 - **View chart data** opens a keyboard-scrollable table with every date and value in the selected history series and range. The table respects **Hide amounts**.
 - History displays one line chart at a time from `portfolio_snapshots`. Choose Mutual funds, Stocks, PF, PPF, NPS or FD and a range of 1M, 6M, 1Y or All. It defaults to Mutual funds over 6M. A chart appears once there are at least two points in the selected range. PF, PPF, NPS and FD series start at their first day above zero.
 - Summary table with one row per portfolio plus a family total row (Holdings, Invested, Current, P&L, 1 Day Change). On mobile, becomes stacked rows.
@@ -72,11 +72,10 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Dialog: Market (India / US), Portfolio, Symbol (upper-cased; suggests the market's stock holdings and past dividends), Date received (hint names the FY it counts for), Amount ($) for US, Amount (₹). For US the ₹ field says to enter what the bank credited and offers "About ₹X at today's rate · Use it".
 - Not on Overview: no card, allocation share or history line.
 
-### RSU
-- Stat cards: Total value after tax (INR), Total value USD (pre-tax), after-tax USD, Vested value (INR), Current price (USD).
-- Unit cards: Total units, Vested, Sellable, Pending vesting, Sold for tax.
-- Grants table (cards on mobile) with edit.
-- Read-only formulas: derived from `DATA_MODEL.md`.
+### Employee equity
+- Use the global portfolio switcher and company, grant type and grant filters. Balance cards cover current value, P&L, purchase cost, reported taxes and receipts. The quantity summary covers grants, vesting, exercises, withholding, sales and shares held.
+- Use sortable tables on desktop and cards on mobile for Grants, Vesting, Exercises, Sales and Companies. Highlight upcoming and overdue vesting by tranche.
+- Sale dialogs let the owner select lots and see available shares. Sale details show allocated basis, P&L, bank reconciliation and holding-period classification.
 
 ### Savings
 - Total card, accounts count, largest account.

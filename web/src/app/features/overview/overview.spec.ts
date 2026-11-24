@@ -34,7 +34,7 @@ describe('allocation', () => {
       allocation([
         { key: 'mf', label: 'MF', value: 300 },
         { key: 'stocks', label: 'Stocks', value: 100 },
-        { key: 'rsu', label: 'RSU', value: 0 },
+        { key: 'equity', label: 'Employee equity', value: 0 },
         { key: 'savings', label: 'Savings', value: -5 },
       ]),
     ).toEqual([

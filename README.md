@@ -1,6 +1,6 @@
 # Portfolio Tracker
 
-A private, free-to-host personal finance dashboard (mutual funds, Indian and US stocks, RSUs, savings, credit card dues, PF, PPF, NPS, fixed deposits and dividends) that replaces a Google Sheet. One owner login, several portfolios (for example Me and Wife). Responsive, installable on a phone, light and dark.
+A private, free-to-host personal finance dashboard (mutual funds, Indian and US stocks, employee equity (RSUs and ESOPs), savings, credit card dues, PF, PPF, NPS, fixed deposits and dividends) that replaces a Google Sheet. One owner login, several portfolios (for example Me and Wife). Responsive, installable on a phone, light and dark.
 
 Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engines)
 
@@ -8,7 +8,7 @@ Live: deployed on Cloudflare Workers (sign-in only; not indexed by search engine
 Angular 22 + PrimeNG (Aura) + Tailwind for layout · Supabase (Postgres, Auth, Row Level Security) · Cloudflare Workers static assets (hosting) · GitHub Actions running Python 3.15 jobs (nightly NAVs, prices, daily snapshot, weekly encrypted backup).
 
 ## Status
-Phases 0 to 18 of [the implementation plan](PLAN.md) are built and live. Phase 18 adds CAMS transaction imports, closed mutual fund positions and XIRR. The Overview includes separate Investments and Savings and dues panels, with expandable History, Allocation and By portfolio sections. The remaining work is owner acceptance and data reconciliation (see the **Status** section at the top of `PLAN.md`). Recent maintenance hardened CI dependency installs, hash-locked Python dependencies with Renovate updates, and aligned SonarCloud's analysis scope with its current scanner behavior. Later work the owner will define: RSU + ESOP rules.
+Phases 0 to 18 of [the implementation plan](PLAN.md) are built and live. Phase 18 adds CAMS transaction imports, closed mutual fund positions and XIRR. Phase 19 replaces the RSU page with the Employee Equity ledger. The Overview includes separate Investments and Savings and dues panels, with expandable History, Allocation and By portfolio sections. The remaining work is owner acceptance and data reconciliation (see the **Status** section at the top of `PLAN.md`). Recent maintenance hardened CI dependency installs, hash-locked Python dependencies with Renovate updates, and aligned SonarCloud's analysis scope with its current scanner behavior. The Employee Equity cutover is pending.
 
 ## Working on it with Claude Code
 Open the repo and start a new chat with, for example:

@@ -20,7 +20,7 @@ export type { WriteError } from './write-error';
 export interface PortfolioContents {
   mutualFunds: number;
   stocks: number;
-  rsuGrants: number;
+  equityGrants: number;
   savingsAccounts: number;
   creditCards: number;
 }
@@ -129,7 +129,8 @@ export class PortfolioService {
 
   async contents(id: string): Promise<PortfolioContents> {
     const count = async (
-      table: 'mf_holdings' | 'stock_holdings' | 'rsu_grants' | 'savings_accounts' | 'credit_cards',
+      table:
+        'mf_holdings' | 'stock_holdings' | 'equity_grants' | 'savings_accounts' | 'credit_cards',
     ) => {
       const { count: n } = await this.supabase
         .from(table)
@@ -137,14 +138,14 @@ export class PortfolioService {
         .eq('portfolio_id', id);
       return n ?? 0;
     };
-    const [mutualFunds, stocks, rsuGrants, savingsAccounts, creditCards] = await Promise.all([
+    const [mutualFunds, stocks, equityGrants, savingsAccounts, creditCards] = await Promise.all([
       count('mf_holdings'),
       count('stock_holdings'),
-      count('rsu_grants'),
+      count('equity_grants'),
       count('savings_accounts'),
       count('credit_cards'),
     ]);
-    return { mutualFunds, stocks, rsuGrants, savingsAccounts, creditCards };
+    return { mutualFunds, stocks, equityGrants, savingsAccounts, creditCards };
   }
 
   private async afterWrite(error: { code?: string } | null): Promise<WriteError> {

@@ -1,5 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
+import type { Market } from '../calc/stocks';
 import { Tables } from '../db.types';
+import { RefreshService } from './refresh.service';
 import { HoldingsService } from './holdings.service';
 import { SUPABASE } from './supabase.client';
 import { WriteError, writeErrorMessage } from './write-error';
@@ -19,6 +21,7 @@ export type JobName = (typeof JOBS)[number];
 export class MarketService {
   private readonly supabase = inject(SUPABASE);
   private readonly holdings = inject(HoldingsService);
+  private readonly refresh = inject(RefreshService);
 
   readonly lastRuns = signal<Partial<Record<JobName, JobRun>>>({});
   readonly loading = signal(false);
@@ -52,12 +55,17 @@ export class MarketService {
     this.lastRuns.set(runs);
   }
 
-  async setStockPrice(symbol: string, close: number, date: string): Promise<WriteError> {
+  async setStockPrice(
+    market: Market,
+    symbol: string,
+    close: number,
+    date: string,
+  ): Promise<WriteError> {
     const { error } = await this.supabase
       .from('stock_price_latest')
       .upsert(
-        { symbol, close, price_date: date, source: 'manual', is_manual: true },
-        { onConflict: 'symbol' },
+        { market, symbol, close, price_date: date, source: 'manual', is_manual: true },
+        { onConflict: 'market,symbol' },
       );
     return this.afterWrite(error);
   }
@@ -70,10 +78,11 @@ export class MarketService {
   }
 
   /** Removes a manual override; the price job fills the row again on its next run. */
-  async removeStockOverride(symbol: string): Promise<WriteError> {
+  async removeStockOverride(market: string, symbol: string): Promise<WriteError> {
     const { error } = await this.supabase
       .from('stock_price_latest')
       .delete()
+      .eq('market', market)
       .eq('symbol', symbol)
       .eq('is_manual', true);
     return this.afterWrite(error);
@@ -91,6 +100,7 @@ export class MarketService {
   private async afterWrite(error: { code?: string } | null): Promise<WriteError> {
     if (error) return writeErrorMessage(error);
     await this.holdings.load();
+    this.refresh.refresh();
     return null;
   }
 }

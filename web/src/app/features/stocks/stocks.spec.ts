@@ -20,8 +20,8 @@ const holding = (over: Partial<StockHolding>): StockHolding => ({
 });
 
 const prices = priceQuotes([
-  { symbol: 'SMPL', close: 60, price_date: '2026-11-03', prev_close: 62 },
-  { symbol: 'INFY', close: 1500, price_date: '2026-11-04', prev_close: 1480 },
+  { market: 'US', symbol: 'SMPL', close: 60, price_date: '2026-11-03', prev_close: 62 },
+  { market: 'IN', symbol: 'INFY', close: 1500, price_date: '2026-11-04', prev_close: 1480 },
 ]);
 const names = new Map([['me', 'Me']]);
 const holdings = [

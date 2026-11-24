@@ -19,6 +19,7 @@ function fakeSupabase(rows: Rows, failing?: string) {
         select: () => builder,
         eq: () => builder,
         gt: () => builder,
+        is: () => builder,
         order: () => builder,
         limit: () => builder,
         maybeSingle: () => Promise.resolve(result),

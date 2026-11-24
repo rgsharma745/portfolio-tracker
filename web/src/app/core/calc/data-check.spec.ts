@@ -13,7 +13,7 @@ const empty: DataCheckInput = {
   npsUnmatchedCodes: [],
   stockHoldings: [],
   pricedSymbols: [],
-  rsuGrants: [],
+  equityLots: [],
   creditCards: [],
 };
 
@@ -32,7 +32,7 @@ describe('findDataProblems', () => {
         mfHoldings: [fund('a', '100')],
         navCodes: ['100'],
         stockHoldings: [{ id: 's', symbol: 'INFY', market: 'IN', portfolio_id: 'me' }],
-        pricedSymbols: ['INFY'],
+        pricedSymbols: ['IN:INFY'],
         creditCards: [
           { id: 'c', name: 'Card', bill_day: 14, due_day: 3, portfolio_id: 'me', is_active: true },
         ],
@@ -66,19 +66,19 @@ describe('findDataProblems', () => {
     expect(problem.kind).toBe('mf_code_not_found');
   });
 
-  it('reports stocks and RSU grants without a price', () => {
+  it('reports stocks and equity lots without a price', () => {
     const problems = findDataProblems({
       ...empty,
       stockHoldings: [
         { id: 's1', symbol: 'INFY', market: 'IN', portfolio_id: 'me' },
         { id: 's2', symbol: 'CIEN', market: 'US', portfolio_id: 'me' },
       ],
-      rsuGrants: [{ id: 'r1', symbol: 'CIEN', grant_label: '2024', portfolio_id: 'me' }],
-      pricedSymbols: ['INFY'],
+      equityLots: [{ id: 'r1', label: 'CIEN · 2024', current_price: null, portfolio_id: 'me' }],
+      pricedSymbols: ['IN:INFY'],
     });
     expect(problems.map((p) => [p.kind, p.label, p.detail])).toEqual([
       ['stock_no_price', 'CIEN', 'US'],
-      ['rsu_no_price', 'CIEN · 2024', 'CIEN'],
+      ['equity_no_price', 'CIEN · 2024', 'Missing share price'],
     ]);
   });
 

@@ -126,29 +126,45 @@ export async function seedHoldings(api, ownerId) {
       },
     ]),
   );
+  const equitySecurity = crypto.randomUUID();
+  const equityGrant = crypto.randomUUID();
   await insert(
     api,
-    'rsu_grants',
+    'equity_securities',
+    own([
+      { id: equitySecurity, name: 'Sample Corp', market: 'US', symbol: 'SMPL', currency: 'USD' },
+    ]),
+  );
+  await insert(
+    api,
+    'equity_grants',
+    own([
+      {
+        id: equityGrant,
+        portfolio_id: id.Me,
+        security_id: equitySecurity,
+        kind: 'RSU',
+        label: '2025 award',
+        granted_on: '2025-03-15',
+        quantity: 200,
+      },
+    ]),
+  );
+  await insert(
+    api,
+    'equity_events',
     own([
       {
         portfolio_id: id.Me,
-        symbol: 'SMPL',
-        grant_label: '2024 annual',
-        grant_date: '2024-03-15',
-        units_granted: 200,
-        units_vested: 150,
-        units_sold_for_tax: 50,
-        tax_rate: 0.3,
-      },
-      {
-        portfolio_id: id.Me,
-        symbol: 'SMPL',
-        grant_label: '2025 annual',
-        grant_date: '2025-03-15',
-        units_granted: 120,
-        units_vested: 30,
-        units_sold_for_tax: 10,
-        tax_rate: 0.3,
+        grant_id: equityGrant,
+        kind: 'vest',
+        occurred_on: '2025-06-15',
+        allotted_on: '2025-06-15',
+        quantity: 150,
+        tax_units: 50,
+        fmv: 140,
+        currency: 'USD',
+        fx: 85,
       },
     ]),
   );
@@ -489,7 +505,7 @@ function sampleHistory(me, wife) {
         snap_date: daysAgo(n),
         mf_value: Math.round(base * 0.7 * factor),
         stocks_value: Math.round(base * 0.3 * factor),
-        rsu_vested_value: 0,
+        employee_equity_value: 0,
         savings: 0,
         card_dues: 0,
         pf_balance: Math.round(base * 0.45 * (1 + drift * 0.08)),
@@ -577,6 +593,7 @@ async function upsertMarketData(api) {
     'stock_price_latest',
     [
       {
+        market: 'IN',
         symbol: 'SAMPLEIN1',
         close: 1612.4,
         price_date: today,
@@ -585,6 +602,7 @@ async function upsertMarketData(api) {
         source: 'seed',
       },
       {
+        market: 'IN',
         symbol: 'SAMPLEIN2',
         close: 781.25,
         price_date: today,
@@ -593,6 +611,7 @@ async function upsertMarketData(api) {
         source: 'seed',
       },
       {
+        market: 'US',
         symbol: 'SMPL',
         close: 171.32,
         price_date: yesterday,
@@ -602,7 +621,7 @@ async function upsertMarketData(api) {
       },
     ],
     merge,
-    'symbol',
+    'market,symbol',
   );
   await insert(
     api,

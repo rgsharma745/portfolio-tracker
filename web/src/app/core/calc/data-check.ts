@@ -1,3 +1,5 @@
+import { quoteKey } from './stocks';
+
 /**
  * Data check: holdings the daily jobs cannot value, and cards whose due dates cannot be
  * computed. Only active portfolios are checked, since only they count in totals.
@@ -11,7 +13,7 @@ export type DataProblemKind =
   | 'nps_code_not_found'
   | 'nps_no_nav'
   | 'stock_no_price'
-  | 'rsu_no_price'
+  | 'equity_no_price'
   | 'card_missing_days';
 
 export interface DataProblem {
@@ -47,9 +49,14 @@ export interface DataCheckInput {
   /** Scheme codes the last NPS NAV job could not find. */
   npsUnmatchedCodes: readonly string[];
   stockHoldings: readonly { id: string; symbol: string; market: string; portfolio_id: string }[];
-  /** Symbols that have a row in stock_price_latest. */
+  /** Market-qualified stock quote keys. */
   pricedSymbols: readonly string[];
-  rsuGrants: readonly { id: string; symbol: string; grant_label: string; portfolio_id: string }[];
+  equityLots: readonly {
+    id: string;
+    portfolio_id: string;
+    label: string;
+    current_price: number | null;
+  }[];
   creditCards: readonly {
     id: string;
     name: string;
@@ -111,7 +118,7 @@ export function findDataProblems(input: DataCheckInput): DataProblem[] {
   }
 
   for (const stock of inActive(input.stockHoldings)) {
-    if (!priced.has(stock.symbol)) {
+    if (!priced.has(quoteKey(stock.market, stock.symbol))) {
       problems.push({
         kind: 'stock_no_price',
         id: stock.id,
@@ -122,16 +129,14 @@ export function findDataProblems(input: DataCheckInput): DataProblem[] {
     }
   }
 
-  for (const grant of inActive(input.rsuGrants)) {
-    if (!priced.has(grant.symbol)) {
-      problems.push({
-        kind: 'rsu_no_price',
-        id: grant.id,
-        label: `${grant.symbol} · ${grant.grant_label}`,
-        portfolio: nameOf(grant.portfolio_id),
-        detail: grant.symbol,
-      });
-    }
+  for (const lot of inActive(input.equityLots)) {
+    problems.push({
+      kind: 'equity_no_price',
+      id: lot.id,
+      label: lot.label,
+      portfolio: nameOf(lot.portfolio_id),
+      detail: lot.current_price === null ? 'Missing share price' : 'Missing USD/INR rate',
+    });
   }
 
   for (const card of inActive(input.creditCards.filter((c) => c.is_active))) {

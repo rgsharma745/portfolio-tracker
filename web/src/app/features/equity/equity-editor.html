@@ -1,0 +1,183 @@
+@if (draft(); as d) {
+  <app-edit-dialog
+    [visible]="initial() !== null"
+    [header]="header()"
+    [busy]="busy()"
+    [error]="error()"
+    [canDelete]="d.editing"
+    (closed)="closed.emit()"
+    (save)="save()"
+    (remove)="remove()"
+  >
+    <div class="equity-fields">
+      @for (field of fields(); track field.key) {
+        @let id = 'equity-' + field.key;
+        @let err = fieldErrors()[field.key];
+        <div class="field">
+          <label [for]="id">{{ field.label }}{{ field.required ? ' *' : '' }}</label>
+          @switch (field.type) {
+            @case ('date') {
+              <app-date-input
+                [inputId]="id"
+                [maxDate]="field.future ? null : today"
+                [describedBy]="err ? id + '-error' : null"
+                [value]="d.fields[field.key] ?? ''"
+                (valueChange)="set(field.key, $event)"
+              />
+            }
+            @case ('select') {
+              <select
+                [id]="id"
+                [name]="field.key"
+                [disabled]="field.frozen ?? false"
+                [required]="field.required ?? false"
+                [attr.aria-invalid]="err ? 'true' : null"
+                [attr.aria-describedby]="err ? id + '-error' : null"
+                [ngModelOptions]="{ standalone: true }"
+                [ngModel]="d.fields[field.key] ?? ''"
+                (ngModelChange)="set(field.key, $event)"
+              >
+                <option value="">{{ field.required ? 'Choose an option' : 'None' }}</option>
+                @for (option of field.options ?? []; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            }
+            @case ('notes') {
+              <textarea
+                [id]="id"
+                [name]="field.key"
+                rows="2"
+                [ngModelOptions]="{ standalone: true }"
+                [ngModel]="d.fields[field.key] ?? ''"
+                (ngModelChange)="set(field.key, $event)"
+              ></textarea>
+            }
+            @default {
+              <input
+                pInputText
+                [id]="id"
+                [name]="field.key"
+                [disabled]="field.frozen ?? false"
+                [required]="field.required ?? false"
+                [attr.inputmode]="field.type === 'decimal' ? 'decimal' : null"
+                [attr.aria-invalid]="err ? 'true' : null"
+                [attr.aria-describedby]="err ? id + '-error' : null"
+                autocomplete="off"
+                [ngModelOptions]="{ standalone: true }"
+                [ngModel]="d.fields[field.key] ?? ''"
+                (ngModelChange)="set(field.key, $event)"
+              />
+            }
+          }
+          @if (err) {
+            <p class="field-error" [id]="id + '-error'" role="alert">{{ err }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    @if (d.kind === 'sale') {
+      <fieldset
+        class="allocations"
+        id="equity-allocations"
+        tabindex="-1"
+        [attr.aria-describedby]="allocationError() ? 'equity-lots-error' : null"
+      >
+        <legend>Sale lots</legend>
+        @if (!availableLots().length) {
+          <p class="section-hint">
+            Choose a portfolio, company and sale date with allotted shares available.
+          </p>
+        }
+        @for (a of d.allocations; track a.key; let index = $index) {
+          <fieldset class="allocation">
+            <legend>Lot {{ index + 1 }}</legend>
+            <div class="equity-fields">
+              <div class="field">
+                <label [for]="'equity-lot-' + a.key">Acquisition lot *</label>
+                <select
+                  [id]="'equity-lot-' + a.key"
+                  [name]="'lot-' + a.key"
+                  required
+                  [ngModelOptions]="{ standalone: true }"
+                  [ngModel]="a.lot"
+                  (ngModelChange)="changeAllocation(a.key, 'lot', $event)"
+                >
+                  <option value="">Choose a lot</option>
+                  @for (lot of allocationOptions(a); track lot.id) {
+                    <option [value]="lot.id">{{ lot.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="field">
+                <label [for]="'equity-sold-' + a.key">Quantity sold *</label>
+                <input
+                  pInputText
+                  [id]="'equity-sold-' + a.key"
+                  [name]="'sold-' + a.key"
+                  inputmode="decimal"
+                  required
+                  [ngModelOptions]="{ standalone: true }"
+                  [ngModel]="a.quantity"
+                  (ngModelChange)="changeAllocation(a.key, 'quantity', $event)"
+                />
+              </div>
+              @if (isExerciseLot(a.lot)) {
+                <div class="field">
+                  <label [for]="'equity-exercise-' + a.key"
+                    >Exercise cost deducted ({{ d.fields.currency }})</label
+                  >
+                  <input
+                    pInputText
+                    [id]="'equity-exercise-' + a.key"
+                    [name]="'exercise-' + a.key"
+                    inputmode="decimal"
+                    [ngModelOptions]="{ standalone: true }"
+                    [ngModel]="a.exercise"
+                    (ngModelChange)="changeAllocation(a.key, 'exercise', $event)"
+                  />
+                </div>
+                <div class="field">
+                  <label [for]="'equity-tax-' + a.key"
+                    >Tax deducted from payout ({{ d.fields.currency }})</label
+                  >
+                  <input
+                    pInputText
+                    [id]="'equity-tax-' + a.key"
+                    [name]="'tax-' + a.key"
+                    inputmode="decimal"
+                    [ngModelOptions]="{ standalone: true }"
+                    [ngModel]="a.tax"
+                    (ngModelChange)="changeAllocation(a.key, 'tax', $event)"
+                  />
+                </div>
+              }
+            </div>
+            @if (d.allocations.length > 1) {
+              <button
+                pButton
+                type="button"
+                text
+                severity="secondary"
+                [attr.aria-label]="'Remove lot ' + (index + 1)"
+                (click)="removeAllocation(a.key)"
+              >
+                Remove lot
+              </button>
+            }
+          </fieldset>
+        }
+        @if (allocationError()) {
+          <p class="field-error" id="equity-lots-error" role="alert">
+            Select distinct lots and enter a positive quantity for each. Deductions must be zero or
+            more.
+          </p>
+        }
+        @if (availableLots().length > d.allocations.length) {
+          <button pButton type="button" text (click)="addAllocation()">Add lot</button>
+        }
+      </fieldset>
+    }
+  </app-edit-dialog>
+}

@@ -62,7 +62,7 @@ def codes(service: SupabaseRest) -> Iterator[list[str]]:
 @pytest.fixture
 def symbols(service: SupabaseRest) -> Iterator[dict[str, str]]:
     tag = f"{random.randrange(10**6):06d}"
-    picked = {"india": f"PYIN{tag}", "us": f"PYUS{tag}", "rsu": f"PYRS{tag}"}
+    picked = {"india": f"PYIN{tag}", "us": f"PYUS{tag}", "equity": f"PYRS{tag}"}
     yield picked
     for s in picked.values():
         service.delete("stock_price_latest", symbol=f"eq.{s}")
@@ -200,17 +200,25 @@ def test_fetch_prices_uses_fallbacks_skips_manual_and_stores_fx(
     base = {"owner_id": user_a.id, "portfolio_id": pid, "quantity": 1, "invested": 1}
     insert(service, "stock_holdings", {**base, "market": "IN", "symbol": symbols["india"], "currency": "INR"})
     insert(service, "stock_holdings", {**base, "market": "US", "symbol": symbols["us"], "currency": "USD"})
-    insert(
-        service,
-        "rsu_grants",
-        {"owner_id": user_a.id, "portfolio_id": pid, "symbol": symbols["rsu"], "grant_label": "pytest"},
-    )
-    # The owner set the RSU symbol's price by hand: the job must not fetch or overwrite it.
-    insert(service, "stock_price_latest", {"symbol": symbols["rsu"], "close": 99, "price_date": "2026-11-01", "is_manual": True})
+    security = insert(service, "equity_securities", {
+        "owner_id": user_a.id, "name": "Payroll shares", "market": "US", "symbol": symbols["equity"],
+    })
+    equity_grant = insert(service, "equity_grants", {
+        "owner_id": user_a.id, "portfolio_id": pid, "security_id": security["id"],
+        "kind": "RSU", "label": "pytest", "granted_on": "2025-01-01", "quantity": 10,
+    })
+    insert(service, "stock_price_latest", {
+        "market": "US", "symbol": symbols["equity"], "close": 99,
+        "price_date": "2026-11-01", "is_manual": True,
+    })
+    # The same ticker in India remains eligible for automatic pricing.
+    insert(service, "stock_holdings", {
+        **base, "market": "IN", "symbol": symbols["equity"], "currency": "INR",
+    })
     fx_before = rows(service, "fx_latest", pair="eq.USDINR")
 
     nse = FakeProvider("nse", {})  # bhavcopy lacks the symbol: the Yahoo fallback is used
-    yahoo_in = FakeProvider("yahoo", {symbols["india"]: "1500.5"})
+    yahoo_in = FakeProvider("yahoo", {symbols["india"]: "1500.5", symbols["equity"]: "256"})
     yahoo_us = FakeProvider("yahoo", {symbols["us"]: "60.25"})
     try:
         summary = fetch_prices.work(
@@ -221,15 +229,19 @@ def test_fetch_prices_uses_fallbacks_skips_manual_and_stores_fx(
             yahoo_us=yahoo_us,
             usd_inr=lambda d: Quote(Decimal("85.5"), date(2026, 11, 3), "frankfurter"),
         )
-        assert symbols["rsu"] not in yahoo_us.asked
+        assert symbols["equity"] not in yahoo_us.asked
         india = rows(service, "stock_price_latest", symbol=f"eq.{symbols['india']}")[0]
         assert Decimal(str(india["close"])) == Decimal("1500.5") and india["source"] == "yahoo"
-        manual = rows(service, "stock_price_latest", symbol=f"eq.{symbols['rsu']}")[0]
+        manual = rows(service, "stock_price_latest", market="eq.US", symbol=f"eq.{symbols['equity']}")[0]
+        india_shared = rows(service, "stock_price_latest", market="eq.IN", symbol=f"eq.{symbols['equity']}")[0]
+        assert india_shared["close"] == 256
         assert Decimal(str(manual["close"])) == 99
-        assert symbols["india"] not in summary["missing"] and symbols["us"] not in summary["missing"]
+        assert f"IN:{symbols['india']}" not in summary["missing"] and f"US:{symbols['us']}" not in summary["missing"]
         fx = rows(service, "fx_latest", pair="eq.USDINR")
         assert fx and (fx[0]["is_manual"] or summary["fx"] == "frankfurter")
     finally:
+        service.delete("equity_grants", id=f"eq.{equity_grant['id']}").raise_for_status()
+        service.delete("equity_securities", id=f"eq.{security['id']}").raise_for_status()
         # Put the shared USDINR row back as it was, so local data is not disturbed.
         service.delete("fx_latest", pair="eq.USDINR")
         if fx_before:
@@ -273,6 +285,29 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
     insert(service, "fixed_deposits", {**fd, "start_date": "2000-07-01", "maturity_date": "2001-07-01", "principal": 100000, "rate": 7})
     insert(service, "fixed_deposits", {**fd, "start_date": "1999-01-01", "maturity_date": "2000-01-01", "principal": 50000, "rate": 6, "compounding": "yearly"})
 
+    owner = {"owner_id": user_a.id}
+    equity = {**owner, "portfolio_id": portfolio["id"]}
+    company = insert(service, "equity_securities", {
+        **owner, "name": "Private issuer", "market": "PRIVATE", "currency": "INR",
+        "private_price": 100, "private_price_date": "2001-01-01",
+    })
+    grant = insert(service, "equity_grants", {
+        **equity, "security_id": company["id"], "kind": "RSU", "label": "Snapshot award",
+        "granted_on": "2000-01-01", "quantity": 20,
+    })
+    lot = insert(service, "equity_events", {
+        **equity, "grant_id": grant["id"], "kind": "vest", "occurred_on": "2000-08-04",
+        "allotted_on": "2000-08-04", "quantity": 10, "tax_units": 2,
+        "fmv": 85, "currency": "INR", "fx": 1,
+    })
+    sale = insert(service, "equity_sales", {
+        **equity, "security_id": company["id"], "sold_on": "2000-12-31",
+        "price": 110, "currency": "INR", "fx": 1,
+    })
+    insert(service, "equity_sale_lots", {
+        **equity, "sale_id": sale["id"], "event_id": lot["id"], "quantity": 3,
+    })
+
     day = date(2001, 1, 1)  # a date no real snapshot uses, so other users' history is untouched
     try:
         snapshot.work(service, today=day)
@@ -285,9 +320,14 @@ def test_snapshot_writes_one_row_per_portfolio_per_day(
         assert Decimal(str(mine[0]["ppf_balance"])) == Decimal("160650.75")
         assert Decimal(str(mine[0]["nps_value"])) == Decimal("5547.09")  # G has no NAV yet
         assert Decimal(str(mine[0]["fd_value"])) == Decimal("156560.15")  # 184 of 365 days; one matured
+        assert mine[0]["employee_equity_value"] == 500
         assert mine[0]["owner_id"] == user_a.id
     finally:
         service.delete("portfolio_snapshots", snap_date="eq.2001-01-01")
+        service.delete("equity_sales", id=f"eq.{sale['id']}").raise_for_status()
+        service.delete("equity_events", id=f"eq.{lot['id']}").raise_for_status()
+        service.delete("equity_grants", id=f"eq.{grant['id']}").raise_for_status()
+        service.delete("equity_securities", id=f"eq.{company['id']}").raise_for_status()
 
 
 # ---- backup, keepalive, run_job ----
@@ -356,3 +396,27 @@ def test_backup_round_trips_through_age(tmp_path) -> None:  # noqa: ANN001
         ["age", "--decrypt", "--identity", str(key), str(out)], check=True, capture_output=True
     ).stdout
     assert json.loads(plain) == {"tables": {}}
+
+
+def test_fetch_all_pages_owner_rows_past_api_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    from requests import Response
+
+    offsets: list[int] = []
+
+    def request(_client: SupabaseRest, method: str, path: str, *, params: dict[str, str]) -> Response:
+        assert method == "GET" and path == "/rest/v1/equity_events"
+        assert params["order"] == "id" and params["owner_id"] == "eq.owner"
+        start = int(params["offset"])
+        offsets.append(start)
+        end = min(start + int(params["limit"]), 1100)
+        response = Response()
+        response.status_code = 200
+        response._content = json.dumps([{"id": i} for i in range(start, end)]).encode()
+        return response
+
+    monkeypatch.setattr(SupabaseRest, "request", request)
+    client = SupabaseRest("http://127.0.0.1:1", "test")
+    result = joblib.fetch_all(client, "equity_events", page_by="id", owner_id="eq.owner")
+    assert offsets == [0, 500, 1000]
+    assert len(result) == 1100
+    assert result[-1]["id"] == 1099

@@ -7,7 +7,9 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { localIsoDate } from '../../core/calc/common';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { MarketService } from '../../core/data/market.service';
-import { Currency, formatMoney } from '../../shared/format/money';
+import { Market } from '../../core/calc/stocks';
+import { EquityService } from '../../core/data/equity.service';
+import { formatMoney } from '../../shared/format/money';
 import { formatDate } from '../../shared/format/number';
 import { FormErrors } from '../../shared/format/validation';
 import { OverrideForm, OverrideKind, validateOverrideForm } from './settings-calc';
@@ -20,6 +22,8 @@ interface OverrideRow {
   label: string;
   value: string;
   date: string;
+  market?: string;
+  symbol?: string;
 }
 
 /**
@@ -90,6 +94,19 @@ interface OverrideRow {
         />
         <div class="form-row">
           @if (form().kind === 'stock') {
+            <div class="field">
+              <label for="override-market">Market</label>
+              <select
+                pInputText
+                id="override-market"
+                name="market"
+                [ngModel]="stockMarket()"
+                (ngModelChange)="stockMarket.set($event)"
+              >
+                <option value="IN">India</option>
+                <option value="US">US</option>
+              </select>
+            </div>
             <div class="field">
               <label for="override-symbol">Symbol</label>
               <app-suggest-input
@@ -164,8 +181,10 @@ interface OverrideRow {
 })
 export class PricesSection {
   private readonly holdings = inject(HoldingsService);
+  private readonly equity = inject(EquityService);
   private readonly market = inject(MarketService);
   protected readonly today = localIsoDate();
+  protected readonly stockMarket = signal<Market>('IN');
   protected readonly kinds: { label: string; value: OverrideKind }[] = [
     { label: 'Stock price', value: 'stock' },
     { label: 'USD/INR rate', value: 'usdinr' },
@@ -181,23 +200,27 @@ export class PricesSection {
   protected readonly busy = signal(false);
   protected readonly message = signal<{ severity: 'success' | 'error'; text: string } | null>(null);
 
-  /** Currency per symbol: US stocks and RSUs are in USD. */
-  private readonly currencyOf = computed(() => {
-    const map = new Map<string, Currency>();
-    for (const s of this.holdings.stocks()) map.set(s.symbol, s.currency === 'USD' ? 'USD' : 'INR');
-    for (const g of this.holdings.rsu()) map.set(g.symbol, 'USD');
-    return map;
+  protected readonly symbols = computed(() => {
+    const market = this.stockMarket();
+    const symbols = [
+      ...this.holdings
+        .stocks()
+        .filter((s) => s.market === market)
+        .map((s) => s.symbol),
+      ...this.equity
+        .ledger()
+        .securities.filter((s) => s.market === market)
+        .flatMap((s) => (s.symbol ? [s.symbol] : [])),
+    ];
+    return [...new Set(symbols)].sort((a, b) => a.localeCompare(b));
   });
-  protected readonly symbols = computed(() =>
-    [...this.currencyOf().keys()].sort((a, b) => a.localeCompare(b)),
+  protected readonly priceLabel = computed(() =>
+    this.form().kind === 'usdinr'
+      ? 'Rate (₹ per $1)'
+      : this.stockMarket() === 'US'
+        ? 'Price ($)'
+        : 'Price (₹)',
   );
-  protected readonly priceLabel = computed(() => {
-    const f = this.form();
-    if (f.kind === 'usdinr') return 'Rate (₹ per $1)';
-    return this.currencyOf().get(f.symbol.trim().toUpperCase()) === 'USD'
-      ? 'Price ($)'
-      : 'Price (₹)';
-  });
   protected readonly autoRate = computed(() => {
     const fx = this.holdings.fx().find((r) => r.pair === 'USDINR');
     return fx ? `₹${fx.rate} (${formatDate(fx.rate_date)}${fx.is_manual ? ', manual' : ''})` : '';
@@ -208,9 +231,14 @@ export class PricesSection {
       .filter((p) => p.is_manual)
       .map((p) => ({
         kind: 'stock',
-        key: `stock:${p.symbol}`,
-        label: p.symbol,
-        value: formatMoney(p.close, this.currencyOf().get(p.symbol) ?? 'INR', { digits: 2 }),
+        key: `stock:${p.market}:${p.symbol}`,
+        label: `${p.symbol} (${p.market === 'UNASSIGNED' ? 'choose market' : p.market})`,
+        market: p.market,
+        symbol: p.symbol,
+        value:
+          p.market === 'UNASSIGNED'
+            ? String(p.close)
+            : formatMoney(p.close, p.market === 'US' ? 'USD' : 'INR', { digits: 2 }),
         date: formatDate(p.price_date),
       }));
     const fx = this.holdings.fx().find((r) => r.pair === 'USDINR' && r.is_manual);
@@ -226,6 +254,10 @@ export class PricesSection {
     return rows;
   });
 
+  constructor() {
+    void this.equity.load();
+  }
+
   protected set<K extends keyof OverrideForm>(key: K, value: OverrideForm[K]): void {
     this.form.update((f) => ({ ...f, [key]: value }));
   }
@@ -238,7 +270,7 @@ export class PricesSection {
       () =>
         value.kind === 'usdinr'
           ? this.market.setUsdInr(value.price, value.date)
-          : this.market.setStockPrice(value.symbol, value.price, value.date),
+          : this.market.setStockPrice(this.stockMarket(), value.symbol, value.price, value.date),
       `Saved the manual ${value.kind === 'usdinr' ? 'USD/INR rate' : `price for ${value.symbol}`}.`,
     );
     if (this.message()?.severity === 'success') {
@@ -251,7 +283,7 @@ export class PricesSection {
       () =>
         row.kind === 'usdinr'
           ? this.market.removeUsdInrOverride()
-          : this.market.removeStockOverride(row.label),
+          : this.market.removeStockOverride(row.market ?? '', row.symbol ?? ''),
       `Removed the manual price for ${row.label}. The next price job fills it in again.`,
     );
   }

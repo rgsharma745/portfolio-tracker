@@ -145,16 +145,12 @@ describe('HoldingsService', () => {
       {
         mf_holdings: duplicate,
         stock_holdings: duplicate,
-        rsu_grants: duplicate,
         savings_accounts: duplicate,
       },
     );
     const row = {} as never;
     expect(await holdings.saveMf(row)).toBe('This fund and folio are already in that portfolio.');
     expect(await holdings.saveStock(row)).toBe('This stock is already in that portfolio.');
-    expect(await holdings.saveRsu(row, 'g')).toBe(
-      'A grant with this label already exists for that symbol.',
-    );
     expect(await holdings.saveSavings(row)).toBe('This bank is already in that portfolio.');
     expect(await holdings.remove('stock_holdings', 's')).toBe('This already exists.');
   });
@@ -194,19 +190,20 @@ describe('MarketService', () => {
 
   it('saves manual overrides the jobs will not overwrite, then reloads the holdings', async () => {
     const { market, writes, calls } = create();
-    expect(await market.setStockPrice('AAPL', 190.5, '2026-11-10')).toBeNull();
+    expect(await market.setStockPrice('US', 'AAPL', 190.5, '2026-11-10')).toBeNull();
     expect(await market.setUsdInr(84.2, '2026-11-10')).toBeNull();
     expect(writes().map((c) => [c.table, ...c.args])).toEqual([
       [
         'stock_price_latest',
         {
+          market: 'US',
           symbol: 'AAPL',
           close: 190.5,
           price_date: '2026-11-10',
           source: 'manual',
           is_manual: true,
         },
-        { onConflict: 'symbol' },
+        { onConflict: 'market,symbol' },
       ],
       [
         'fx_latest',
@@ -219,10 +216,11 @@ describe('MarketService', () => {
 
   it('removes only manual rows, handing the symbol back to the jobs', async () => {
     const { market, writes } = create();
-    await market.removeStockOverride('AAPL');
+    await market.removeStockOverride('US', 'AAPL');
     await market.removeUsdInrOverride();
     expect(writes().map((c) => [c.table, c.op, ...c.args])).toEqual([
       ['stock_price_latest', 'delete'],
+      ['stock_price_latest', 'eq', 'market', 'US'],
       ['stock_price_latest', 'eq', 'symbol', 'AAPL'],
       ['stock_price_latest', 'eq', 'is_manual', true],
       ['fx_latest', 'delete'],
@@ -233,7 +231,7 @@ describe('MarketService', () => {
 
   it('reports a rejected price instead of reloading', async () => {
     const { market, calls } = create({}, { stock_price_latest: { code: '23514' } });
-    expect(await market.setStockPrice('AAPL', -1, '2026-11-10')).toBe(
+    expect(await market.setStockPrice('US', 'AAPL', -1, '2026-11-10')).toBe(
       'Check the numbers: one of them is not allowed.',
     );
     expect(calls.some((c) => c.table === 'mf_holdings')).toBe(false);

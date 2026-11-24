@@ -38,13 +38,24 @@ def service_client() -> SupabaseRest:
     return SupabaseRest(url, key)
 
 
-def fetch_all(db: SupabaseRest, table: str, columns: str = "*", **filters: str) -> list[dict[str, Any]]:
-    """Reads a whole (small) table with the service role."""
-    resp = db.request("GET", f"/rest/v1/{table}", params={"select": columns, **filters})
-    if resp.status_code != 200:
-        raise JobError(f"Could not read {table} (HTTP {resp.status_code})")
-    rows: list[dict[str, Any]] = resp.json()
-    return rows
+def fetch_all(
+    db: SupabaseRest, table: str, columns: str = "*", *, page_by: str | None = None,
+    **filters: str,
+) -> list[dict[str, Any]]:
+    """Read rows with the service role. Pass a unique sort key for tables that can grow."""
+    params = {"select": columns, **filters}
+    rows: list[dict[str, Any]] = []
+    page_size = 500
+    while True:
+        if page_by:
+            params.update(order=page_by, limit=str(page_size), offset=str(len(rows)))
+        response = db.request("GET", f"/rest/v1/{table}", params=params)
+        if response.status_code not in (200, 206):
+            raise JobError(f"Could not read {table} (HTTP {response.status_code})")
+        batch = response.json()
+        rows.extend(batch)
+        if not page_by or len(batch) < page_size:
+            return rows
 
 
 def record_run(

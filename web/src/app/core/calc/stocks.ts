@@ -27,6 +27,7 @@ export interface StockHoldingInput {
 }
 
 export interface PriceRow {
+  market: string;
   symbol: string;
   close: number;
   price_date: string;
@@ -42,10 +43,17 @@ export interface FxRow {
 
 export type PriceQuotes = ReadonlyMap<string, Quote>;
 
-/** Indexes `stock_price_latest` rows by symbol (also used for RSU prices). */
+export function quoteKey(market: string, symbol: string): string {
+  return `${market}:${symbol}`;
+}
+
+/** Indexes listed quotes by market and ticker. */
 export function priceQuotes(rows: readonly PriceRow[]): PriceQuotes {
   return new Map(
-    rows.map((r) => [r.symbol, { price: r.close, date: r.price_date, prevPrice: r.prev_close }]),
+    rows.map((r) => [
+      quoteKey(r.market, r.symbol),
+      { price: r.close, date: r.price_date, prevPrice: r.prev_close },
+    ]),
   );
 }
 
@@ -78,7 +86,7 @@ export function valueStockHolding(
   const native = valueHolding(
     holding.quantity,
     holding.invested,
-    prices.get(holding.symbol),
+    prices.get(quoteKey(holding.market, holding.symbol)),
     today,
   );
   if (currency === 'INR') return { currency, native, inr: native };

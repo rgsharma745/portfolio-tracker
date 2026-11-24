@@ -51,8 +51,24 @@ def seed(db: SupabaseRest, owner_id: str) -> None:
         })
     add(db, "stock_holdings", {**o, "portfolio_id": q, "market": "US", "symbol": "AAPL",
                                "currency": "USD", "quantity": 3, "invested": "450.25"})
-    add(db, "rsu_grants", {**o, "portfolio_id": p, "symbol": "AAPL", "grant_label": "G1",
-                           "units_granted": 100, "units_vested": 40, "tax_rate": "0.3"})
+    security = add(db, "equity_securities", {**o, "name": "AAPL Inc", "symbol": "AAPL"})
+    g = {**o, "portfolio_id": p}
+    grant = add(db, "equity_grants", {
+        **g, "security_id": security, "kind": "RSU", "label": "G1",
+        "granted_on": "2024-05-01", "quantity": 100,
+    })
+    tranche = add(db, "equity_schedule", {
+        **g, "grant_id": grant, "scheduled_on": "2025-06-01", "quantity": 40,
+    })
+    event = add(db, "equity_events", {
+        **g, "grant_id": grant, "schedule_id": tranche, "kind": "vest", "occurred_on": "2025-06-01",
+        "allotted_on": "2025-06-01", "quantity": 40, "fmv": 20, "fx": "85.0001", "currency": "USD",
+    })
+    sale = add(db, "equity_sales", {
+        **g, "security_id": security, "sold_on": "2025-07-01", "price": 25, "fx": 85,
+        "currency": "USD",
+    })
+    add(db, "equity_sale_lots", {**g, "sale_id": sale, "event_id": event, "quantity": 10})
     add(db, "savings_accounts", {**o, "portfolio_id": p, "bank": "HDFC", "balance": "-1500.50"})
     add(db, "pf_entries", {**o, "portfolio_id": p, "company": "Acme", "wage_month": "Oct",
                            "wage_year": 2026, "transaction_date": "2026-11-05",
@@ -333,5 +349,19 @@ def test_backup_covers_the_same_tables_as_the_app_export() -> None:
     # The owner's JSON export (Settings) and the weekly backup must list the same tables.
     source = (Path(__file__).resolve().parents[2]
               / "web/src/app/core/data/export.service.ts").read_text()
-    block = source[source.index("EXPORT_TABLES = ["):source.index("] as const")]
-    assert re.findall(r"'([a-z_]+)'", block) == list(TABLES)
+    equity = source.split("EQUITY_TABLES = [", 1)[1].split("] as const", 1)[0]
+    block = source.split("EXPORT_TABLES = [", 1)[1].split("] as const", 1)[0]
+    assert re.findall(r"'([a-z_]+)'", block.replace("...EQUITY_TABLES", equity)) == list(TABLES)
+
+
+def test_legacy_rsu_backup_restores_other_assets(tmp_path: Path) -> None:
+    path = tmp_path / "backup.json"
+    legacy_snapshot = {"id": "snapshot", "owner_id": "owner", "mf_value": 100, "rsu_vested_value": 200}
+    path.write_text(json.dumps({"tables": {
+        "rsu_grants": [{"owner_id": "owner"}],
+        "portfolio_snapshots": [legacy_snapshot],
+    }}))
+    loaded = tool.load_backup(path)
+    assert "rsu_grants" not in loaded
+    assert loaded["equity_grants"] == []
+    assert loaded["portfolio_snapshots"] == [{"id": "snapshot", "owner_id": "owner", "mf_value": 100}]

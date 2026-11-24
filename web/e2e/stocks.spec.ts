@@ -22,8 +22,8 @@ test('stocks: India and US tabs, INR toggle, add and edit', async ({ page }, tes
   const ownerId = await ensureUser(HOLDINGS_EMAIL);
   const ids = await seedPortfolios(ownerId, ['Me']);
   await adminUpsert('stock_price_latest', [
-    { symbol: 'E2EIN', close: 150, price_date: daysAgo(0), prev_close: 140 },
-    { symbol: 'E2EUS', close: 60, price_date: daysAgo(1), prev_close: 62 },
+    { market: 'IN', symbol: 'E2EIN', close: 150, price_date: daysAgo(0), prev_close: 140 },
+    { market: 'US', symbol: 'E2EUS', close: 60, price_date: daysAgo(1), prev_close: 62 },
   ]);
   await adminUpsert('fx_latest', [{ pair: 'USDINR', rate: 85, rate_date: daysAgo(0) }]);
   await adminInsert('stock_holdings', [

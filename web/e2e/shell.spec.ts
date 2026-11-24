@@ -5,7 +5,7 @@ const PAGES = [
   { label: 'Overview', heading: 'Overview' },
   { label: 'Mutual funds', heading: 'Mutual funds' },
   { label: 'Stocks', heading: 'Stocks' },
-  { label: 'RSU', heading: 'RSU' },
+  { label: 'Employee equity', heading: 'Employee equity' },
   { label: 'Savings', heading: 'Savings' },
   { label: 'Provident fund', heading: 'Provident fund' },
   { label: 'Credit cards', heading: 'Credit cards' },

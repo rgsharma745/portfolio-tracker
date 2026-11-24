@@ -110,10 +110,7 @@ export class CardTemplate {
             </tr>
           </ng-template>
           <ng-template #body let-row>
-            <tr
-              [class.row-clickable]="rowClickable()"
-              (click)="rowClickable() && rowOpen.emit(row)"
-            >
+            <tr [class.row-clickable]="rowClickable()" (click)="openRow(row, $event)">
               @for (col of columns(); track col.key) {
                 <td [class.num]="isNumeric(col)">
                   <ng-container
@@ -350,6 +347,17 @@ export class DataTable<T extends object> {
     table: { 'aria-label': this.label() },
     tableContainer: { tabindex: '0', role: 'region', 'aria-label': this.label() + ' scroll area' },
   }));
+
+  protected openRow(row: T, event: MouseEvent): void {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest('button, a, input, select, textarea, details')
+    ) {
+      return;
+    }
+    if (this.rowClickable()) this.rowOpen.emit(row);
+  }
 
   protected trackKey(row: T): unknown {
     return (row as Record<string, unknown>)[this.dataKey()];

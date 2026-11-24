@@ -1,0 +1,283 @@
+<div class="page-stack">
+  @if (equity.error(); as message) {
+    <app-error-state [message]="message" (retry)="equity.load()" />
+  } @else if (!equity.loaded()) {
+    <app-list-skeleton [rows]="5" />
+  } @else {
+    <search class="equity-filters" aria-label="Filter employee equity">
+      <div class="field">
+        <label for="equity-filter-company">Company</label>
+        <select
+          id="equity-filter-company"
+          [ngModel]="company()"
+          (ngModelChange)="company.set($event)"
+        >
+          <option value="">All companies</option>
+          @for (security of companies(); track security.id) {
+            <option [value]="security.id">
+              {{ security.name }}{{ security.symbol ? ' · ' + security.symbol : '' }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label for="equity-filter-type">Grant type</label>
+        <select
+          id="equity-filter-type"
+          [ngModel]="grantType()"
+          (ngModelChange)="grantType.set($event)"
+        >
+          <option value="">All types</option>
+          <option value="RSU">RSU</option>
+          <option value="ESOP">ESOP</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="equity-filter-grant">Grant</label>
+        <select
+          id="equity-filter-grant"
+          [ngModel]="grantId()"
+          (ngModelChange)="grantId.set($event)"
+        >
+          <option value="">All grants</option>
+          @for (grant of grantOptions(); track grant.id) {
+            <option [value]="grant.id">{{ grant.label }}</option>
+          }
+        </select>
+      </div>
+    </search>
+
+    @if (totals(); as summary) {
+      <section class="stats-grid equity-stats" aria-label="Employee equity balances">
+        <app-stat-card
+          label="Current value"
+          [value]="summary.unpriced && !summary.priced ? null : summary.value"
+          [note]="summary.unpriced ? 'Partial valuation' : ''"
+        />
+        <app-stat-card
+          label="Unrealized P&L"
+          [value]="summary.unpriced && !summary.priced ? null : summary.unrealized"
+          [signed]="true"
+        />
+        <app-stat-card
+          label="Realized P&L"
+          [value]="summary.realized"
+          [signed]="true"
+          [note]="realizedEstimated() ? 'Includes sales at trade FX' : ''"
+        />
+        <app-stat-card label="INR received in bank" [value]="summary.received" />
+        <app-stat-card label="Purchase cost" [value]="summary.purchase" />
+        <app-stat-card label="Reported taxes paid" [value]="summary.taxes" />
+      </section>
+      @if (summary.unpriced) {
+        <p class="section-hint" role="status">
+          {{ summary.unpriced }} {{ summary.unpriced === 1 ? 'lot needs' : 'lots need' }} a price or
+          USD/INR rate.
+        </p>
+      }
+      <dl class="app-card equity-counts" aria-label="Share and option quantities">
+        <div>
+          <dt>Granted</dt>
+          <dd>{{ units(summary.granted) }}</dd>
+        </div>
+        <div>
+          <dt>Vested</dt>
+          <dd>{{ units(summary.vested) }}</dd>
+        </div>
+        <div>
+          <dt>Pending vesting</dt>
+          <dd>{{ units(summary.pending) }}</dd>
+        </div>
+        <div>
+          <dt>Options exercised</dt>
+          <dd>{{ units(summary.exercised) }}</dd>
+        </div>
+        <div>
+          <dt>Withheld or sold for tax</dt>
+          <dd>{{ units(summary.taxUnits) }}</dd>
+        </div>
+        <div>
+          <dt>Voluntarily sold</dt>
+          <dd>{{ units(summary.sold) }}</dd>
+        </div>
+        <div>
+          <dt>Shares held</dt>
+          <dd>{{ units(summary.held) }}</dd>
+        </div>
+      </dl>
+    }
+
+    @if (upcoming().length && view() !== 'Vesting') {
+      <section class="app-card vesting-preview" aria-labelledby="equity-upcoming">
+        <div class="equity-heading">
+          <h2 id="equity-upcoming" class="section-title">Upcoming and overdue vesting</h2>
+          <button pButton type="button" text (click)="changeView('Vesting')">View vesting</button>
+        </div>
+        <ul>
+          @for (row of upcoming().slice(0, 5); track row.id) {
+            <li>
+              <span
+                ><strong>{{ row.name }}</strong> · {{ row.subtitle }}</span
+              >
+              <span class="app-num"
+                >{{ date(row.date) }} · {{ units(row.quantity)
+                }}{{ row.status === 'Overdue' ? ' · Overdue' : '' }}</span
+              >
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="page-stack" aria-labelledby="equity-ledger-title">
+      <div class="equity-switch" role="group" aria-label="Ledger view">
+        @for (section of views; track section) {
+          <button
+            pButton
+            type="button"
+            [outlined]="section !== view()"
+            [attr.aria-pressed]="section === view()"
+            (click)="changeView(section)"
+          >
+            {{ section }}
+          </button>
+        }
+      </div>
+      <div class="equity-heading">
+        <h2 class="section-title" id="equity-ledger-title">{{ view() }}</h2>
+        <div class="equity-actions">
+          @switch (view()) {
+            @case ('Companies') {
+              <button pButton type="button" (click)="add('company')">Add company</button>
+            }
+            @case ('Grants') {
+              <button pButton type="button" outlined (click)="add('company')">Add company</button>
+              @if (companies().length) {
+                <button pButton type="button" (click)="add('grant')">Add grant</button>
+              }
+            }
+            @case ('Vesting') {
+              <button
+                pButton
+                type="button"
+                outlined
+                [disabled]="!grantOptions().length"
+                (click)="add('schedule')"
+              >
+                Add tranche
+              </button>
+              <button
+                pButton
+                type="button"
+                [disabled]="!grantOptions().length"
+                (click)="add('vest')"
+              >
+                Record vesting
+              </button>
+            }
+            @case ('Exercises') {
+              <button
+                pButton
+                type="button"
+                [disabled]="!grantOptions().length"
+                (click)="add('exercise')"
+              >
+                Record exercise
+              </button>
+            }
+            @case ('Sales') {
+              <button
+                pButton
+                type="button"
+                [disabled]="!grantOptions().length"
+                (click)="add('sale')"
+              >
+                Record sale
+              </button>
+            }
+          }
+        </div>
+      </div>
+
+      @if (!rows().length) {
+        <app-empty-state
+          icon="pi-briefcase"
+          [title]="'No ' + view().toLowerCase() + ' to show'"
+          [message]="companies().length ? '' : 'Add a company before recording its first grant.'"
+        />
+      } @else {
+        <app-data-table
+          [label]="view()"
+          [rows]="rows()"
+          [columns]="columns()"
+          [footer]="footer()"
+          [sort]="sort()"
+          (sortChange)="sort.set($event)"
+          [rowClickable]="true"
+          (rowOpen)="edit($event)"
+          minWidth="38rem"
+        >
+          <ng-template appCell="name" let-row>
+            <button
+              class="entry-button"
+              type="button"
+              [attr.aria-label]="'Edit ' + row.name"
+              (click)="edit(row); $event.stopPropagation()"
+            >
+              {{ row.name }}
+            </button>
+            @if (row.subtitle) {
+              <p class="section-hint">{{ row.subtitle }}</p>
+            }
+          </ng-template>
+          <ng-template appCell="details" let-row>
+            <ng-container *ngTemplateOutlet="entryDetails; context: { $implicit: row }" />
+          </ng-template>
+          <ng-template appCard let-row>
+            <article class="app-card entry-card">
+              <div class="equity-heading">
+                <button
+                  class="entry-button"
+                  type="button"
+                  [attr.aria-label]="'Edit ' + row.name"
+                  (click)="edit(row)"
+                >
+                  {{ row.name }}
+                </button>
+                <span class="app-num">{{ row.value === null ? '' : (row.value | money) }}</span>
+              </div>
+              @if (row.subtitle) {
+                <p class="section-hint">{{ row.subtitle }}</p>
+              }
+              <div class="entry-meta">
+                <span>{{ row.status }}{{ row.date ? ' · ' + date(row.date) : '' }}</span>
+                @if (row.quantity !== null) {
+                  <span>Qty {{ units(row.quantity) }}</span>
+                }
+              </div>
+              <ng-container *ngTemplateOutlet="entryDetails; context: { $implicit: row }" />
+            </article>
+          </ng-template>
+        </app-data-table>
+      }
+    </section>
+  }
+</div>
+
+<ng-template #entryDetails let-row>
+  @if (row.details.length) {
+    <details class="entry-details">
+      <summary [attr.aria-label]="'Details for ' + row.name">Details</summary>
+      <dl>
+        @for (detail of row.details; track $index) {
+          <div>
+            <dt>{{ detail.label }}</dt>
+            <dd>{{ detail.value }}</dd>
+          </div>
+        }
+      </dl>
+    </details>
+  }
+</ng-template>
+
+<app-equity-editor [initial]="draft()" (closed)="draft.set(null)" />

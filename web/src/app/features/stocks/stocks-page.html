@@ -17,14 +17,18 @@
     <div class="market-bar">
       <span id="market-label" class="visually-hidden">Market</span>
       <p-selectbutton
-        [options]="marketTabs()"
+        [options]="markets"
         optionLabel="label"
         optionValue="value"
         [ngModel]="market()"
         (ngModelChange)="setMarket($event)"
         [allowEmpty]="false"
         ariaLabelledBy="market-label"
-      />
+      >
+        <ng-template #item let-option>
+          {{ option.label }} ({{ option.value === 'IN' ? counts().IN : counts().US }})
+        </ng-template>
+      </p-selectbutton>
       @if (market() === 'US') {
         <span class="inr-toggle">
           <p-toggleswitch

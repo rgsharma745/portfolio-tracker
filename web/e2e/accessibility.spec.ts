@@ -19,7 +19,7 @@ const PAGES = [
   '/mutual-funds',
   '/stocks',
   '/dividends',
-  '/rsu',
+  '/employee-equity',
   '/savings',
   '/pf',
   '/ppf',
@@ -57,7 +57,14 @@ async function seedAuditData(): Promise<void> {
     { scheme_code: 'e2e-a11y-1', nav: 50, nav_date: today, prev_nav: 49 },
   ]);
   await adminUpsert('stock_price_latest', [
-    { symbol: 'E2EA11Y', close: 120, price_date: today, prev_close: 125, source: 'nse' },
+    {
+      market: 'IN',
+      symbol: 'E2EA11Y',
+      close: 120,
+      price_date: today,
+      prev_close: 125,
+      source: 'nse',
+    },
   ]);
   await adminUpsert('fx_latest', [{ pair: 'USDINR', rate: 85, rate_date: today }]);
   await adminInsert('mf_holdings', [
@@ -99,17 +106,33 @@ async function seedAuditData(): Promise<void> {
       invested: 1300,
     },
   ]);
-  await adminInsert('rsu_grants', [
+  const [{ id: securityId }] = await adminInsert('equity_securities', [
+    { owner_id: ownerId, name: 'E2E Emmy', market: 'IN', currency: 'INR', symbol: 'E2EA11Y' },
+  ]);
+  const [{ id: grantId }] = await adminInsert('equity_grants', [
     {
       owner_id: ownerId,
       portfolio_id: ids['Me'],
-      symbol: 'E2EA11Y',
-      grant_label: 'E2E 2025',
-      grant_date: '2025-03-15',
-      units_granted: 100,
-      units_vested: 40,
-      units_sold_for_tax: 12,
-      tax_rate: 0.3,
+      security_id: securityId,
+      kind: 'RSU',
+      label: 'E2E 2025',
+      granted_on: '2025-03-15',
+      quantity: 100,
+    },
+  ]);
+  await adminInsert('equity_events', [
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      grant_id: grantId,
+      kind: 'vest',
+      occurred_on: '2025-06-15',
+      allotted_on: '2025-06-15',
+      quantity: 40,
+      tax_units: 12,
+      fmv: 100,
+      currency: 'INR',
+      fx: 1,
     },
   ]);
   await adminInsert('savings_accounts', [
@@ -309,6 +332,20 @@ for (const theme of ['light', 'dark'] as const) {
     await page.keyboard.press('Escape');
     await dividendDialog.getByRole('button', { name: 'Cancel' }).click();
     await expect(dividendDialog).toBeHidden();
+
+    await page.goto('/employee-equity');
+    const addGrant = page.getByRole('button', { name: 'Add grant', exact: true });
+    await addGrant.focus();
+    await addGrant.press('Enter');
+    const grantDialog = page.getByRole('dialog', { name: 'Add grant' });
+    await audit(page, 'employee equity grant');
+    await grantDialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(addGrant).toBeFocused();
+    await page.getByRole('button', { name: 'Sales', exact: true }).click();
+    await page.getByRole('button', { name: 'Record sale' }).click();
+    const saleDialog = page.getByRole('dialog', { name: 'Add sale' });
+    await audit(page, 'employee equity sale');
+    await saleDialog.getByRole('button', { name: 'Cancel' }).click();
 
     // The NPS dialogs: a contribution (with its Self/Employer switch) and Update units.
     await page.goto('/nps');

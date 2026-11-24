@@ -213,6 +213,7 @@ sharedRowsTest('manual prices, job runs and data export', async ({ page }) => {
 
   // Manual price: validation, then a USD price for a US stock
   const prices = page.getByRole('region', { name: 'Manual prices' });
+  await prices.getByLabel('Market').selectOption('US');
   await prices.getByRole('combobox', { name: 'Symbol' }).fill('E2EMANUAL');
   await prices.getByRole('button', { name: 'Set manual price' }).click();
   await expect(prices.getByText('Enter the price.')).toBeVisible();
@@ -233,7 +234,7 @@ sharedRowsTest('manual prices, job runs and data export', async ({ page }) => {
   expect(Object.keys(data.tables)).toContain('card_bills');
 
   // Remove the manual price: the row goes, so the jobs take the symbol back
-  await prices.getByRole('button', { name: 'Remove manual price for E2EMANUAL' }).click();
+  await prices.getByRole('button', { name: 'Remove manual price for E2EMANUAL (US)' }).click();
   await expect(prices.getByRole('list', { name: 'Manual prices' })).toBeHidden();
   await adminDelete('job_runs', { job: 'eq.fetch_nav' });
 });

@@ -20,13 +20,21 @@ The first run is preview-only. If there are multiple active portfolios, choose o
 
 On the PF page, **Add next month** opens the wage month after a company's last contribution, credited a month after it, with the same amounts, so each month is usually one tap on Save; **Add interest** records an interest credit by its transaction date (it counts for that date's financial year).
 
-For stocks, enter either the amount invested or the average price; the app works out the other from the quantity. RSU tax rates are entered as a percentage (30 for 30%).
+For stocks, enter either the amount invested or the average price; the app works out the other from the quantity.
 
 **Try it locally first** if you like: `cd web && npm run db:start && npm run start:local` gives you a throwaway copy of the app and database on your machine (see AGENTS.md).
 
 1. `portfolios`
-2. `mf_holdings`, `mf_transactions` (normally created by the CAS CLI), `stock_holdings`, `rsu_grants`, `savings_accounts`, `pf_entries`, `credit_cards` (each needs a `portfolio_id`)
+2. `mf_holdings`, `mf_transactions` (normally created by the CAS CLI), `stock_holdings`, `savings_accounts`, `pf_entries`, `credit_cards` (each needs a `portfolio_id`)
 3. `card_bills` (needs a `card_id`)
+
+## Employee equity
+
+1. Add a company in Employee equity. Choose US listed (USD), India listed (INR) or Private (USD or INR). Enter a date with any private value per share.
+2. Add the company's award to a portfolio. Add dated tranches and link each recorded vest to its tranche when available.
+3. Record RSU vesting with FMV and shares withheld or sold for tax. For ESOPs, record option vesting, then exercise and share allotment. Enter the historical FX from the statement. If you record actual INR tax on the lot, include any amount paid from sale proceeds.
+4. Record the sale with quantities for each lot and any cashless exercise or tax deductions in the sale currency. Edit the sale to add the INR bank credit and date when available.
+5. Reconcile held shares against the broker statement and actual receipts against the bank. Enter shares managed by this ledger once under Employee equity so they contribute once to Overview.
 
 ## Important: owner_id
 The dashboard and SQL editor run without a logged-in user, so the default `auth.uid()` is empty there. Always supply `owner_id` yourself: your user UUID from Supabase > Authentication > Users. Rows without the right `owner_id` are invisible in the app (RLS) or rejected.
@@ -135,7 +143,6 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 | `portfolios` | `owner_id,name,sort_order` |
 | `mf_holdings` | `owner_id,portfolio_id,scheme_code,scheme_name,folio,units,invested` |
 | `stock_holdings` | `owner_id,portfolio_id,market,symbol,name,currency,quantity,avg_price,invested` |
-| `rsu_grants` | `owner_id,portfolio_id,symbol,grant_label,grant_date,units_granted,units_vested,units_sold_for_tax,tax_rate` |
 | `savings_accounts` | `owner_id,portfolio_id,bank,balance` |
 | `pf_entries` | `owner_id,portfolio_id,company,contribution_type,wage_month,wage_year,transaction_date,employee_amount,employer_amount,pension_amount` |
 | `ppf_entries` | `owner_id,portfolio_id,account,entry_type,entry_date,amount` |
@@ -166,6 +173,6 @@ Include `owner_id` and the parent id columns (`portfolio_id`, `card_id`) with re
 - Open Settings › Data check. Before the jobs have run it lists every fund and stock as "no NAV yet" / "without a price"; that is expected.
 - Run the NAV and price jobs once (GitHub Actions > Run workflow), then re-run the Data check. Anything still listed needs fixing:
   - **Funds without a scheme code** / **scheme codes not found in the AMFI file**: correct `scheme_code`.
-  - **Stocks or RSU grants without a price**: correct `symbol`, or set a manual price in Settings.
+  - **Stocks or employee equity lots without a value**. Check the market and ticker, private valuation or USD/INR.
   - **Cards missing a bill day or due day**: set `bill_day` and `due_day`.
 - Only active portfolios are checked.

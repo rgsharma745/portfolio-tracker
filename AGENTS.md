@@ -3,7 +3,7 @@
 Instructions for AI coding agents (Claude Code) working on this repo. Read this fully before making changes. Also read `PLAN.md` and the files in `docs/`.
 
 ## Project summary
-Personal portfolio tracker for ONE login (the owner), with several portfolios under it (for example the owner and the owner's wife; portfolios are labels, not accounts). It tracks Indian mutual funds, stocks (India and US), RSUs, savings balances and credit card dues. Data lives in Supabase Postgres. The site is a static Angular app on Cloudflare Workers (static assets only). Scheduled GitHub Actions load daily NAVs and prices. It replaces an existing Google Sheet and must reach feature parity with it (see `docs/SHEET_MAPPING.md`).
+Personal portfolio tracker for ONE login (the owner), with several portfolios under it (for example the owner and the owner's wife; portfolios are labels, not accounts). It tracks Indian mutual funds, stocks (India and US), employee equity (RSUs and ESOPs), savings balances and credit card dues. Data lives in Supabase Postgres. The site is a static Angular app on Cloudflare Workers (static assets only). Scheduled GitHub Actions load daily NAVs and prices. It replaces an existing Google Sheet and must reach feature parity with it (see `docs/SHEET_MAPPING.md`).
 
 ## Tech stack (do not swap without asking)
 - Angular (latest stable), standalone components, signals, TypeScript strict mode
@@ -58,8 +58,8 @@ scripts/              Python: NAV/price jobs, snapshot, backup
 2. **Secrets.** The Supabase service role key is only used in `scripts/` and GitHub Actions. It must never appear in `web/`, in logs, or in git. Never commit `.env`.
 3. **Money.** Use Postgres `numeric` for money and units, never floats. In TypeScript keep values as numbers only for display math and round only at the display layer. Format INR with the `en-IN` locale (lakh/crore grouping, e.g. ₹56,74,412). Format USD with `en-US`.
 4. **Migrations.** Schema changes only through a new numbered file in `supabase/migrations/`. Never edit a migration that has already been applied.
-5. **Keep it light.** No NAV or price history tables: market data is latest-only (see `docs/DATA_MODEL.md`). The owner has requested ledgers for `mf_transactions` (CAMS CAS transaction rows), `pf_entries` (PF passbook), `ppf_entries` (PPF passbook), `nps_contributions` (NPS contributions), and `dividends` (dividends received). No other ledgers without asking.
-5a. **Portfolios.** Every holding, savings account, card and RSU grant belongs to a `portfolio_id`. Totals default to all active portfolios; the portfolio switcher scopes every page.
+5. **Keep it light.** No NAV or price history tables: market data is latest-only (see `docs/DATA_MODEL.md`). The owner has requested ledgers for `mf_transactions` (CAMS CAS transaction rows), `pf_entries` (PF passbook), `ppf_entries` (PPF passbook), `nps_contributions` (NPS contributions), `dividends` (dividends received), and the employee equity ledger. No other ledgers without asking.
+5a. **Portfolios.** Every holding, savings account, card and employee equity grant belongs to a `portfolio_id`. Totals default to all active portfolios; the portfolio switcher scopes every page.
 5b. **Credit cards are monthly.** Bills are one row per card per month (`card_bills`) with a derived status; never store status or a single "pending amount" on the card.
 5c. **No invented data.** Never hardcode sample portfolio values in production code. Use fixtures only in tests.
 6. **One login.** Public sign-up is disabled. Do not build registration, per-portfolio logins or sharing features.
