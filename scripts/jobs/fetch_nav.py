@@ -58,7 +58,7 @@ def parse_nav_file(text: str, wanted: set[str]) -> tuple[dict[str, Nav], int]:
 
 
 def held_codes(db: SupabaseRest) -> set[str]:
-    rows = fetch_all(db, "mf_holdings", "scheme_code", scheme_code="not.is.null")
+    rows = fetch_all(db, "mf_holdings", "scheme_code", scheme_code="not.is.null", units="gt.0")
     return {str(r["scheme_code"]).strip() for r in rows if str(r["scheme_code"]).strip()}
 
 

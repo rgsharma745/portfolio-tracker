@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mfXirr, mfXirrByFolio } from './mf-transactions';
+import { mfLiveXirr, mfXirr, mfXirrByFolio } from './mf-transactions';
 
 const indexFund = { scheme_code: '123456', scheme_name: 'Index Fund' };
 const manualFund = { scheme_code: '654321', scheme_name: 'Manual Fund' };
@@ -166,5 +166,41 @@ describe('mutual fund transaction XIRR', () => {
       },
     ];
     expect(mfXirr(closed, [], ['p1'], '2025-01-01')).not.toBeNull();
+  });
+});
+
+describe('portfolio live and overall XIRR', () => {
+  it('starts live return at switch-in and keeps the original purchase in overall return', () => {
+    const closed = { ...indexFund, portfolio_id: 'p1', folio: 'shared' };
+    const open = { ...manualFund, portfolio_id: 'p1', folio: 'shared' };
+    const history = [
+      { ...closed, transaction_type: 'PURCHASE', transaction_date: '2023-01-01', amount: 100 },
+      { ...closed, transaction_type: 'SWITCH_OUT', transaction_date: '2024-01-01', amount: -110 },
+      { ...open, transaction_type: 'SWITCH_IN', transaction_date: '2024-01-01', amount: 110 },
+    ];
+    const holdings = [
+      { ...closed, units: 0, value: 0 },
+      { ...open, units: 1, value: 132 },
+    ];
+    const today = '2024-12-31';
+
+    expect(mfLiveXirr(history, holdings, ['p1'], today)).toBeCloseTo(0.2);
+    expect(mfXirr(history, holdings, ['p1'], today)).toBeCloseTo(Math.sqrt(1.32) - 1);
+    expect(mfLiveXirr(history, holdings, ['p2'], today)).toBeNull();
+    expect(mfXirr(history, holdings, ['p2'], today)).toBeNull();
+    const unpriced = [holdings[0], { ...holdings[1], value: null }];
+    expect(mfLiveXirr(history, unpriced, ['p1'], today)).toBeNull();
+    expect(mfXirr(history, unpriced, ['p1'], today)).toBeNull();
+  });
+
+  it('keeps realized returns when every position is closed', () => {
+    const position = { ...indexFund, portfolio_id: 'p1', folio: 'closed' };
+    const history = [
+      { ...position, transaction_type: 'PURCHASE', transaction_date: '2023-01-01', amount: 100 },
+      { ...position, transaction_type: 'REDEMPTION', transaction_date: '2024-01-01', amount: -110 },
+    ];
+    const holdings = [{ ...position, units: 0, value: 0 }];
+    expect(mfXirr(history, holdings, ['p1'], '2025-01-01')).toBeCloseTo(0.1);
+    expect(mfLiveXirr(history, holdings, ['p1'], '2025-01-01')).toBeNull();
   });
 });

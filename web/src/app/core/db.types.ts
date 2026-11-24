@@ -370,6 +370,7 @@ export type Database = {
           scheme_name: string;
           source_key: string;
           transaction_date: string;
+          transaction_side: string | null;
           transaction_type: string;
           units: number | null;
           updated_at: string;
@@ -389,6 +390,7 @@ export type Database = {
           scheme_name: string;
           source_key: string;
           transaction_date: string;
+          transaction_side?: never;
           transaction_type: string;
           units?: number | null;
           updated_at?: string;
@@ -407,6 +409,7 @@ export type Database = {
           scheme_name?: string;
           source_key?: string;
           transaction_date?: string;
+          transaction_side?: never;
           transaction_type?: string;
           units?: number | null;
           updated_at?: string;

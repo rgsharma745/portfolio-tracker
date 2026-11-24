@@ -26,7 +26,17 @@ function fakeSupabase(rows: Record<string, unknown[]>, errors: Record<string, ob
         then: (resolve: (v: unknown) => void) => resolve(result),
         maybeSingle: () => Promise.resolve({ data: rows[table]?.[0] ?? null, error }),
       } as Record<string, unknown>;
-      for (const op of ['select', 'order', 'eq', 'limit', 'insert', 'update', 'upsert', 'delete']) {
+      for (const op of [
+        'select',
+        'order',
+        'eq',
+        'limit',
+        'range',
+        'insert',
+        'update',
+        'upsert',
+        'delete',
+      ]) {
         builder[op] = (...args: unknown[]) => {
           calls.push({ table, op, args });
           return builder;
@@ -38,7 +48,7 @@ function fakeSupabase(rows: Record<string, unknown[]>, errors: Record<string, ob
   return {
     client,
     calls,
-    writes: () => calls.filter((c) => c.op !== 'select' && c.op !== 'order'),
+    writes: () => calls.filter((c) => c.op !== 'select' && c.op !== 'order' && c.op !== 'range'),
   };
 }
 

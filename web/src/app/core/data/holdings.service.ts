@@ -66,7 +66,7 @@ export class HoldingsService {
     this.error.set(null);
     const db = this.supabase;
     const results = await Promise.all([
-      db.from('mf_holdings').select('*').order('scheme_name'),
+      this.loadMf(),
       db.from('stock_holdings').select('*').order('symbol'),
       db.from('rsu_grants').select('*').order('grant_date', { nullsFirst: false }),
       db.from('savings_accounts').select('*').order('bank'),
@@ -89,6 +89,22 @@ export class HoldingsService {
     this.fx.set(fx.data ?? []);
     this.loaded.set(true);
     this.refresher.markUpdated();
+  }
+
+  private async loadMf() {
+    const data: MfHolding[] = [];
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+      const result = await this.supabase
+        .from('mf_holdings')
+        .select('*')
+        .order('scheme_name')
+        .order('id')
+        .range(offset, offset + pageSize - 1);
+      if (result.error) return result;
+      data.push(...result.data);
+      if (result.data.length < pageSize) return { data, error: null };
+    }
   }
 
   async saveMf(row: MfHoldingInput, id?: string): Promise<WriteError> {

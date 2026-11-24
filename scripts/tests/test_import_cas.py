@@ -138,7 +138,7 @@ def test_prepare_import_requires_portfolio_for_non_interactive_multiple_portfoli
         import_cas.prepare_import(statement(("folio-1", [scheme()])), PORTFOLIOS, [], None)
 
 
-def test_prepare_import_skips_zero_unit_folios() -> None:
+def test_prepare_import_includes_zero_unit_folios() -> None:
     data = statement(
         (
             "open-folio",
@@ -149,10 +149,21 @@ def test_prepare_import_skips_zero_unit_folios() -> None:
 
     transactions, positions, mapping = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
 
-    assert mapping == {"open-folio": "p1"}
-    assert [row["folio"] for row in transactions] == ["open-folio"]
-    assert [row["folio"] for row in positions] == ["open-folio"]
-    assert [row["scheme_name"] for row in positions] == ["Index Fund"]
+    assert mapping == {"open-folio": "p1", "closed-folio": "p1"}
+    assert [row["folio"] for row in transactions] == ["open-folio", "open-folio", "closed-folio"]
+    assert [(row["units"], row["invested"]) for row in positions] == [("12", "120"), ("0", "0"), ("0", "0")]
+    assert import_cas.prepare_import(data, PORTFOLIOS, [], "Me")[0] == transactions
+
+
+def test_prepare_import_excludes_only_requested_transaction_types() -> None:
+    rows = [transaction() for _ in range(5)]
+    for row, kind in zip(rows, ("STT_TAX", "STAMP_DUTY_TAX", "MISC", "TDS_TAX", "REDEMPTION"), strict=True):
+        row.type = kind
+    data = statement(("folio-1", [scheme(close="0", transactions=rows)]))
+
+    transactions, _, _ = import_cas.prepare_import(data, PORTFOLIOS, [], "Me")
+
+    assert [row["transaction_type"] for row in transactions] == ["TDS_TAX", "REDEMPTION"]
 
 
 def test_prepare_import_rejects_two_folios_claiming_one_manual_holding() -> None:

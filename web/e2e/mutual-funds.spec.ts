@@ -43,6 +43,14 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
       units: 50,
       invested: 1200,
     },
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      scheme_name: 'E2E Closed Fund',
+      folio: 'e2e-closed-folio',
+      units: 0,
+      invested: 0,
+    },
   ]);
   await adminInsert('mf_transactions', [
     {
@@ -60,6 +68,28 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
       nav: 40,
       balance: 100,
     },
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      source_key: 'b'.repeat(64),
+      scheme_name: 'E2E Closed Fund',
+      folio: 'e2e-closed-folio',
+      transaction_date: daysAgo(365),
+      transaction_type: 'PURCHASE',
+      description: 'Purchase',
+      amount: 1000,
+    },
+    {
+      owner_id: ownerId,
+      portfolio_id: ids['Me'],
+      source_key: 'c'.repeat(64),
+      scheme_name: 'E2E Closed Fund',
+      folio: 'e2e-closed-folio',
+      transaction_date: daysAgo(0),
+      transaction_type: 'REDEMPTION',
+      description: 'Redemption',
+      amount: -1100,
+    },
   ]);
 
   await signInWithMagicLink(page, HOLDINGS_EMAIL);
@@ -71,11 +101,25 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(stat('Invested')).toContainText('₹5,200');
   await expect(stat('Total P&L')).toContainText('+₹800');
   await expect(stat('1 Day Change')).toContainText('+₹50');
-  await expect(stat('XIRR')).not.toContainText('—');
+  await expect(stat('Live XIRR')).toContainText('+25.00%');
+  await expect(stat('XIRR')).toContainText('+22.00%');
 
   const list = mobile
     ? page.getByRole('list', { name: 'Mutual fund holdings' })
     : page.getByRole('table', { name: 'Mutual fund holdings' });
+  await expect(list).not.toContainText('E2E Closed Fund');
+  const includeClosed = page.getByRole('checkbox', { name: 'Include closed positions' });
+  await includeClosed.check();
+  await expect(list).toContainText('E2E Closed Fund');
+  await expect(stat('XIRR')).toContainText('+22.00%');
+  await list.getByText('E2E Closed Fund', { exact: true }).click();
+  const closedDialog = page.getByRole('dialog', { name: 'E2E Closed Fund' });
+  await expect(closedDialog.getByRole('listitem').filter({ hasText: 'REDEMPTION' })).toContainText(
+    /Buy\/Sell:\s*Sell/,
+  );
+  await closedDialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await includeClosed.uncheck();
+  await expect(list).not.toContainText('E2E Closed Fund');
   await expect(list).toContainText('E2E Growth Fund');
   await expect(list).toContainText('Stale');
   await expect(list).toContainText('Wife');
@@ -99,6 +143,9 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(
     transactionDialog.getByRole('list', { name: 'Mutual fund transactions' }),
   ).toContainText('PURCHASE');
+  await expect(
+    transactionDialog.getByRole('listitem').filter({ hasText: 'PURCHASE' }),
+  ).toContainText(/Buy\/Sell:\s*Buy/);
   await transactionDialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expectNoHorizontalScroll(page);
   await screenshot(page, 'mutual-funds', testInfo.project.name);

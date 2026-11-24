@@ -18,6 +18,7 @@ function fakeSupabase(rows: Rows, failing?: string) {
       const builder = {
         select: () => builder,
         eq: () => builder,
+        gt: () => builder,
         order: () => builder,
         limit: () => builder,
         maybeSingle: () => Promise.resolve(result),

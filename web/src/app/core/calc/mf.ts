@@ -29,6 +29,18 @@ export function navQuotes(rows: readonly NavRow[]): NavQuotes {
 }
 
 export function valueMfHolding(holding: MfHoldingInput, navs: NavQuotes, today: string): Valuation {
+  if (holding.units === 0 && holding.invested === 0) {
+    return {
+      invested: 0,
+      value: 0,
+      pl: 0,
+      plPercent: 0,
+      dayChange: 0,
+      price: null,
+      priceDate: null,
+      stale: false,
+    };
+  }
   const code = holding.scheme_code?.trim();
   return valueHolding(holding.units, holding.invested, code ? navs.get(code) : undefined, today);
 }
@@ -41,6 +53,8 @@ export function mfTotals(
   today: string,
 ): Totals {
   return sumValuations(
-    inPortfolios(holdings, portfolioIds).map((h) => valueMfHolding(h, navs, today)),
+    inPortfolios(holdings, portfolioIds)
+      .filter((holding) => holding.units > 0)
+      .map((holding) => valueMfHolding(holding, navs, today)),
   );
 }

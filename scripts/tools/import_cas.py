@@ -32,6 +32,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = SCRIPTS_DIR / ".env.prod"
 MAX_PDF_BYTES = 100 * 1024 * 1024
 WRITE_BATCH = 250
+SKIPPED_TRANSACTION_TYPES = frozenset({"STT_TAX", "STAMP_DUTY_TAX", "MISC"})
 LOOKUP_BATCH = 50
 PORTFOLIO_CONFLICT = "A transaction is already assigned to another portfolio; check the selected portfolio"
 
@@ -76,14 +77,18 @@ def _schemes(data: CASData) -> list[Scheme]:
     return [scheme for folio in data.folios for scheme in folio.schemes]
 
 
-def _api_rows(db: SupabaseRest, table: str, *, order: str | None = None) -> list[dict[str, Any]]:
-    params = {"select": "*"}
-    if order:
-        params["order"] = order
-    response = db.request("GET", f"/rest/v1/{table}", params=params)
-    if response.status_code != 200:
-        raise JobError(f"Could not read {table} (HTTP {response.status_code})")
-    return response.json()
+def _api_rows(db: SupabaseRest, table: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    params = {"select": "*", "order": "id.asc", "limit": "500"}
+    while True:
+        response = db.request("GET", f"/rest/v1/{table}", params=params)
+        if response.status_code != 200:
+            raise JobError(f"Could not read {table} (HTTP {response.status_code})")
+        page = response.json()
+        rows.extend(page)
+        if len(page) < 500:
+            return rows
+        params["id"] = f"gt.{page[-1]['id']}"
 
 
 def _normal_name(value: str) -> str:
@@ -201,9 +206,7 @@ def prepare_import(
                 )
             ]
             candidates = [row for row in same_fund if row.get("folio") == folio_number]
-            if not candidates:
-                if scheme.close == 0:
-                    continue
+            if not candidates and scheme.close > 0:
                 candidates = [
                     row for row in same_fund
                     if row.get("folio") is None and scheme.amfi and row.get("scheme_code") == scheme.amfi
@@ -222,13 +225,16 @@ def prepare_import(
             seen_positions.add(identity)
             prior: dict[str, int] = {}
             for transaction in scheme.transactions:
+                transaction_type = str(_enum_value(transaction.type))
+                if transaction_type in SKIPPED_TRANSACTION_TYPES:
+                    continue
                 txn_date = transaction.date
                 if not isinstance(txn_date, date):
                     txn_date = date.fromisoformat(str(txn_date))
                 fingerprint = json.dumps(
                     {
                         "date": txn_date.isoformat(),
-                        "type": str(_enum_value(transaction.type)),
+                        "type": transaction_type,
                         "description": transaction.description,
                         "amount": _decimal(transaction.amount),
                         "units": _decimal(transaction.units),
@@ -353,10 +359,10 @@ def main(argv: list[str] | None = None) -> int:
         names = {str(p["id"]): str(p["name"]) for p in portfolios}
         print("\nCAMS detailed statement preview")
         print(f"Supabase target: {urlsplit(db.url).hostname or 'unknown host'}")
-        excluded_positions = len(_schemes(data)) - len(holding_rows)
+        closed_positions = sum(Decimal(row["units"]) == 0 for row in holding_rows)
         print(
             f"Folios: {len(mapping)} · Fund positions: {len(holding_rows)} · "
-            f"Transactions: {len(transactions)} · Untracked zero-unit positions skipped: {excluded_positions}"
+            f"Transactions: {len(transactions)} · Zero-unit positions: {closed_positions}"
         )
         if not mapping:
             print("No new or tracked positions found. Nothing to import.")

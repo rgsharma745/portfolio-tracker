@@ -49,7 +49,7 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Desktop table (clean list rows): Fund with a details line under it (units · NAV and NAV date · portfolio and stale tags), Value with the amount invested under it, P&L with P&L % under it, XIRR, 1 Day Change; a totals bar at the bottom. Units, NAV and invested are not separate columns (CSV export still has them). A soft header band, roomy rows and row hover come from the PrimeNG preset (`core/theme/preset.ts`). Stocks use the same layout (quantity, average price and price in the details line; ≈ INR under a USD value).
 - Mobile card: fund name (2 lines max), current value, P&L and %, 1 day change, NAV date, and a signed XIRR below 1 Day Change when available.
 - Stale NAV badge when the NAV date is older than 4 days.
-- Portfolio XIRR is the header stat. Folio XIRR is shown in the main fund table/card beside absolute P&L. Clicking or keyboard-activating a fund row/card opens a fund-specific dialog containing its folio number, folio XIRR, absolute P&L and read-only imported transactions. Manual-only holdings show no folio XIRR.
+- The header shows Live XIRR for open positions and XIRR for open and closed positions. The list defaults to open positions. Include closed positions reveals zero-unit holdings. Folio XIRR is shown in the main fund table/card beside absolute P&L. Clicking or keyboard-activating a fund row/card opens a fund-specific dialog containing its folio number, folio XIRR, absolute P&L and read-only imported transactions with a Buy/Sell field. Manual-only holdings show no folio XIRR.
 - Add / edit / delete holding (portfolio, units, invested, folio) with validation (positive numbers). Delete requires confirmation.
 - Export CSV.
 

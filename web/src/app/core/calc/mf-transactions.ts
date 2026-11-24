@@ -33,9 +33,17 @@ const EXTERNAL_FLOWS: Readonly<Record<string, 1 | -1>> = {
   DIVIDEND_PAYOUT: 1,
 };
 
-function cashFlows(rows: readonly MfTransactionInput[]): CashFlow[] {
+const LIVE_FLOWS: Readonly<Record<string, 1 | -1>> = {
+  ...EXTERNAL_FLOWS,
+  SWITCH_IN: -1,
+  SWITCH_OUT: 1,
+  SWITCH_IN_MERGER: -1,
+  SWITCH_OUT_MERGER: 1,
+};
+
+function cashFlows(rows: readonly MfTransactionInput[], directions = EXTERNAL_FLOWS): CashFlow[] {
   return rows.flatMap((row) => {
-    const direction = EXTERNAL_FLOWS[row.transaction_type];
+    const direction = directions[row.transaction_type];
     return direction && row.amount !== null && row.amount !== 0
       ? [{ date: row.transaction_date, amount: direction * Math.abs(row.amount) }]
       : [];
@@ -75,18 +83,41 @@ export function mfXirr(
   today: string,
 ): number | null {
   const scopedTransactions = inPortfolios(transactions, portfolioIds);
-  const activeFolios = foliosWithCashFlows(scopedTransactions);
-  if (activeFolios.size === 0) return null;
-  const relevantTransactions = scopedTransactions.filter((row) =>
-    activeFolios.has(scopeKey(row.portfolio_id, row.folio)),
+  return xirrWithCurrentValue(
+    cashFlows(scopedTransactions),
+    importedHoldings(scopedTransactions, holdings),
+    today,
   );
-  const scopedHoldings = importedHoldings(scopedTransactions, holdings).filter(
-    (row) => row.folio !== null && activeFolios.has(scopeKey(row.portfolio_id, row.folio)),
+}
+
+/** Return on positions still held, including transfers into and out of those positions. */
+export function mfLiveXirr(
+  transactions: readonly MfTransactionInput[],
+  holdings: readonly (MfCurrentValueInput & { units: number })[],
+  portfolioIds: readonly string[],
+  today: string,
+): number | null {
+  const scopedTransactions = inPortfolios(transactions, portfolioIds);
+  const open = importedHoldings(
+    scopedTransactions,
+    holdings.filter((row) => row.units > 0),
   );
-  if (scopedHoldings.some((h) => h.value === null)) return null;
-  const value = scopedHoldings.reduce((sum, h) => sum + (h.value ?? 0), 0);
-  const flows = cashFlows(relevantTransactions);
-  return xirr(value > 0 ? [...flows, { date: today, amount: value }] : flows);
+  const keys = new Set(open.map(mfPositionKey));
+  const rows = scopedTransactions.filter((row) => keys.has(mfPositionKey(row)));
+  return xirrWithCurrentValue(cashFlows(rows, LIVE_FLOWS), open, today);
+}
+
+function xirrWithCurrentValue(
+  flows: CashFlow[],
+  holdings: readonly MfCurrentValueInput[],
+  today: string,
+): number | null {
+  if (holdings.some((holding) => holding.value === null)) return null;
+  const value = holdings.reduce((sum, holding) => sum + (holding.value ?? 0), 0);
+  const daily = new Map<string, number>();
+  for (const { date, amount } of flows) daily.set(date, (daily.get(date) ?? 0) + amount);
+  if (value > 0) daily.set(today, (daily.get(today) ?? 0) + value);
+  return xirr(Array.from(daily, ([date, amount]) => ({ date, amount })));
 }
 
 /** One XIRR per portfolio/folio pair. A null value means the folio is not fully priced. */

@@ -122,3 +122,43 @@
     gap: 8px;
   }
 }
+
+.mf-stat-grid {
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.closed-filter {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.65rem;
+  min-block-size: 44px;
+  cursor: pointer;
+}
+
+.closed-filter input {
+  inline-size: 1.25em;
+  aspect-ratio: 1;
+  accent-color: var(--p-primary-color);
+}
+
+.mf-transaction-header {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mf-transaction {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5rem minmax(8rem, 25%);
+  }
+
+  .mf-transaction-header > :last-child {
+    text-align: end;
+  }
+}

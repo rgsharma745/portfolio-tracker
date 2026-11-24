@@ -25,7 +25,7 @@ export class DataCheckService {
         .maybeSingle();
     const results = await Promise.all([
       db.from('portfolios').select('id, name, is_active'),
-      db.from('mf_holdings').select('id, scheme_name, scheme_code, portfolio_id'),
+      db.from('mf_holdings').select('id, scheme_name, scheme_code, portfolio_id').gt('units', 0),
       db.from('mf_nav_latest').select('scheme_code'),
       db.from('stock_holdings').select('id, symbol, market, portfolio_id'),
       db.from('stock_price_latest').select('symbol'),

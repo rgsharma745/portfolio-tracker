@@ -43,6 +43,12 @@ def seed(db: SupabaseRest, owner_id: str) -> None:
     q = add(db, "portfolios", {**o, "name": "Wife", "sort_order": 1})
     add(db, "mf_holdings", {**o, "portfolio_id": p, "scheme_code": "120503",
                             "scheme_name": "Fund", "units": "1234.5678", "invested": "56789.12"})
+    for index, kind in enumerate(("PURCHASE", "PURCHASE_SIP", "SWITCH_IN", "REDEMPTION", "SWITCH_OUT", "DIVIDEND_PAYOUT")):
+        add(db, "mf_transactions", {
+            **o, "portfolio_id": p, "source_key": f"{index:064x}", "scheme_name": "Fund",
+            "folio": "folio", "transaction_date": "2026-10-01", "transaction_type": kind,
+            "description": kind, "amount": "100.50",
+        })
     add(db, "stock_holdings", {**o, "portfolio_id": q, "market": "US", "symbol": "AAPL",
                                "currency": "USD", "quantity": 3, "invested": "450.25"})
     add(db, "rsu_grants", {**o, "portfolio_id": p, "symbol": "AAPL", "grant_label": "G1",
@@ -88,13 +94,26 @@ def counts(db: SupabaseRest, owner_id: str) -> dict[str, int]:
     return {t: len(rows) for t, rows in snapshot(db, owner_id).items()}
 
 
-def test_restores_lost_data_exactly(service: SupabaseRest, owner: AuthUser) -> None:
+@pytest.mark.parametrize("legacy", [False, True])
+def test_restores_lost_data_exactly(service: SupabaseRest, owner: AuthUser, legacy: bool) -> None:
     seed(service, owner.id)
     backup = snapshot(service, owner.id)
+    expected = {
+        "PURCHASE": "buy", "PURCHASE_SIP": "buy", "SWITCH_IN": "buy",
+        "REDEMPTION": "sell", "SWITCH_OUT": "sell", "DIVIDEND_PAYOUT": None,
+    }
+    assert {row["transaction_type"]: row["transaction_side"] for row in backup["mf_transactions"]} == expected
+    restore_input = backup if not legacy else {
+        **backup,
+        "mf_transactions": [
+            {key: value for key, value in row.items() if key != "transaction_side"}
+            for row in backup["mf_transactions"]
+        ],
+    }
     tool._wipe(service, f"in.({owner.id})")
     assert sum(counts(service, owner.id).values()) == 0
 
-    after = tool.restore(service, backup)
+    after = tool.restore(service, restore_input)
 
     assert after == {t: len(rows) for t, rows in backup.items()}
     # Same ids, same values (numeric strings included), same links between tables.

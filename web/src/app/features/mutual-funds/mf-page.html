@@ -22,7 +22,7 @@
   </div>
 } @else {
   <div class="page-stack">
-    <div class="stat-grid stat-grid-5">
+    <div class="stat-grid mf-stat-grid">
       <app-stat-card label="Current value" [value]="totals().value" [compact]="bp.isMobile()" />
       <app-stat-card label="Invested" [value]="totals().invested" [compact]="bp.isMobile()" />
       <app-stat-card
@@ -39,10 +39,17 @@
         [compact]="bp.isMobile()"
       />
       <app-stat-card
+        label="Live XIRR"
+        [text]="xirr(liveXirr())"
+        [tone]="liveXirr() === null ? null : liveXirr()! >= 0 ? 'up' : 'down'"
+        note="Open positions"
+        [compact]="bp.isMobile()"
+      />
+      <app-stat-card
         label="XIRR"
         [text]="xirr(portfolioXirr())"
         [tone]="portfolioXirr() === null ? null : portfolioXirr()! >= 0 ? 'up' : 'down'"
-        note="From imported CAS transactions and current value"
+        note="Open and closed positions"
         [compact]="bp.isMobile()"
       />
     </div>
@@ -66,6 +73,15 @@
       (export)="exportCsv()"
     />
 
+    <label class="closed-filter">
+      <input
+        type="checkbox"
+        [ngModel]="includeClosed()"
+        (ngModelChange)="includeClosed.set($event)"
+      />
+      Include closed positions
+    </label>
+
     <app-data-table
       label="Mutual fund holdings"
       [rows]="visible()"
@@ -73,7 +89,7 @@
       [footer]="tableFooter()"
       [sort]="sort()"
       (sortChange)="sort.set($event)"
-      emptyMessage="No funds match."
+      [emptyMessage]="includeClosed() ? 'No funds match.' : 'No open funds match.'"
       minWidth="52rem"
       [rowClickable]="true"
       (rowOpen)="showTransactions($event)"
@@ -172,7 +188,9 @@
     @if (showPortfolio()) {
       <p-tag [value]="row.portfolio" severity="secondary" />
     }
-    @if (row.value === null) {
+    @if (row.units === 0) {
+      <p-tag value="Closed" severity="secondary" />
+    } @else if (row.value === null) {
       <p-tag value="No NAV" severity="warn" />
     } @else if (row.stale) {
       <p-tag value="Stale" severity="warn" [title]="staleTitle(row)" />
@@ -214,6 +232,9 @@
     } @else if (selectedTransactions().length === 0) {
       <p class="note">No imported transactions for this folio and fund.</p>
     } @else {
+      <div class="mf-transaction mf-transaction-header cell-sub" aria-hidden="true">
+        <span>Transaction</span><span>Buy/Sell</span><span>Amount</span>
+      </div>
       <ul class="mf-transaction-list" aria-label="Mutual fund transactions">
         @for (transaction of selectedTransactions(); track transaction.id) {
           <li class="mf-transaction">
@@ -223,6 +244,16 @@
               }}</span>
               <span class="cell-sub">{{ date(transaction.transaction_date) }}</span>
             </div>
+            <span class="mf-transaction-side">
+              <span class="visually-hidden">Buy/Sell: </span>
+              {{
+                transaction.transaction_side === 'buy'
+                  ? 'Buy'
+                  : transaction.transaction_side === 'sell'
+                    ? 'Sell'
+                    : '—'
+              }}
+            </span>
             <div class="mf-transaction-detail">
               <span class="app-num">{{ transactionAmount(transaction.amount) }}</span>
               @if (transaction.units !== null) {

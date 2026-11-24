@@ -81,11 +81,11 @@ def test_fetch_nav_stores_held_codes_only_and_reports_unmatched(
     service: SupabaseRest, user_a: AuthUser, portfolio: dict[str, Any], codes: list[str]
 ) -> None:
     held, missing = codes
-    for code in (held, missing):
+    for code, units in ((held, 1), (missing, 1), ("100000", 0)):
         insert(
             service,
             "mf_holdings",
-            {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "scheme_name": f"Pytest {code}", "scheme_code": code},
+            {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "scheme_name": f"Pytest {code}", "scheme_code": code, "units": units},
         )
     file = amfi_file({held: "12.3456"})
 
@@ -95,7 +95,7 @@ def test_fetch_nav_stores_held_codes_only_and_reports_unmatched(
     stored = rows(service, "mf_nav_latest", scheme_code=f"eq.{held}")
     assert Decimal(str(stored[0]["nav"])) == Decimal("12.3456")
     assert stored[0]["nav_date"] == "2026-11-03"
-    # Filler funds nobody holds are never stored.
+    # The AMFI file contains this closed fund, which needs no NAV refresh.
     assert rows(service, "mf_nav_latest", scheme_code="eq.100000") == []
 
     # Re-running (or a holiday with no new date) changes nothing and adds no rows.
@@ -112,7 +112,7 @@ def test_fetch_nav_fails_on_a_broken_file(service: SupabaseRest, user_a: AuthUse
     insert(
         service,
         "mf_holdings",
-        {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "scheme_name": "Pytest", "scheme_code": codes[0]},
+        {"owner_id": user_a.id, "portfolio_id": portfolio["id"], "scheme_name": "Pytest", "scheme_code": codes[0], "units": 1},
     )
     with pytest.raises(joblib.JobError, match="empty or broken"):
         fetch_nav.work(service, download=lambda: "<html>maintenance</html>")

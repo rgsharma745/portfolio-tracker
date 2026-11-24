@@ -146,6 +146,11 @@ def _write(db: SupabaseRest, backup: Backup, owners: str, *, wipe: bool) -> None
         rows = backup[table]
         for start in range(0, len(rows), BATCH):
             chunk = rows[start : start + BATCH]
+            if table == "mf_transactions":
+                chunk = [
+                    {key: value for key, value in row.items() if key != "transaction_side"}
+                    for row in chunk
+                ]
             resp = db.request("POST", f"/rest/v1/{table}", json=chunk, prefer="return=minimal")
             _check(resp, table)
 

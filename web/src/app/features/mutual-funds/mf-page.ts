@@ -11,6 +11,7 @@ import { localIsoDate, sumValuations } from '../../core/calc/common';
 import { mfTotals } from '../../core/calc/mf';
 import {
   MfCurrentValueInput,
+  mfLiveXirr,
   mfPositionKey,
   mfXirr,
   mfXirrByFolio,
@@ -83,6 +84,7 @@ export class MfPage {
   private readonly today = localIsoDate();
 
   protected readonly search = signal('');
+  protected readonly includeClosed = signal(false);
   protected readonly plFilter = signal<PlFilter>('all');
   protected readonly sort = signal<Sort>({ key: 'value', order: -1 });
   protected readonly sortOptions = [
@@ -117,7 +119,7 @@ export class MfPage {
   private readonly importedPositions = computed(
     () => new Set(this.transactionService.transactions().map(mfPositionKey)),
   );
-  private readonly currentValues = computed<MfCurrentValueInput[]>(() =>
+  private readonly currentValues = computed<(MfCurrentValueInput & { units: number })[]>(() =>
     this.rows().map((row) => ({
       ...row.holding,
       value: row.units === 0 ? 0 : row.value,
@@ -125,6 +127,14 @@ export class MfPage {
   );
   protected readonly portfolioXirr = computed(() =>
     mfXirr(
+      this.transactionService.transactions(),
+      this.currentValues(),
+      this.portfolios.scopeIds(),
+      this.today,
+    ),
+  );
+  protected readonly liveXirr = computed(() =>
+    mfLiveXirr(
       this.transactionService.transactions(),
       this.currentValues(),
       this.portfolios.scopeIds(),
@@ -153,7 +163,11 @@ export class MfPage {
   protected readonly visible = computed(() =>
     sortRows(
       filterByPl(
-        this.rows().filter((r) => matchesSearch(this.search(), r.name, r.code, r.folio)),
+        this.rows().filter(
+          (row) =>
+            (this.includeClosed() || row.units > 0) &&
+            matchesSearch(this.search(), row.name, row.code, row.folio),
+        ),
         this.plFilter(),
       ),
       this.sort(),
