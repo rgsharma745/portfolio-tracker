@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mfLiveXirr, mfXirr, mfXirrByFolio } from './mf-transactions';
+import { mfLiveXirr, mfTradeTotals, mfXirr, mfXirrByFolio } from './mf-transactions';
 
 const indexFund = { scheme_code: '123456', scheme_name: 'Index Fund' };
 const manualFund = { scheme_code: '654321', scheme_name: 'Manual Fund' };
@@ -202,5 +202,23 @@ describe('portfolio live and overall XIRR', () => {
     const holdings = [{ ...position, units: 0, value: 0 }];
     expect(mfXirr(history, holdings, ['p1'], '2025-01-01')).toBeCloseTo(0.1);
     expect(mfLiveXirr(history, holdings, ['p1'], '2025-01-01')).toBeNull();
+  });
+});
+
+describe('closed fund trade totals', () => {
+  it('sums buy and sell amounts independently and ignores unclassified trades', () => {
+    expect(
+      mfTradeTotals([
+        { transaction_side: 'buy', amount: 900 },
+        { transaction_side: 'buy', amount: 100 },
+        { transaction_side: 'sell', amount: -1100 },
+        { transaction_side: 'sell', amount: null },
+        { transaction_side: null, amount: 50 },
+      ]),
+    ).toEqual({ buy: 1000, sell: 1100 });
+    expect(mfTradeTotals([{ transaction_side: 'buy', amount: 0 }])).toEqual({
+      buy: 0,
+      sell: null,
+    });
   });
 });

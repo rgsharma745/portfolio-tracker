@@ -157,3 +157,16 @@ export function mfXirrByFolio(
     };
   });
 }
+
+/** Gross invested and redeemed amounts for the selected position's imported trades. */
+export function mfTradeTotals(
+  transactions: readonly { transaction_side: string | null; amount: number | null }[],
+): { buy: number | null; sell: number | null } {
+  const totals: { buy: number | null; sell: number | null } = { buy: null, sell: null };
+  for (const { transaction_side: side, amount } of transactions) {
+    if ((side === 'buy' || side === 'sell') && amount !== null) {
+      totals[side] = (totals[side] ?? 0) + Math.abs(amount);
+    }
+  }
+  return totals;
+}

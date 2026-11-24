@@ -129,6 +129,8 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(fundRows.nth(2)).toContainText('E2E Stale Fund');
   await list.getByText('E2E Closed Fund', { exact: true }).click();
   const closedDialog = page.getByRole('dialog', { name: 'E2E Closed Fund' });
+  await expect(closedDialog).toContainText(/Total invested\s*₹1,000/);
+  await expect(closedDialog).toContainText(/Total redeemed\s*₹1,100/);
   await expect(closedDialog.getByRole('listitem').filter({ hasText: 'REDEMPTION' })).toContainText(
     /Buy\/Sell:\s*Sell/,
   );

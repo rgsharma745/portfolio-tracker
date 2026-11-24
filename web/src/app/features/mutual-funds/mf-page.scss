@@ -102,6 +102,14 @@
   border-radius: 12px;
 }
 
+.transaction-dialog-summary.closed-summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+}
+
+.closed-summary .name-title {
+  overflow-wrap: anywhere;
+}
+
 .transaction-dialog-summary > div {
   display: flex;
   flex-direction: column;

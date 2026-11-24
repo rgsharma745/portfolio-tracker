@@ -22,6 +22,7 @@ import {
   MfCurrentValueInput,
   mfLiveXirr,
   mfPositionKey,
+  mfTradeTotals,
   mfXirr,
   mfXirrByFolio,
 } from '../../core/calc/mf-transactions';
@@ -170,6 +171,9 @@ export class MfPage {
       .transactions()
       .filter((transaction) => mfPositionKey(transaction) === position);
   });
+  protected readonly closedFundTotals = computed(() =>
+    mfTradeTotals(this.transactionService.error() ? [] : this.selectedTransactions()),
+  );
   protected readonly visible = computed(() => {
     const sort = this.sort();
     const rows = filterByPl(

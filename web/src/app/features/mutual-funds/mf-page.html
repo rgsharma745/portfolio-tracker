@@ -208,7 +208,7 @@
   styleClass="app-dialog"
 >
   @if (transactionDialog(); as row) {
-    <div class="transaction-dialog-summary">
+    <div class="transaction-dialog-summary" [class.closed-summary]="row.units === 0">
       <div>
         <span class="cell-sub">Folio</span>
         <span class="name-title">{{ row.folio ?? '—' }}</span>
@@ -217,12 +217,23 @@
         <span class="cell-sub">Folio XIRR</span>
         <span class="name-title" [appPl]="folioXirr(row)">{{ xirr(folioXirr(row)) }}</span>
       </div>
-      <div>
-        <span class="cell-sub">Absolute P&amp;L</span>
-        <span class="name-title" [appPl]="row.pl">
-          {{ row.pl | money: 'INR' : { sign: true } }}
-        </span>
-      </div>
+      @if (row.units === 0) {
+        <div>
+          <span class="cell-sub">Total invested</span>
+          <span class="name-title app-num">{{ closedFundTotals().buy | money }}</span>
+        </div>
+        <div>
+          <span class="cell-sub">Total redeemed</span>
+          <span class="name-title app-num">{{ closedFundTotals().sell | money }}</span>
+        </div>
+      } @else {
+        <div>
+          <span class="cell-sub">Absolute P&amp;L</span>
+          <span class="name-title" [appPl]="row.pl">
+            {{ row.pl | money: 'INR' : { sign: true } }}
+          </span>
+        </div>
+      }
     </div>
 
     @if (transactionService.error()) {
