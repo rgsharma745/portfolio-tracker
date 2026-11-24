@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mfLiveXirr, mfTradeTotals, mfXirr, mfXirrByFolio } from './mf-transactions';
+import {
+  mfLiveXirr,
+  mfTradeTotals,
+  mfXirr,
+  mfPositionKey,
+  mfXirrByPosition,
+} from './mf-transactions';
 
 const indexFund = { scheme_code: '123456', scheme_name: 'Index Fund' };
 const manualFund = { scheme_code: '654321', scheme_name: 'Manual Fund' };
@@ -54,7 +60,9 @@ describe('mutual fund transaction XIRR', () => {
     const current = [{ ...indexFund, portfolio_id: 'p1', folio: 'f1', value: 110 }];
 
     expect(mfXirr(history, current, ['p1'], '2024-01-01')).toBeCloseTo(0.1, 10);
-    expect(mfXirrByFolio(history, current, ['p1'], '2024-01-01')[0].xirr).toBeCloseTo(0.1, 10);
+    expect(
+      mfXirrByPosition(history, current, ['p1'], '2024-01-01').get(mfPositionKey(current[0])),
+    ).toBeCloseTo(0.1, 10);
   });
 
   it('calculates selected and all-portfolio XIRR from external flows and current value', () => {
@@ -71,7 +79,7 @@ describe('mutual fund transaction XIRR', () => {
   });
 
   it('reports folio returns independently and excludes unpriced holdings', () => {
-    const rows = mfXirrByFolio(
+    const rows = mfXirrByPosition(
       transactions,
       [
         { ...indexFund, portfolio_id: 'p1', folio: 'f1', value: 250 },
@@ -80,9 +88,9 @@ describe('mutual fund transaction XIRR', () => {
       ['p1', 'p2'],
       '2025-01-01',
     );
-    expect(rows).toHaveLength(2);
-    expect(rows.find((row) => row.folio === 'f1')?.xirr).not.toBeNull();
-    expect(rows.find((row) => row.folio === 'f2')?.xirr).toBeNull();
+    expect(rows.size).toBe(2);
+    expect(rows.get(mfPositionKey(transactions[0]))).not.toBeNull();
+    expect(rows.get(mfPositionKey(transactions[3]))).toBeNull();
   });
 
   it('returns null when the scoped holdings are not valued', () => {
@@ -125,7 +133,7 @@ describe('mutual fund transaction XIRR', () => {
     );
 
     expect(withManual).toBe(onlyImported);
-    const sameFolio = mfXirrByFolio(
+    const sameFolio = mfXirrByPosition(
       history,
       [
         { ...indexFund, portfolio_id: 'p1', folio: 'f1', value: 150 },
@@ -134,16 +142,15 @@ describe('mutual fund transaction XIRR', () => {
       ['p1'],
       '2025-01-01',
     );
-    expect(sameFolio[0].xirr).toBe(onlyImported);
-    const manualOnlyFolios = mfXirrByFolio(
+    expect(sameFolio.size).toBe(1);
+    expect(sameFolio.get(mfPositionKey(history[0]))).toBe(onlyImported);
+    const manualOnlyFolios = mfXirrByPosition(
       history,
       [{ ...indexFund, portfolio_id: 'p1', folio: 'manual-only', value: 500 }],
       ['p1'],
       '2025-01-01',
     );
-    expect(manualOnlyFolios).toHaveLength(1);
-    expect(manualOnlyFolios[0].folio).toBe('f1');
-    expect(manualOnlyFolios[0].xirr).toBeNull();
+    expect(manualOnlyFolios.size).toBe(0);
   });
 
   it('calculates a closed folio from its realized flows without a terminal value', () => {
@@ -183,6 +190,18 @@ describe('portfolio live and overall XIRR', () => {
       { ...open, units: 1, value: 132 },
     ];
     const today = '2024-12-31';
+
+    const positions = mfXirrByPosition(history, holdings, ['p1'], today);
+    expect(positions.get(mfPositionKey(closed))).toBeCloseTo(0.1);
+    expect(positions.get(mfPositionKey(open))).toBeCloseTo(0.2);
+    const withUnpriced = mfXirrByPosition(
+      history,
+      [holdings[0], { ...holdings[1], value: null }],
+      ['p1'],
+      today,
+    );
+    expect(withUnpriced.get(mfPositionKey(closed))).toBeCloseTo(0.1);
+    expect(withUnpriced.get(mfPositionKey(open))).toBeNull();
 
     expect(mfLiveXirr(history, holdings, ['p1'], today)).toBeCloseTo(0.2);
     expect(mfXirr(history, holdings, ['p1'], today)).toBeCloseTo(Math.sqrt(1.32) - 1);

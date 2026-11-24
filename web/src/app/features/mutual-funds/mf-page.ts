@@ -24,7 +24,7 @@ import {
   mfPositionKey,
   mfTradeTotals,
   mfXirr,
-  mfXirrByFolio,
+  mfXirrByPosition,
 } from '../../core/calc/mf-transactions';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { MfTransaction, MfTransactionsService } from '../../core/data/mf-transactions.service';
@@ -127,9 +127,6 @@ export class MfPage {
   protected readonly totals = computed(() =>
     mfTotals(this.holdings.mf(), this.holdings.navQuotes(), this.portfolios.scopeIds(), this.today),
   );
-  private readonly importedPositions = computed(
-    () => new Set(this.transactionService.transactions().map(mfPositionKey)),
-  );
   private readonly currentValues = computed<(MfCurrentValueInput & { units: number })[]>(() =>
     this.rows().map((row) => ({
       ...row.holding,
@@ -152,16 +149,13 @@ export class MfPage {
       this.today,
     ),
   );
-  private readonly folioXirrMap = computed(
-    () =>
-      new Map(
-        mfXirrByFolio(
-          this.transactionService.transactions(),
-          this.currentValues(),
-          this.portfolios.scopeIds(),
-          this.today,
-        ).map((summary) => [summary.key, summary.xirr]),
-      ),
+  private readonly positionXirr = computed(() =>
+    mfXirrByPosition(
+      this.transactionService.transactions(),
+      this.currentValues(),
+      this.portfolios.scopeIds(),
+      this.today,
+    ),
   );
   protected readonly selectedTransactions = computed<readonly MfTransaction[]>(() => {
     const row = this.transactionDialog();
@@ -236,9 +230,7 @@ export class MfPage {
   }
 
   protected folioXirr(row: MfRow): number | null {
-    if (row.folio === null || !this.importedPositions().has(mfPositionKey(row.holding)))
-      return null;
-    return this.folioXirrMap().get(`${row.holding.portfolio_id}\u0000${row.folio}`) ?? null;
+    return this.positionXirr().get(mfPositionKey(row.holding)) ?? null;
   }
 
   protected transactionAmount(value: number | null): string {
