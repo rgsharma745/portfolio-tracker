@@ -9,7 +9,12 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { localIsoDate, sumValuations } from '../../core/calc/common';
 import { mfTotals } from '../../core/calc/mf';
-import { MfCurrentValueInput, mfXirr, mfXirrByFolio } from '../../core/calc/mf-transactions';
+import {
+  MfCurrentValueInput,
+  mfPositionKey,
+  mfXirr,
+  mfXirrByFolio,
+} from '../../core/calc/mf-transactions';
 import { HoldingsService } from '../../core/data/holdings.service';
 import { MfTransaction, MfTransactionsService } from '../../core/data/mf-transactions.service';
 import { PortfolioService } from '../../core/data/portfolio.service';
@@ -109,11 +114,13 @@ export class MfPage {
   protected readonly totals = computed(() =>
     mfTotals(this.holdings.mf(), this.holdings.navQuotes(), this.portfolios.scopeIds(), this.today),
   );
+  private readonly importedPositions = computed(
+    () => new Set(this.transactionService.transactions().map(mfPositionKey)),
+  );
   private readonly currentValues = computed<MfCurrentValueInput[]>(() =>
     this.rows().map((row) => ({
-      portfolio_id: row.holding.portfolio_id,
-      folio: row.folio,
-      value: row.value,
+      ...row.holding,
+      value: row.units === 0 ? 0 : row.value,
     })),
   );
   protected readonly portfolioXirr = computed(() =>
@@ -138,14 +145,10 @@ export class MfPage {
   protected readonly selectedTransactions = computed<readonly MfTransaction[]>(() => {
     const row = this.transactionDialog();
     if (!row?.folio) return [];
+    const position = mfPositionKey(row.holding);
     return this.transactionService
       .transactions()
-      .filter(
-        (transaction) =>
-          transaction.portfolio_id === row.holding.portfolio_id &&
-          transaction.folio === row.folio &&
-          transaction.scheme_name === row.name,
-      );
+      .filter((transaction) => mfPositionKey(transaction) === position);
   });
   protected readonly visible = computed(() =>
     sortRows(
@@ -203,7 +206,8 @@ export class MfPage {
   }
 
   protected folioXirr(row: MfRow): number | null {
-    if (row.folio === null) return null;
+    if (row.folio === null || !this.importedPositions().has(mfPositionKey(row.holding)))
+      return null;
     return this.folioXirrMap().get(`${row.holding.portfolio_id}\u0000${row.folio}`) ?? null;
   }
 

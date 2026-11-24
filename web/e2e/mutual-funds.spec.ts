@@ -79,15 +79,21 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(list).toContainText('E2E Growth Fund');
   await expect(list).toContainText('Stale');
   await expect(list).toContainText('Wife');
-  await expect(list).toContainText('Folio XIRR');
-  await list.getByText('E2E Growth Fund').first().click();
+  await expect(list).toContainText(mobile ? 'XIRR +25.00%' : 'Folio XIRR');
+  if (mobile) {
+    await list.getByText('E2E Growth Fund').first().click();
+  } else {
+    await list.getByRole('button', { name: 'E2E Growth Fund', exact: true }).press('Space');
+  }
   const transactionDialog = page.getByRole('dialog', { name: 'E2E Growth Fund' });
   await expect(transactionDialog).toBeVisible();
   await expect(transactionDialog).toContainText('Folio');
   await expect(transactionDialog).toContainText('Folio XIRR');
   await expect(transactionDialog).toContainText('Absolute P&L');
-  await expect(transactionDialog).toContainText('E2E Growth Fund');
-  await transactionDialog.getByRole('button', { name: 'Close' }).click();
+  await expect(
+    transactionDialog.getByRole('list', { name: 'Mutual fund transactions' }),
+  ).toContainText('PURCHASE');
+  await transactionDialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expectNoHorizontalScroll(page);
   await screenshot(page, 'mutual-funds', testInfo.project.name);
 
@@ -108,6 +114,7 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(dialog.getByText('Must be zero or more.')).toBeVisible();
   await expect(dialog.getByText('Enter the amount invested.')).toBeVisible();
   if (mobile) await screenshot(page, 'mutual-funds-dialog', testInfo.project.name);
+  await dialog.getByLabel('Folio (optional)').fill(' 123 / 45 ');
   await dialog.getByLabel('Units').fill('10');
   await dialog.getByLabel('Invested (₹)').fill('1,000');
   await dialog.getByRole('button', { name: 'Save' }).click();
@@ -119,11 +126,16 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   // Edit, then delete with confirmation
   if (mobile) {
     await list.getByRole('button', { name: /E2E New Fund/ }).click();
+    await page
+      .getByRole('dialog', { name: 'E2E New Fund' })
+      .getByRole('button', { name: 'Edit fund' })
+      .click();
   } else {
     await page.getByRole('button', { name: 'Edit E2E New Fund' }).click();
   }
   const edit = page.getByRole('dialog', { name: 'Edit fund' });
   await expect(edit.getByLabel('Units')).toHaveValue('10');
+  await expect(edit.getByLabel('Folio (optional)')).toHaveValue('123/45');
   await edit.getByRole('button', { name: 'Delete' }).click();
   await edit
     .getByRole('group', { name: 'Confirm delete' })

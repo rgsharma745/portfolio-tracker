@@ -112,11 +112,7 @@ export class CardTemplate {
           <ng-template #body let-row>
             <tr
               [class.row-clickable]="rowClickable()"
-              [attr.tabindex]="rowClickable() ? 0 : null"
-              [attr.role]="rowClickable() ? 'button' : null"
               (click)="rowClickable() && rowOpen.emit(row)"
-              (keydown.enter)="rowClickable() && rowOpen.emit(row)"
-              (keydown.space)="rowClickable() && $event.preventDefault() && rowOpen.emit(row)"
             >
               @for (col of columns(); track col.key) {
                 <td [class.num]="isNumeric(col)">
@@ -239,10 +235,6 @@ export class CardTemplate {
     }
     .row-clickable {
       cursor: pointer;
-    }
-    .row-clickable:focus-visible {
-      outline: 2px solid var(--p-primary-color);
-      outline-offset: -2px;
     }
     th {
       font-size: 12px;

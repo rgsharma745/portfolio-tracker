@@ -50,7 +50,7 @@ export function validateMfForm(form: MfForm): {
       portfolio_id: form.portfolioId,
       scheme_name: name,
       scheme_code: code || null,
-      folio: form.folio.trim() || null,
+      folio: form.folio.replace(/\s+/g, '') || null,
       units: units as number,
       invested: invested as number,
     },

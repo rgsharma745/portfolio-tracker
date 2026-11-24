@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from requests import Response
 
 from lib.supabase_rest import SupabaseRest
 
@@ -92,6 +93,36 @@ def seeded(anon: SupabaseRest, user_a: AuthUser) -> dict[str, str]:
         "amount": 10, "units": 1,
     })["id"]
     return ids
+
+
+def test_reimport_cannot_move_an_existing_transaction(
+    anon: SupabaseRest, service: SupabaseRest, user_a: AuthUser, seeded: dict[str, str]
+) -> None:
+    other = insert_ok(anon, user_a.token, "portfolios", {"name": "pytest-reimport"})["id"]
+    values = {
+        "owner_id": user_a.id, "portfolio_id": seeded["portfolios"], "source_key": "a" * 64,
+        "scheme_name": "Fund", "folio": "pytest-folio", "transaction_date": "2026-10-01",
+        "transaction_type": "PURCHASE", "description": "pytest", "amount": 11, "units": 1,
+    }
+
+    def upsert(portfolio_id: str) -> Response:
+        return service.request(
+            "POST", "/rest/v1/mf_transactions",
+            params={"on_conflict": "owner_id,source_key"},
+            json=[{**values, "portfolio_id": portfolio_id}],
+            prefer="resolution=merge-duplicates,return=minimal",
+        )
+
+    try:
+        assert upsert(seeded["portfolios"]).status_code in (200, 201, 204)
+        moved = upsert(other)
+        assert moved.status_code == 409
+        assert moved.json()["code"] == "23505"
+        saved = service.select("mf_transactions", id=f"eq.{seeded['mf_transactions']}").json()[0]
+        assert saved["portfolio_id"] == seeded["portfolios"]
+        assert saved["amount"] == 11
+    finally:
+        anon.delete("portfolios", token=user_a.token, id=f"eq.{other}")
 
 
 @pytest.mark.parametrize("relation", OWNER_TABLES + MARKET_TABLES + VIEWS)

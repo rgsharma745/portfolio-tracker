@@ -32,6 +32,8 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = SCRIPTS_DIR / ".env.prod"
 MAX_PDF_BYTES = 100 * 1024 * 1024
 WRITE_BATCH = 250
+LOOKUP_BATCH = 50
+PORTFOLIO_CONFLICT = "A transaction is already assigned to another portfolio; check the selected portfolio"
 
 
 def input_pdf(path: Path) -> Path:
@@ -57,7 +59,7 @@ def parse_statement(path: Path, password: str) -> CASData:
             "The parser reported reconciliation warnings. No data was written; re-download and check the statement."
         )
     for scheme in _schemes(data):
-        if scheme.valuation.cost is None:
+        if scheme.close > 0 and scheme.valuation.cost is None:
             raise JobError(
                 "At least one scheme has no reported cost basis. No data was written; review that statement manually."
             )
@@ -170,30 +172,50 @@ def prepare_import(
     holdings: list[dict[str, Any]],
     supplied_portfolio: str | None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
-    active_folios = [
-        folio
-        for folio in data.folios
-        if any(scheme.close > 0 for scheme in folio.schemes)
-    ]
-    folios = sorted({_normal_folio(folio.folio) for folio in active_folios})
+    folios = sorted({_normal_folio(folio.folio) for folio in data.folios if folio.schemes})
     active = [p for p in portfolios if p.get("is_active", True)]
     if not active:
         raise JobError("No active portfolio exists")
     owners = {str(p["owner_id"]) for p in portfolios}
     if len(owners) != 1:
         raise JobError("Expected portfolios belonging to one owner")
-    portfolio_by_id = {str(p["id"]): p for p in active}
     mapping = _folio_mappings(folios, active, supplied_portfolio) if folios else {}
     transaction_rows: list[dict[str, Any]] = []
     holding_rows: list[dict[str, Any]] = []
     seen_positions: set[tuple[str, str, str]] = set()
+    claimed_holdings: set[str] = set()
 
-    for folio in active_folios:
+    for folio in data.folios:
+        if not folio.schemes:
+            continue
         folio_number = _normal_folio(folio.folio)
         portfolio_id = mapping[folio_number]
         for scheme in folio.schemes:
-            if scheme.close <= 0:
-                continue
+            same_fund = [
+                row
+                for row in holdings
+                if str(row["portfolio_id"]) == portfolio_id
+                and (
+                    (scheme.amfi and row.get("scheme_code") == scheme.amfi)
+                    or _normal_name(str(row["scheme_name"])) == _normal_name(scheme.scheme)
+                )
+            ]
+            candidates = [row for row in same_fund if row.get("folio") == folio_number]
+            if not candidates:
+                if scheme.close == 0:
+                    continue
+                candidates = [
+                    row for row in same_fund
+                    if row.get("folio") is None and scheme.amfi and row.get("scheme_code") == scheme.amfi
+                ]
+            if len(candidates) > 1:
+                raise JobError("A statement position matches multiple saved holdings; resolve the duplicate first")
+            if candidates:
+                holding_id = str(candidates[0]["id"])
+                if holding_id in claimed_holdings:
+                    raise JobError("Multiple statement positions match one saved holding; assign its folio first")
+                claimed_holdings.add(holding_id)
+
             identity = (portfolio_id, folio_number, _normal_name(scheme.scheme))
             if identity in seen_positions:
                 raise JobError("The statement contains duplicate fund positions in one folio")
@@ -222,40 +244,42 @@ def prepare_import(
                     _transaction_row(folio_number, portfolio_id, scheme, transaction, occurrence)
                 )
 
-            candidates = [
-                row
-                for row in holdings
-                if str(row["portfolio_id"]) == portfolio_id
-                and (
-                    row.get("folio") == folio_number
-                    or (
-                        row.get("folio") is None
-                        and scheme.amfi
-                        and row.get("scheme_code") == scheme.amfi
-                    )
-                )
-                and (
-                    (scheme.amfi and row.get("scheme_code") == scheme.amfi)
-                    or _normal_name(str(row["scheme_name"])) == _normal_name(scheme.scheme)
-                )
-            ]
-            if len(candidates) > 1:
-                raise JobError("A statement position matches multiple saved holdings; resolve the duplicate first")
             holding = {
                 "portfolio_id": portfolio_id,
                 "scheme_code": scheme.amfi,
                 "scheme_name": scheme.scheme,
                 "folio": folio_number,
                 "units": str(scheme.close),
-                "invested": str(scheme.valuation.cost),
+                "invested": str(scheme.valuation.cost) if scheme.close > 0 else "0",
             }
             if candidates:
-                holding["id"] = str(candidates[0]["id"])
+                holding["id"] = holding_id
             holding_rows.append(holding)
 
-    if any(row["portfolio_id"] not in portfolio_by_id for row in holding_rows):
-        raise JobError("A folio maps to an inactive or unknown portfolio")
-    return transaction_rows, holding_rows, mapping
+    included_folios = {row["folio"] for row in holding_rows}
+    return transaction_rows, holding_rows, {folio: mapping[folio] for folio in folios if folio in included_folios}
+
+
+def check_transaction_portfolios(
+    db: SupabaseRest, owner_id: str, transactions: list[dict[str, Any]]
+) -> None:
+    keys_by_portfolio: dict[str, list[str]] = {}
+    for row in transactions:
+        keys_by_portfolio.setdefault(row["portfolio_id"], []).append(row["source_key"])
+    for portfolio_id, keys in keys_by_portfolio.items():
+        for start in range(0, len(keys), LOOKUP_BATCH):
+            batch = ",".join(keys[start : start + LOOKUP_BATCH])
+            response = db.request("GET", "/rest/v1/mf_transactions", params={
+                "select": "id",
+                "owner_id": f"eq.{owner_id}",
+                "portfolio_id": f"neq.{portfolio_id}",
+                "source_key": f"in.({batch})",
+                "limit": "1",
+            })
+            if response.status_code != 200:
+                raise JobError(f"Could not verify transaction portfolios (HTTP {response.status_code})")
+            if response.json():
+                raise JobError(PORTFOLIO_CONFLICT)
 
 
 def write_rows(db: SupabaseRest, owner_id: str, transactions: list[dict[str, Any]], holdings: list[dict[str, Any]]) -> None:
@@ -271,6 +295,8 @@ def write_rows(db: SupabaseRest, owner_id: str, transactions: list[dict[str, Any
             json=batch,
             prefer="resolution=merge-duplicates,return=minimal",
         )
+        if response.status_code == 409:
+            raise JobError(PORTFOLIO_CONFLICT)
         if response.status_code not in (200, 201, 204):
             raise JobError(f"Could not save transactions (HTTP {response.status_code}); re-running is safe")
 
@@ -322,20 +348,18 @@ def main(argv: list[str] | None = None) -> int:
         portfolios = _api_rows(db, "portfolios")
         holdings = _api_rows(db, "mf_holdings")
         transactions, holding_rows, mapping = prepare_import(data, portfolios, holdings, args.portfolio)
+        owner_id = str(portfolios[0]["owner_id"])
+        check_transaction_portfolios(db, owner_id, transactions)
         names = {str(p["id"]): str(p["name"]) for p in portfolios}
         print("\nCAMS detailed statement preview")
         print(f"Supabase target: {urlsplit(db.url).hostname or 'unknown host'}")
-        excluded_folios = len({folio.folio for folio in data.folios}) - len(mapping)
-        excluded_positions = sum(
-            scheme.close <= 0 for folio in data.folios for scheme in folio.schemes
-        )
+        excluded_positions = len(_schemes(data)) - len(holding_rows)
         print(
             f"Folios: {len(mapping)} · Fund positions: {len(holding_rows)} · "
-            f"Transactions: {len(transactions)} · Zero-unit positions skipped: {excluded_positions} "
-            f"({excluded_folios} folios with no remaining positions)"
+            f"Transactions: {len(transactions)} · Untracked zero-unit positions skipped: {excluded_positions}"
         )
         if not mapping:
-            print("No folios with units found. Nothing to import.")
+            print("No new or tracked positions found. Nothing to import.")
             return 0
         for folio, portfolio_id in sorted(mapping.items()):
             print(f"  Folio {folio} → {names.get(portfolio_id, 'portfolio')}")
@@ -353,7 +377,6 @@ def main(argv: list[str] | None = None) -> int:
         if not sys.stdin.isatty() or input("Type IMPORT to write the transactions and reconcile holdings: ").strip() != "IMPORT":
             print("Cancelled. Nothing written.")
             return 1
-        owner_id = str(portfolios[0]["owner_id"])
         write_rows(db, owner_id, transactions, holding_rows)
         print(f"Imported {len(transactions)} transaction rows and reconciled {len(holding_rows)} positions.")
         return 0

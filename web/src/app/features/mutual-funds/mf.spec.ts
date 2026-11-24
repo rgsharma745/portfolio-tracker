@@ -89,6 +89,6 @@ describe('validateMfForm', () => {
   it('round-trips a saved holding', () => {
     const form = mfFormFrom(holding({ folio: '123/45' }));
     expect(form).toMatchObject({ units: '10', invested: '400', folio: '123/45' });
-    expect(validateMfForm(form).value?.folio).toBe('123/45');
+    expect(validateMfForm({ ...form, folio: ' 123 / 45 ' }).value?.folio).toBe('123/45');
   });
 });

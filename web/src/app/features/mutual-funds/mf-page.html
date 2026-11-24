@@ -80,7 +80,13 @@
     >
       <ng-template appCell="name" let-row>
         <div class="name-cell">
-          <span class="name-title">{{ row.name }}</span>
+          <button
+            type="button"
+            class="name-title mf-fund-button"
+            (click)="showTransactions(row); $event.stopPropagation()"
+          >
+            {{ row.name }}
+          </button>
           <span class="cell-sub">
             <span class="app-num">{{ units(row.units) }} units</span>
             @if (row.nav !== null) {
@@ -185,7 +191,7 @@
   [modal]="true"
   [draggable]="false"
   [header]="transactionDialog()?.name ?? 'Fund transactions'"
-  closeAriaLabel="Close"
+  closeAriaLabel="Close fund transactions"
   styleClass="app-dialog"
 >
   @if (transactionDialog(); as row) {

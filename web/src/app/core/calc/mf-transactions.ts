@@ -1,17 +1,21 @@
 import { inPortfolios } from './common';
 import { CashFlow, xirr } from './xirr';
 
-export interface MfTransactionInput {
+interface MfPosition {
   portfolio_id: string;
+  folio: string | null;
+  scheme_code: string | null;
+  scheme_name: string;
+}
+
+export interface MfTransactionInput extends MfPosition {
   folio: string;
   transaction_date: string;
   transaction_type: string;
   amount: number | null;
 }
 
-export interface MfCurrentValueInput {
-  portfolio_id: string;
-  folio: string | null;
+export interface MfCurrentValueInput extends MfPosition {
   value: number | null;
 }
 
@@ -42,6 +46,19 @@ function scopeKey(portfolioId: string, folio: string | null): string {
   return `${portfolioId}\u0000${folio ?? ''}`;
 }
 
+export function mfPositionKey(row: MfPosition): string {
+  const scheme = row.scheme_code ?? row.scheme_name.trim().toLowerCase().replace(/\s+/g, ' ');
+  return JSON.stringify([row.portfolio_id, row.folio, scheme]);
+}
+
+function importedHoldings(
+  transactions: readonly MfTransactionInput[],
+  holdings: readonly MfCurrentValueInput[],
+): MfCurrentValueInput[] {
+  const positions = new Set(transactions.map(mfPositionKey));
+  return holdings.filter((row) => positions.has(mfPositionKey(row)));
+}
+
 function foliosWithCashFlows(rows: readonly MfTransactionInput[]): Set<string> {
   return new Set(
     rows
@@ -63,7 +80,7 @@ export function mfXirr(
   const relevantTransactions = scopedTransactions.filter((row) =>
     activeFolios.has(scopeKey(row.portfolio_id, row.folio)),
   );
-  const scopedHoldings = inPortfolios(holdings, portfolioIds).filter(
+  const scopedHoldings = importedHoldings(scopedTransactions, holdings).filter(
     (row) => row.folio !== null && activeFolios.has(scopeKey(row.portfolio_id, row.folio)),
   );
   if (scopedHoldings.some((h) => h.value === null)) return null;
@@ -80,7 +97,7 @@ export function mfXirrByFolio(
   today: string,
 ): MfXirrSummary[] {
   const scopedTransactions = inPortfolios(transactions, portfolioIds);
-  const scopedHoldings = inPortfolios(holdings, portfolioIds);
+  const scopedHoldings = importedHoldings(scopedTransactions, holdings);
   const keys = new Map<string, { portfolioId: string; folio: string }>();
   const activeFolios = foliosWithCashFlows(scopedTransactions);
   for (const row of scopedTransactions) {

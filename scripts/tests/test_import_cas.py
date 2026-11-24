@@ -155,6 +155,34 @@ def test_prepare_import_skips_zero_unit_folios() -> None:
     assert [row["scheme_name"] for row in positions] == ["Index Fund"]
 
 
+def test_prepare_import_rejects_two_folios_claiming_one_manual_holding() -> None:
+    data = statement(("folio-1", [scheme()]), ("folio-2", [scheme()]))
+    holdings = [{
+        "id": "holding-1", "portfolio_id": "p1", "scheme_code": "12345",
+        "scheme_name": "Index Fund", "folio": None,
+    }]
+    with pytest.raises(JobError, match="assign its folio first"):
+        import_cas.prepare_import(data, PORTFOLIOS, holdings, "Me")
+
+
+def test_prepare_import_reconciles_a_tracked_closed_position() -> None:
+    redemption = transaction(amount="120", units="-12")
+    redemption.type = "REDEMPTION"
+    closed = scheme(close="0", transactions=[redemption])
+    closed.valuation.cost = None
+    data = statement(("folio-1", [closed]))
+    holdings = [{
+        "id": "holding-1", "portfolio_id": "p1", "scheme_code": "12345",
+        "scheme_name": "Index Fund", "folio": "folio-1",
+    }]
+
+    transactions, positions, mapping = import_cas.prepare_import(data, PORTFOLIOS, holdings, "Me")
+
+    assert mapping == {"folio-1": "p1"}
+    assert [row["transaction_type"] for row in transactions] == ["REDEMPTION"]
+    assert [(row["id"], row["units"], row["invested"]) for row in positions] == [("holding-1", "0", "0")]
+
+
 def test_prepare_import_rejects_duplicate_matching_positions() -> None:
     with pytest.raises(JobError, match="duplicate fund positions"):
         import_cas.prepare_import(
@@ -166,12 +194,15 @@ def test_prepare_import_rejects_duplicate_matching_positions() -> None:
 
 
 class FakeDatabase:
-    def __init__(self, status_codes: list[int] | None = None):
+    def __init__(self, status_codes: list[int] | None = None, *, conflict: bool = False):
         self.calls: list[tuple[str, str, dict[str, Any]]] = []
         self.status_codes = iter(status_codes or [])
+        self.conflict = conflict
 
     def request(self, method: str, path: str, **kwargs: Any) -> SimpleNamespace:
         self.calls.append((method, path, kwargs))
+        if method == "GET":
+            return SimpleNamespace(status_code=200, json=lambda: [{"id": "existing"}] if self.conflict else [])
         return SimpleNamespace(status_code=next(self.status_codes, 201))
 
 
@@ -197,6 +228,22 @@ def test_write_rows_upserts_transactions_then_patches_and_inserts_positions() ->
     assert db.calls[1][2]["params"] == {"id": "eq.existing"}
     assert "owner_id" not in db.calls[1][2]["json"]
     assert db.calls[2][2]["json"]["owner_id"] == "owner"
+
+
+def test_preview_checks_existing_portfolio_assignments() -> None:
+    db = FakeDatabase(conflict=True)
+    with pytest.raises(JobError, match="already assigned to another portfolio"):
+        import_cas.check_transaction_portfolios(db, "owner", [{"source_key": "a" * 64, "portfolio_id": "p2"}])
+    assert [call[0] for call in db.calls] == ["GET"]
+
+
+def test_write_rows_stops_before_holdings_if_a_portfolio_conflict_is_detected_on_write() -> None:
+    db = FakeDatabase([409])
+    with pytest.raises(JobError, match="already assigned to another portfolio"):
+        import_cas.write_rows(
+            db, "owner", [{"source_key": "a" * 64, "portfolio_id": "p2"}], [{"portfolio_id": "p2"}]
+        )
+    assert [call[1] for call in db.calls] == ["/rest/v1/mf_transactions"]
 
 
 def test_write_rows_reports_database_failure_as_retryable() -> None:
@@ -296,16 +343,16 @@ def test_cli_is_preview_only_by_default_and_requires_typed_confirmation(
     monkeypatch.setattr("builtins.input", lambda _prompt: "CANCEL")
 
     assert import_cas.main([str(pdf)]) == 0
-    assert db.calls == []
+    assert all(call[0] == "GET" for call in db.calls)
     assert "Preview only. Nothing written." in capsys.readouterr().out
 
     assert import_cas.main([str(pdf), "--apply"]) == 1
-    assert db.calls == []
+    assert all(call[0] == "GET" for call in db.calls)
     assert "Cancelled. Nothing written." in capsys.readouterr().out
 
     monkeypatch.setattr("builtins.input", lambda _prompt: "IMPORT")
     assert import_cas.main([str(pdf), "--apply"]) == 0
-    assert [call[1] for call in db.calls] == [
+    assert [call[1] for call in db.calls if call[0] != "GET"] == [
         "/rest/v1/mf_transactions",
         "/rest/v1/mf_holdings",
     ]
