@@ -80,6 +80,7 @@ See `docs/UI_SPEC.md`.
 - Standalone components, `ChangeDetectionStrategy.OnPush`, signals for state, `inject()` for DI.
 - One feature per folder under `web/src/app/features/<name>/` (page component, service, models, tests).
 - Shared UI under `web/src/app/shared/` (`ui/` components and pipes, `layout/` shell and navigation, `format/` pure formatters). Supabase access only through services in `web/src/app/core/data/` (and `core/auth/` for sessions), never directly in components; ESLint enforces this.
+- Use the shared `DataTable` wrapper for feature tables. When a row must open details, enable `rowClickable` and handle `(rowOpen)`; the wrapper provides click and Enter/Space activation and a visible keyboard focus ring.
 - In component/page unit tests, provide mocks or fakes for injected data/auth services in `TestBed`. Do not instantiate real services that connect to Supabase or other external systems unless the test explicitly configures those dependencies.
 - Calculation logic (value, P&L, day change, XIRR if added) lives in pure functions in `web/src/app/core/calc/` with unit tests.
 - Types for database rows are generated with `supabase gen types typescript` into `web/src/app/core/db.types.ts`. Do not hand-write them.

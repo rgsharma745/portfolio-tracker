@@ -79,10 +79,15 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await expect(list).toContainText('E2E Growth Fund');
   await expect(list).toContainText('Stale');
   await expect(list).toContainText('Wife');
-  await expect(page.getByRole('heading', { name: 'XIRR by folio' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Recent mutual fund transactions' })).toContainText(
-    'E2E Growth Fund',
-  );
+  await expect(list).toContainText('Folio XIRR');
+  await list.getByText('E2E Growth Fund').first().click();
+  const transactionDialog = page.getByRole('dialog', { name: 'E2E Growth Fund' });
+  await expect(transactionDialog).toBeVisible();
+  await expect(transactionDialog).toContainText('Folio');
+  await expect(transactionDialog).toContainText('Folio XIRR');
+  await expect(transactionDialog).toContainText('Absolute P&L');
+  await expect(transactionDialog).toContainText('E2E Growth Fund');
+  await transactionDialog.getByRole('button', { name: 'Close' }).click();
   await expectNoHorizontalScroll(page);
   await screenshot(page, 'mutual-funds', testInfo.project.name);
 

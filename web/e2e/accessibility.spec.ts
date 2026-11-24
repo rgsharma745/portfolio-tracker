@@ -241,10 +241,15 @@ for (const theme of ['light', 'dark'] as const) {
       await page.goto(path);
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
       if (path === '/mutual-funds') {
-        await expect(
-          page.getByRole('list', { name: 'Recent mutual fund transactions' }),
-        ).toContainText('E2E Accessible Fund');
-        await expect(page.getByRole('heading', { name: 'XIRR by folio' })).toBeVisible();
+        const list = page
+          .getByRole('list', { name: 'Mutual fund holdings' })
+          .or(page.getByRole('table', { name: 'Mutual fund holdings' }));
+        await expect(list).toContainText('Folio XIRR');
+        await list.getByText('E2E Accessible Fund').first().click();
+        const transactions = page.getByRole('dialog', { name: 'E2E Accessible Fund' });
+        await expect(transactions).toBeVisible();
+        await audit(page, `${theme} ${path} fund transactions`);
+        await transactions.getByRole('button', { name: 'Close' }).click();
       }
       await audit(page, `${theme} ${path}`);
     }
