@@ -112,6 +112,21 @@ test('mutual funds: totals, badges, add, edit and delete', async ({ page }, test
   await includeClosed.check();
   await expect(list).toContainText('E2E Closed Fund');
   await expect(stat('XIRR')).toContainText('+22.00%');
+  const sortBy = page.getByRole('combobox', { name: 'Sort by' });
+  await sortBy.click();
+  await page.getByRole('option', { name: 'XIRR', exact: true }).click();
+  const fundRows = mobile ? list.getByRole('listitem') : list.locator('tbody tr');
+  await expect(fundRows.nth(0)).toContainText('E2E Growth Fund');
+  const xirrHeader = list.getByRole('columnheader', { name: 'XIRR', exact: true });
+  if (mobile) {
+    await page.getByRole('button', { name: 'Sort ascending', exact: true }).click();
+  } else {
+    await xirrHeader.getByRole('button', { name: 'XIRR', exact: true }).click();
+    await expect(xirrHeader).toHaveAttribute('aria-sort', 'ascending');
+  }
+  await expect(fundRows.nth(0)).toContainText('E2E Closed Fund');
+  await expect(fundRows.nth(1)).toContainText('E2E Growth Fund');
+  await expect(fundRows.nth(2)).toContainText('E2E Stale Fund');
   await list.getByText('E2E Closed Fund', { exact: true }).click();
   const closedDialog = page.getByRole('dialog', { name: 'E2E Closed Fund' });
   await expect(closedDialog.getByRole('listitem').filter({ hasText: 'REDEMPTION' })).toContainText(

@@ -92,6 +92,7 @@ export class MfPage {
     { label: 'Name', value: 'name' },
     { label: 'P&L', value: 'pl' },
     { label: 'P&L %', value: 'plPercent' },
+    { label: 'XIRR', value: 'xirr' },
     { label: '1 Day Change', value: 'dayChange' },
   ];
 
@@ -160,19 +161,21 @@ export class MfPage {
       .transactions()
       .filter((transaction) => mfPositionKey(transaction) === position);
   });
-  protected readonly visible = computed(() =>
-    sortRows(
-      filterByPl(
-        this.rows().filter(
-          (row) =>
-            (this.includeClosed() || row.units > 0) &&
-            matchesSearch(this.search(), row.name, row.code, row.folio),
-        ),
-        this.plFilter(),
+  protected readonly visible = computed(() => {
+    const sort = this.sort();
+    const rows = filterByPl(
+      this.rows().filter(
+        (row) =>
+          (this.includeClosed() || row.units > 0) &&
+          matchesSearch(this.search(), row.name, row.code, row.folio),
       ),
-      this.sort(),
-    ),
-  );
+      this.plFilter(),
+    );
+    return sortRows(
+      sort.key === 'xirr' ? rows.map((row) => ({ ...row, xirr: this.folioXirr(row) })) : rows,
+      sort,
+    );
+  });
   protected readonly tableFooter = computed(() => {
     const t = sumValuations(this.visible().map((r) => r.valuation));
     return {
@@ -188,7 +191,7 @@ export class MfPage {
     { key: 'name', header: 'Fund', type: 'custom', sortable: true },
     { key: 'value', header: 'Value', type: 'custom', sortable: true, alignEnd: true },
     { key: 'pl', header: 'P&L', type: 'custom', sortable: true, alignEnd: true },
-    { key: 'xirr', header: 'XIRR', type: 'custom', alignEnd: true },
+    { key: 'xirr', header: 'XIRR', type: 'custom', sortable: true, alignEnd: true },
     { key: 'dayChange', header: '1 Day Change', type: 'pl' },
     { key: 'actions', header: 'Actions', type: 'custom', hiddenHeader: true },
   ];
