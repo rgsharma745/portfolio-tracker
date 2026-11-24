@@ -42,14 +42,12 @@
         label="Live XIRR"
         [text]="xirr(liveXirr())"
         [tone]="liveXirr() === null ? null : liveXirr()! >= 0 ? 'up' : 'down'"
-        note="Open positions"
         [compact]="bp.isMobile()"
       />
       <app-stat-card
         label="XIRR"
         [text]="xirr(portfolioXirr())"
         [tone]="portfolioXirr() === null ? null : portfolioXirr()! >= 0 ? 'up' : 'down'"
-        note="Open and closed positions"
         [compact]="bp.isMobile()"
       />
     </div>
