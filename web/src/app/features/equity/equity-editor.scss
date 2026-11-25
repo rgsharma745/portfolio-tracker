@@ -8,6 +8,20 @@
   .equity-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  @supports (grid-template-rows: subgrid) {
+    .equity-fields {
+      row-gap: 6px;
+    }
+
+    .equity-fields > .field {
+      // Share tracks for the label, control and optional error across both columns.
+      display: grid;
+      grid-row: span 3;
+      grid-template-rows: subgrid;
+      align-items: start;
+    }
+  }
 }
 
 .field,
@@ -18,13 +32,31 @@ fieldset {
 select,
 textarea {
   width: 100%;
-  min-height: 44px;
   padding: 0.5rem 0.625rem;
   border-radius: var(--p-inputtext-border-radius);
   background: var(--p-inputtext-background);
   color: var(--p-inputtext-color);
   border: 1px solid var(--p-inputtext-border-color);
   font: inherit;
+}
+
+select {
+  // iOS WebKit uses its own height for the native select appearance.
+  appearance: none;
+  padding-inline-end: 2rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 15px center,
+    right 10px center;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+
+  @media (forced-colors: active) {
+    appearance: auto;
+    background-image: none;
+  }
 }
 
 .allocations,

@@ -210,6 +210,11 @@ body {
   }
 }
 
+// The equity editor mixes native selects with PrimeNG text and date inputs.
+.equity-fields .field :is(input, select, textarea) {
+  min-block-size: 2.75rem;
+}
+
 .field-help {
   margin: 0;
   color: var(--app-text-muted);

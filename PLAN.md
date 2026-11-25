@@ -5,7 +5,7 @@ Goal: replace the Google Sheet "Portfolio" with a secure, free, responsive websi
 Legend: `[ ]` todo, `[x]` done. **Human** = a task only the owner can do. Stop at the end of every phase for review.
 
 ## Status (update this when work lands)
-_Last updated 24 Nov 2026._
+_Last updated 25 Nov 2026._
 - **Built:** phases 0 to 18. **Phase 18 is live:** production migrations applied and a fresh CAMS statement imported. The owner confirmed Live XIRR, overall XIRR, and the corrected fund-level XIRR. Live on Cloudflare Workers (deploys on push to `main`). Jobs run in GitHub Actions, started on time by Cloudflare Cron Triggers (Phase 15); backups are encrypted weekly artifacts; restore is `scripts/tools/restore.py`.
 - **Overview:** Investments and Savings and dues appear in separate panels. A compact 1D badge shows daily changes below mutual fund, stock and NPS balances. History, Allocation and By portfolio start collapsed. History offers separate mutual fund and stock views.
 - **Checks:** the latest Overview refinement passed lint, the production build and all three Overview browser tests (desktop Chrome, mobile Chrome and iPhone WebKit). The preceding panel redesign also passed 359 app unit tests, 17 Worker tests and nine Overview and accessibility browser checks. Phase 18 verification included lint, 357 app unit tests + 17 Worker tests, 275 pytest, production build and bundle secret scan; Overview, Mutual Funds and Cards E2E on mobile Chrome, iPhone WebKit and desktop Chrome; axe WCAG 2.1 AA for every page and dialog in both themes. Shared accessibility improvements cover chart data, form errors, keyboard table scrolling and navigation bypass. Previous full E2E suite: 99 tests (3 skipped). Lighthouse on the live site: 99–100 performance, 100 accessibility and best practices (SEO low on purpose: `noindex`). Security checklist in `docs/SECURITY.md` complete except the restore rehearsal.
@@ -248,6 +248,7 @@ The owner asked for a separate page to record dividends received (market, symbol
 - [x] Use shares held for Overview and daily history. Integrate Settings, JSON export, encrypted backup and restore.
 - [x] Verify the local migrations and generated types, lint, build and bundle scan, 349 app tests, 17 Worker tests, 319 Python tests, and 99 browser checks across the full run and iPhone keyboard rerun (3 intentional skips).
 - [x] Show field errors for tax withholding above the gross vested quantity or allotment before vesting. Verify correction and save on desktop Chrome, mobile Chrome and iPhone WebKit.
+- [x] Match control heights in the equity dialogs and align desktop rows when labels wrap.
 - [ ] **Human:** back up production, clear the legacy RSU snapshot amounts, apply migrations `0014` through `0017`, deploy, enter grants, and verify the first price, snapshot and backup runs.
 - [ ] Consider financial-year filtering in a later release.
 

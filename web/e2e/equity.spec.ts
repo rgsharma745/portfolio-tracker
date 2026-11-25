@@ -1,5 +1,6 @@
 import {
   adminInsert,
+  animationsDone,
   ensureUser,
   expect,
   expectNoHorizontalScroll,
@@ -65,6 +66,25 @@ test('employee equity records vesting, exercise and a multi-lot cashless sale', 
   await page.getByRole('button', { name: 'Record vesting' }).click();
   const vest = page.getByRole('dialog', { name: 'Add vesting' });
   await vest.getByLabel('Grant', { exact: false }).selectOption(award);
+  await expect(vest.getByLabel('FMV per share')).toBeVisible();
+  await animationsDone(page);
+  const controls = await vest.locator('select, input').evaluateAll((elements) =>
+    elements.map((element) => {
+      const { y, height } = element.getBoundingClientRect();
+      return { id: element.id, y, height };
+    }),
+  );
+  const heights = controls.map((control) => control.height);
+  expect(
+    Math.max(...heights) - Math.min(...heights),
+    controls.map(({ id, height }) => `${id} is ${height}px`).join(', '),
+  ).toBeLessThan(1);
+  expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+  if (info.project.name === 'desktop') {
+    for (let i = 0; i + 1 < controls.length; i += 2) {
+      expect(controls[i].y, `Top of controls in row ${i / 2 + 1}`).toBeCloseTo(controls[i + 1].y);
+    }
+  }
   await vest.getByLabel('Vested quantity').fill('10');
   await vest.getByLabel('FMV per share').fill('40');
   const withheld = vest.getByLabel('Shares withheld or sold for tax');

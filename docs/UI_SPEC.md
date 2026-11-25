@@ -73,6 +73,8 @@ Email magic link (and Google if enabled). Single centered card. No sign-up link.
 - Not on Overview: no card, allocation share or history line.
 
 ### Employee equity
+
+- Add and edit dialogs use consistent heights for dropdowns, text inputs and date fields. Side-by-side controls line up even when a label wraps.
 - Use the global portfolio switcher and company, grant type and grant filters. Balance cards cover current value, P&L, purchase cost, reported taxes and receipts. The quantity summary covers grants, vesting, exercises, withholding, sales and shares held.
 - Use sortable tables on desktop and cards on mobile for Grants, Vesting, Exercises, Sales and Companies. Highlight upcoming and overdue vesting by tranche.
 - Sale dialogs let the owner select lots and see available shares. Sale details show allocated basis, P&L, bank reconciliation and holding-period classification.
